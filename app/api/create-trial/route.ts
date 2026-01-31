@@ -5,6 +5,7 @@ import {
   getCurrency,
   getPricingEnvironment
 } from '@/lib/codes';
+import { saveEnvironmentLog } from '@/lib/logger';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 const SLACK_API_URL = 'https://slack.com/api/chat.postMessage';
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!response.ok) {
       console.error('Mews API error:', result);
-      
+
       // Send Slack failure notification
       await sendSlackNotification({
         success: false,
@@ -134,6 +135,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         requestorEmail,
         customerEmail,
         error: result
+      });
+
+      // Log failed environment creation
+      saveEnvironmentLog({
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        propertyName,
+        customerName: `${firstName} ${lastName}`,
+        customerEmail,
+        propertyCountry,
+        propertyType,
+        loginUrl: 'https://app.mews-demo.com',
+        loginEmail: customerEmail,
+        loginPassword: 'Sample123',
+        status: 'failure',
+        errorMessage: JSON.stringify(result)
       });
 
       return NextResponse.json(
@@ -150,6 +167,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       lastName,
       requestorEmail,
       customerEmail
+    });
+
+    // Log successful environment creation
+    saveEnvironmentLog({
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      propertyName,
+      customerName: `${firstName} ${lastName}`,
+      customerEmail,
+      propertyCountry,
+      propertyType,
+      loginUrl: 'https://app.mews-demo.com',
+      loginEmail: customerEmail,
+      loginPassword: 'Sample123',
+      status: 'success'
     });
 
     return NextResponse.json({
