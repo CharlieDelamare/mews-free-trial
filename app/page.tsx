@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { languageOptions, countryOptions } from '@/lib/codes';
 
 export default function FreeTrialPage() {
@@ -55,6 +56,14 @@ export default function FreeTrialPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <Link
+            href="/logs"
+            className="text-blue-600 hover:text-blue-700 font-medium"
+          >
+            View Environment Logs →
+          </Link>
+        </div>
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Free Trial</h1>
           <p className="text-gray-600">Request a 45-day free trial of Mews</p>
