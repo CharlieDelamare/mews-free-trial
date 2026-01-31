@@ -131,6 +131,8 @@ export default function FreeTrialPage() {
                 onChange={handleChange}
                 required
                 placeholder="customer@hotel.com"
+                data-1p-ignore
+                autoComplete="off"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
