@@ -3,7 +3,7 @@ import { readEnvironmentLogs } from '@/lib/logger';
 
 export async function GET() {
   try {
-    const logs = readEnvironmentLogs();
+    const logs = await readEnvironmentLogs();
     return NextResponse.json({ success: true, logs });
   } catch (error) {
     console.error('Failed to fetch logs:', error);
