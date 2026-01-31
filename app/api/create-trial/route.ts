@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const accessToken = process.env.MEWS_ACCESS_TOKEN;
+    const accessToken = process.env.MEWS_SAMPLE_TOKEN;
     if (!accessToken) {
       return NextResponse.json(
         { success: false, error: 'Server configuration error' },
