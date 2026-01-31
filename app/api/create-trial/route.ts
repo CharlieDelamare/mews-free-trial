@@ -7,6 +7,7 @@ import {
 } from '@/lib/codes';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
+const SLACK_API_URL = 'https://slack.com/api/chat.postMessage';
 
 interface TrialRequest {
   requestorEmail: string;
@@ -169,7 +170,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Slack notification helper
+// Slack API notification helper
 async function sendSlackNotification(data: {
   success: boolean;
   propertyName: string;
@@ -179,22 +180,116 @@ async function sendSlackNotification(data: {
   customerEmail: string;
   error?: unknown;
 }) {
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhookUrl) {
-    console.log('Slack webhook not configured, skipping notification');
+  const slackBotToken = process.env.SLACK_BOT_TOKEN;
+  const slackChannelId = process.env.SLACK_CHANNEL_ID;
+
+  if (!slackBotToken || !slackChannelId) {
+    console.log('Slack API not configured, skipping notification');
     return;
   }
 
-  const message = data.success
-    ? `New trial generated! \nProperty name: ${data.propertyName} \nContact: ${data.lastName}, ${data.firstName} \nRequested by: ${data.requestorEmail} \nLogin details: https://app.mews-demo.com, login: ${data.customerEmail}, password: Sample123`
-    : `New trial generation *failed*! \nProperty name: ${data.propertyName} \nContact: ${data.lastName}, ${data.firstName} \nRequested by: ${data.requestorEmail} \nError: ${JSON.stringify(data.error)}`;
+  // Build Block Kit message for richer formatting
+  const blocks = data.success
+    ? [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: '✅ New Trial Generated!',
+            emoji: true
+          }
+        },
+        {
+          type: 'section',
+          fields: [
+            {
+              type: 'mrkdwn',
+              text: `*Property Name:*\n${data.propertyName}`
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Contact:*\n${data.firstName} ${data.lastName}`
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Requested By:*\n${data.requestorEmail}`
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Customer Email:*\n${data.customerEmail}`
+            }
+          ]
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*Login Details:*\n• URL: https://app.mews-demo.com\n• Email: ${data.customerEmail}\n• Password: \`Sample123\``
+          }
+        }
+      ]
+    : [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: '❌ Trial Generation Failed!',
+            emoji: true
+          }
+        },
+        {
+          type: 'section',
+          fields: [
+            {
+              type: 'mrkdwn',
+              text: `*Property Name:*\n${data.propertyName}`
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Contact:*\n${data.firstName} ${data.lastName}`
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Requested By:*\n${data.requestorEmail}`
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Customer Email:*\n${data.customerEmail}`
+            }
+          ]
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*Error Details:*\n\`\`\`${JSON.stringify(data.error, null, 2)}\`\`\``
+          }
+        }
+      ];
+
+  const fallbackText = data.success
+    ? `New trial generated for ${data.propertyName}`
+    : `Trial generation failed for ${data.propertyName}`;
 
   try {
-    await fetch(slackWebhookUrl, {
+    const response = await fetch(SLACK_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: message })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${slackBotToken}`
+      },
+      body: JSON.stringify({
+        channel: slackChannelId,
+        text: fallbackText,
+        blocks: blocks
+      })
     });
+
+    const result = await response.json();
+
+    if (!result.ok) {
+      console.error('Slack API error:', result.error);
+    }
   } catch (err) {
     console.error('Failed to send Slack notification:', err);
   }
