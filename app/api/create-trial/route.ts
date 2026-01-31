@@ -138,9 +138,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
       // Log failed environment creation
-      saveEnvironmentLog({
-        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        timestamp: new Date().toISOString(),
+      await saveEnvironmentLog({
         propertyName,
         customerName: `${firstName} ${lastName}`,
         customerEmail,
@@ -170,9 +168,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
     // Log successful environment creation
-    saveEnvironmentLog({
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
+    await saveEnvironmentLog({
       propertyName,
       customerName: `${firstName} ${lastName}`,
       customerEmail,

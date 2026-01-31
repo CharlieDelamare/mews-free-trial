@@ -1,0 +1,29 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model EnvironmentLog {
+  id             String   @id @default(cuid())
+  timestamp      DateTime @default(now())
+  propertyName   String
+  customerName   String
+  customerEmail  String
+  propertyCountry String
+  propertyType   String
+  loginUrl       String
+  loginEmail     String
+  loginPassword  String
+  status         String
+  errorMessage   String?
+
+  @@index([timestamp])
+  @@index([status])
+}

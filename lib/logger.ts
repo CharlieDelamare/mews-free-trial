@@ -1,9 +1,8 @@
-import fs from 'fs';
-import path from 'path';
+import { prisma } from './prisma';
 
 export interface EnvironmentLog {
   id: string;
-  timestamp: string;
+  timestamp: Date;
   propertyName: string;
   customerName: string;
   customerEmail: string;
@@ -13,34 +12,38 @@ export interface EnvironmentLog {
   loginEmail: string;
   loginPassword: string;
   status: 'success' | 'failure';
-  errorMessage?: string;
+  errorMessage?: string | null;
 }
 
-const LOGS_FILE = path.join(process.cwd(), 'environment-logs.json');
-
-// Ensure logs file exists
-function ensureLogsFile() {
-  if (!fs.existsSync(LOGS_FILE)) {
-    fs.writeFileSync(LOGS_FILE, JSON.stringify([], null, 2));
-  }
-}
-
-export function saveEnvironmentLog(log: EnvironmentLog) {
+export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'timestamp'>) {
   try {
-    ensureLogsFile();
-    const logs = readEnvironmentLogs();
-    logs.unshift(log); // Add to beginning for newest first
-    fs.writeFileSync(LOGS_FILE, JSON.stringify(logs, null, 2));
+    await prisma.environmentLog.create({
+      data: {
+        propertyName: log.propertyName,
+        customerName: log.customerName,
+        customerEmail: log.customerEmail,
+        propertyCountry: log.propertyCountry,
+        propertyType: log.propertyType,
+        loginUrl: log.loginUrl,
+        loginEmail: log.loginEmail,
+        loginPassword: log.loginPassword,
+        status: log.status,
+        errorMessage: log.errorMessage,
+      },
+    });
   } catch (error) {
     console.error('Failed to save environment log:', error);
   }
 }
 
-export function readEnvironmentLogs(): EnvironmentLog[] {
+export async function readEnvironmentLogs(): Promise<EnvironmentLog[]> {
   try {
-    ensureLogsFile();
-    const data = fs.readFileSync(LOGS_FILE, 'utf-8');
-    return JSON.parse(data);
+    const logs = await prisma.environmentLog.findMany({
+      orderBy: {
+        timestamp: 'desc',
+      },
+    });
+    return logs as EnvironmentLog[];
   } catch (error) {
     console.error('Failed to read environment logs:', error);
     return [];
