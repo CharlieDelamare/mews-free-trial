@@ -24,3 +24,11 @@ yarn-error.log*
 
 # OS
 .DS_Store
+
+# Prisma
+/lib/generated/prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Data directory (legacy token storage)
+/data

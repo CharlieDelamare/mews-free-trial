@@ -1,0 +1,28 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AccessToken {
+  id              Int      @id @default(autoincrement())
+  accessToken     String
+  enterpriseId    String
+  enterpriseName  String
+  serviceId       String?
+  serviceName     String?
+  integrationId   String?
+  integrationName String?
+  createdUtc      String
+  receivedAt      DateTime @default(now())
+  isEnabled       Boolean  @default(true)
+  action          String
+
+  @@index([enterpriseId])
+}
