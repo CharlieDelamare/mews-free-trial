@@ -10,20 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model EnvironmentLog {
-  id             String   @id @default(cuid())
-  timestamp      DateTime @default(now())
-  propertyName   String
-  customerName   String
-  customerEmail  String
-  propertyCountry String
-  propertyType   String
-  loginUrl       String
-  loginEmail     String
-  loginPassword  String
-  status         String
-  errorMessage   String?
+model AccessToken {
+  id              Int      @id @default(autoincrement())
+  accessToken     String
+  enterpriseId    String
+  enterpriseName  String
+  serviceId       String?
+  serviceName     String?
+  integrationId   String?
+  integrationName String?
+  createdUtc      String
+  receivedAt      DateTime @default(now())
+  isEnabled       Boolean  @default(true)
+  action          String
 
-  @@index([timestamp])
-  @@index([status])
+  @@index([enterpriseId])
 }

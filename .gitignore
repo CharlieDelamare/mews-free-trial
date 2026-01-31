@@ -22,17 +22,16 @@ yarn-error.log*
 .vscode/
 .idea/
 
-# database (contains sensitive login data)
-prisma/dev.db
-prisma/dev.db-journal
+# OS
+.DS_Store
+
+# Prisma
+/lib/generated/prisma
+prisma/*.db
+prisma/*.db-journal
 *.db
 *.db-journal
 
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-/lib/generated/prisma
+# Data directory (legacy token storage)
+/data
+environment-logs.json

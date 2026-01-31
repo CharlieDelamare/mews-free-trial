@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-
-const TOKENS_FILE = path.join(process.cwd(), 'data', 'access-tokens.json');
+import { prisma } from '@/lib/prisma';
 
 interface MewsWebhookPayload {
   Action: string;
@@ -26,53 +23,6 @@ interface MewsWebhookPayload {
   };
 }
 
-interface StoredToken {
-  accessToken: string;
-  enterpriseId: string;
-  enterpriseName: string;
-  serviceId?: string;
-  serviceName?: string;
-  integrationId?: string;
-  integrationName?: string;
-  createdUtc: string;
-  receivedAt: string;
-  isEnabled: boolean;
-  action: string;
-}
-
-/**
- * Ensure the data directory exists
- */
-async function ensureDataDirectory() {
-  const dataDir = path.join(process.cwd(), 'data');
-  try {
-    await fs.access(dataDir);
-  } catch {
-    await fs.mkdir(dataDir, { recursive: true });
-  }
-}
-
-/**
- * Load existing tokens from file
- */
-async function loadTokens(): Promise<StoredToken[]> {
-  try {
-    await ensureDataDirectory();
-    const data = await fs.readFile(TOKENS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    // File doesn't exist yet or is invalid, return empty array
-    return [];
-  }
-}
-
-/**
- * Save tokens to file
- */
-async function saveTokens(tokens: StoredToken[]): Promise<void> {
-  await ensureDataDirectory();
-  await fs.writeFile(TOKENS_FILE, JSON.stringify(tokens, null, 2), 'utf-8');
-}
 
 /**
  * POST /api/webhook/access-token
@@ -97,35 +47,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load existing tokens
-    const tokens = await loadTokens();
-
-    // Create new token entry
-    const newToken: StoredToken = {
-      accessToken: payload.Data.AccessToken,
-      enterpriseId: payload.Data.Enterprise.Id,
-      enterpriseName: payload.Data.Enterprise.Name,
-      serviceId: payload.Data.Service?.Id,
-      serviceName: payload.Data.Service?.Name,
-      integrationId: payload.Data.Integration?.Id,
-      integrationName: payload.Data.Integration?.Name,
-      createdUtc: payload.Data.CreatedUtc,
-      receivedAt: new Date().toISOString(),
-      isEnabled: payload.Data.IsEnabled,
-      action: payload.Action
-    };
-
-    // Add to tokens array
-    tokens.push(newToken);
-
-    // Save to file
-    await saveTokens(tokens);
+    // Create new token entry in database
+    const newToken = await prisma.accessToken.create({
+      data: {
+        accessToken: payload.Data.AccessToken,
+        enterpriseId: payload.Data.Enterprise.Id,
+        enterpriseName: payload.Data.Enterprise.Name,
+        serviceId: payload.Data.Service?.Id,
+        serviceName: payload.Data.Service?.Name,
+        integrationId: payload.Data.Integration?.Id,
+        integrationName: payload.Data.Integration?.Name,
+        createdUtc: payload.Data.CreatedUtc,
+        isEnabled: payload.Data.IsEnabled,
+        action: payload.Action
+      }
+    });
 
     console.log('[Webhook] Access token received and stored:', {
+      id: newToken.id,
       action: newToken.action,
       enterpriseId: newToken.enterpriseId,
       enterpriseName: newToken.enterpriseName,
-      receivedAt: newToken.receivedAt
+      receivedAt: newToken.receivedAt.toISOString()
     });
 
     // Send Slack notification if configured
@@ -188,7 +131,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Access token received and stored',
-      tokenId: tokens.length - 1
+      tokenId: newToken.id
     });
 
   } catch (error) {
@@ -206,16 +149,16 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const tokens = await loadTokens();
-
     // Optional: filter by enterpriseId from query params
     const { searchParams } = new URL(request.url);
     const enterpriseId = searchParams.get('enterpriseId');
 
-    if (enterpriseId) {
-      const filtered = tokens.filter(t => t.enterpriseId === enterpriseId);
-      return NextResponse.json({ tokens: filtered, count: filtered.length });
-    }
+    const tokens = await prisma.accessToken.findMany({
+      where: enterpriseId ? { enterpriseId } : undefined,
+      orderBy: {
+        receivedAt: 'desc'
+      }
+    });
 
     return NextResponse.json({ tokens, count: tokens.length });
 
