@@ -123,6 +123,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       details: reservationData
     };
 
+    // Send notification to Zapier webhook
+    const zapierWebhookUrl = process.env.ZAPIER_WEBHOOK_URL;
+    if (zapierWebhookUrl) {
+      try {
+        await fetch(zapierWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            email,
+            phone,
+            companyName,
+            startDate,
+            endDate,
+            notes,
+            reservationId: result.reservationId,
+            confirmationNumber: result.confirmationNumber
+          })
+        });
+      } catch (error) {
+        // Log error but don't fail the request
+        console.error('Failed to send Zapier webhook:', error);
+      }
+    }
+
     return NextResponse.json(result);
 
   } catch (error) {
