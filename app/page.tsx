@@ -13,7 +13,8 @@ export default function FreeTrialPage() {
     preferredLanguage: 'English (UK)',
     propertyName: '',
     propertyCountry: 'United Kingdom',
-    propertyType: 'hotel' as 'hotel' | 'hostel' | 'apartments'
+    propertyType: 'hotel' as 'hotel' | 'hostel' | 'apartments',
+    salesforceAccountId: ''
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -36,6 +37,13 @@ export default function FreeTrialPage() {
     e.preventDefault();
     setLoading(true);
     setResult(null);
+
+    // Validate Salesforce Account ID
+    if (!formData.salesforceAccountId.startsWith('001')) {
+      setResult({ success: false, error: 'The Salesforce Account ID is incorrect' });
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch('/api/create-trial', {
@@ -131,6 +139,8 @@ export default function FreeTrialPage() {
                 onChange={handleChange}
                 required
                 placeholder="customer@hotel.com"
+                data-1p-ignore
+                autoComplete="off"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -195,6 +205,20 @@ export default function FreeTrialPage() {
                 <option value="hostel">Hostel</option>
                 <option value="apartments">Apartments</option>
               </select>
+            </div>
+
+            {/* Salesforce Account ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Salesforce Account ID *</label>
+              <input
+                type="text"
+                name="salesforceAccountId"
+                value={formData.salesforceAccountId}
+                onChange={handleChange}
+                required
+                placeholder="001..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
 
             {result?.error && (
