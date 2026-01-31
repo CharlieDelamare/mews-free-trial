@@ -26,3 +26,21 @@ model AccessToken {
 
   @@index([enterpriseId])
 }
+
+model EnvironmentLog {
+  id              String   @id @default(cuid())
+  timestamp       DateTime @default(now())
+  propertyName    String
+  customerName    String
+  customerEmail   String
+  propertyCountry String
+  propertyType    String
+  loginUrl        String
+  loginEmail      String
+  loginPassword   String
+  status          String
+  errorMessage    String?
+
+  @@index([timestamp])
+  @@index([status])
+}
