@@ -1,26 +1,30 @@
 'use client';
 
 import { useState } from 'react';
+import { languageOptions, countryOptions } from '@/lib/codes';
 
 export default function FreeTrialPage() {
   const [formData, setFormData] = useState({
+    requestorEmail: '',
     firstName: '',
     lastName: '',
-    email: '',
-    phone: '',
-    companyName: '',
-    startDate: '',
-    endDate: '',
-    notes: ''
+    customerEmail: '',
+    preferredLanguage: 'English (UK)',
+    propertyName: '',
+    propertyCountry: 'United Kingdom',
+    propertyType: 'hotel' as 'hotel' | 'hostel' | 'apartments'
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success?: boolean;
-    confirmationNumber?: string;
+    message?: string;
+    loginUrl?: string;
+    loginEmail?: string;
+    defaultPassword?: string;
     error?: string;
   } | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -33,7 +37,7 @@ export default function FreeTrialPage() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/create-reservation', {
+      const response = await fetch('/api/create-trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -49,23 +53,43 @@ export default function FreeTrialPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4">
-      <div className="max-w-xl mx-auto">
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+      <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Start Your Free Trial</h1>
-          <p className="text-gray-600">Experience Mews with a complimentary trial</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Free Trial</h1>
+          <p className="text-gray-600">Request a 45-day free trial of Mews</p>
         </div>
 
         {result?.success ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-            <h2 className="text-xl font-semibold text-green-800 mb-2">Trial Request Submitted!</h2>
-            <p className="text-green-700">Confirmation: {result.confirmationNumber}</p>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-green-800 mb-4">Trial Created Successfully!</h2>
+            <div className="space-y-2 text-green-700">
+              <p><strong>Login URL:</strong> <a href={result.loginUrl} className="underline">{result.loginUrl}</a></p>
+              <p><strong>Email:</strong> {result.loginEmail}</p>
+              <p><strong>Password:</strong> {result.defaultPassword}</p>
+            </div>
+            <p className="mt-4 text-sm text-green-600">Check your email for additional details.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+            {/* Requestor Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Your Email (Requestor) *</label>
+              <input
+                type="email"
+                name="requestorEmail"
+                value={formData.requestorEmail}
+                onChange={handleChange}
+                required
+                placeholder="your.email@company.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Customer Details */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer First Name *</label>
                 <input
                   type="text"
                   name="firstName"
@@ -76,7 +100,7 @@ export default function FreeTrialPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer Last Name *</label>
                 <input
                   type="text"
                   name="lastName"
@@ -88,74 +112,80 @@ export default function FreeTrialPage() {
               </div>
             </div>
 
+            {/* Customer Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Customer Email (for login) *</label>
               <input
                 type="email"
-                name="email"
-                value={formData.email}
+                name="customerEmail"
+                value={formData.customerEmail}
+                onChange={handleChange}
+                required
+                placeholder="customer@hotel.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Preferred Language */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Language *</label>
+              <select
+                name="preferredLanguage"
+                value={formData.preferredLanguage}
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              >
+                {languageOptions.map(lang => (
+                  <option key={lang} value={lang}>{lang}</option>
+                ))}
+              </select>
             </div>
 
+            {/* Property Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Property Name *</label>
               <input
                 type="text"
-                name="companyName"
-                value={formData.companyName}
+                name="propertyName"
+                value={formData.propertyName}
                 onChange={handleChange}
+                required
+                placeholder="Hotel Grand Example"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
-                <input
-                  type="date"
-                  name="startDate"
-                  value={formData.startDate}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
-                <input
-                  type="date"
-                  name="endDate"
-                  value={formData.endDate}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
+            {/* Property Country */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Property Country *</label>
+              <select
+                name="propertyCountry"
+                value={formData.propertyCountry}
                 onChange={handleChange}
-                rows={3}
+                required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              >
+                {countryOptions.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Property Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Property Type *</label>
+              <select
+                name="propertyType"
+                value={formData.propertyType}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="hotel">Hotel</option>
+                <option value="hostel">Hostel</option>
+                <option value="apartments">Apartments</option>
+              </select>
             </div>
 
             {result?.error && (
@@ -169,8 +199,12 @@ export default function FreeTrialPage() {
               disabled={loading}
               className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Submitting...' : 'Start Free Trial'}
+              {loading ? 'Creating Trial... (this may take a few minutes)' : 'Create Free Trial'}
             </button>
+
+            <p className="text-xs text-gray-500 text-center">
+              Trial properties are valid for 45 days. Login details will be sent to the customer email.
+            </p>
           </form>
         )}
       </div>
