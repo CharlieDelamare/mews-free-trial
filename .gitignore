@@ -1,7 +1,10 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
 # dependencies
-node_modules/
+/node_modules
 /.pnp
 .pnp.js
+.yarn/install-state.gz
 
 # testing
 /coverage
@@ -26,12 +29,12 @@ yarn-error.log*
 .env*.local
 .env
 
-# environment logs (contains sensitive login data)
-environment-logs.json
-
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Access tokens storage
+/data
