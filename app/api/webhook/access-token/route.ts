@@ -4,19 +4,40 @@ import path from 'path';
 
 const TOKENS_FILE = path.join(process.cwd(), 'data', 'access-tokens.json');
 
-interface AccessTokenPayload {
-  accessToken: string;
-  enterpriseId?: string;
-  clientToken?: string;
-  [key: string]: any;
+interface MewsWebhookPayload {
+  Action: string;
+  Data: {
+    Enterprise: {
+      Id: string;
+      Name: string;
+    };
+    Service?: {
+      Id: string;
+      Name: string;
+    };
+    Integration?: {
+      Id: string;
+      Name: string;
+    };
+    AccessToken: string;
+    CreatedUtc: string;
+    IsEnabled: boolean;
+    Requestor?: any;
+  };
 }
 
 interface StoredToken {
   accessToken: string;
-  enterpriseId?: string;
-  clientToken?: string;
+  enterpriseId: string;
+  enterpriseName: string;
+  serviceId?: string;
+  serviceName?: string;
+  integrationId?: string;
+  integrationName?: string;
+  createdUtc: string;
   receivedAt: string;
-  metadata?: Record<string, any>;
+  isEnabled: boolean;
+  action: string;
 }
 
 /**
@@ -59,12 +80,19 @@ async function saveTokens(tokens: StoredToken[]): Promise<void> {
  */
 export async function POST(request: NextRequest) {
   try {
-    const payload: AccessTokenPayload = await request.json();
+    const payload: MewsWebhookPayload = await request.json();
 
-    // Validate that we have an access token
-    if (!payload.accessToken) {
+    // Validate payload structure
+    if (!payload.Data || !payload.Data.AccessToken) {
       return NextResponse.json(
-        { error: 'Missing accessToken in webhook payload' },
+        { error: 'Missing AccessToken in webhook payload' },
+        { status: 400 }
+      );
+    }
+
+    if (!payload.Data.Enterprise || !payload.Data.Enterprise.Id) {
+      return NextResponse.json(
+        { error: 'Missing Enterprise data in webhook payload' },
         { status: 400 }
       );
     }
@@ -74,13 +102,17 @@ export async function POST(request: NextRequest) {
 
     // Create new token entry
     const newToken: StoredToken = {
-      accessToken: payload.accessToken,
-      enterpriseId: payload.enterpriseId,
-      clientToken: payload.clientToken,
+      accessToken: payload.Data.AccessToken,
+      enterpriseId: payload.Data.Enterprise.Id,
+      enterpriseName: payload.Data.Enterprise.Name,
+      serviceId: payload.Data.Service?.Id,
+      serviceName: payload.Data.Service?.Name,
+      integrationId: payload.Data.Integration?.Id,
+      integrationName: payload.Data.Integration?.Name,
+      createdUtc: payload.Data.CreatedUtc,
       receivedAt: new Date().toISOString(),
-      metadata: Object.keys(payload)
-        .filter(key => !['accessToken', 'enterpriseId', 'clientToken'].includes(key))
-        .reduce((acc, key) => ({ ...acc, [key]: payload[key] }), {})
+      isEnabled: payload.Data.IsEnabled,
+      action: payload.Action
     };
 
     // Add to tokens array
@@ -90,7 +122,9 @@ export async function POST(request: NextRequest) {
     await saveTokens(tokens);
 
     console.log('[Webhook] Access token received and stored:', {
+      action: newToken.action,
       enterpriseId: newToken.enterpriseId,
+      enterpriseName: newToken.enterpriseName,
       receivedAt: newToken.receivedAt
     });
 
@@ -118,7 +152,23 @@ export async function POST(request: NextRequest) {
                 fields: [
                   {
                     type: 'mrkdwn',
-                    text: `*Enterprise ID:*\n${newToken.enterpriseId || 'N/A'}`
+                    text: `*Action:*\n${newToken.action}`
+                  },
+                  {
+                    type: 'mrkdwn',
+                    text: `*Enterprise:*\n${newToken.enterpriseName}`
+                  },
+                  {
+                    type: 'mrkdwn',
+                    text: `*Enterprise ID:*\n${newToken.enterpriseId}`
+                  },
+                  {
+                    type: 'mrkdwn',
+                    text: `*Service:*\n${newToken.serviceName || 'N/A'}`
+                  },
+                  {
+                    type: 'mrkdwn',
+                    text: `*Integration:*\n${newToken.integrationName || 'N/A'}`
                   },
                   {
                     type: 'mrkdwn',

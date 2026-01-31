@@ -4,23 +4,39 @@ This application includes a webhook endpoint to receive Access Tokens from the M
 
 ## Webhook Endpoint
 
-**URL:** `POST /api/webhook/access-token`
+**Production URL:** `https://mews-free-trial-2.onrender.com/api/webhook/access-token`
+
+**Local Development:** `POST /api/webhook/access-token`
 
 When a sample hotel is created, Mews will send a webhook to this endpoint containing an Access Token that will be stored automatically.
 
 ## Expected Payload
 
-The webhook expects a JSON payload with at minimum:
+The webhook expects a JSON payload in the Mews format:
 
 ```json
 {
-  "accessToken": "your-access-token-here",
-  "enterpriseId": "optional-enterprise-id",
-  "clientToken": "optional-client-token"
+  "Action": "IntegrationCreated",
+  "Data": {
+    "Enterprise": {
+      "Id": "8865aa96-f62d-4f9b-a912-ab2100f60f42",
+      "Name": "Sample Chain Hotel 1"
+    },
+    "Service": {
+      "Id": "9745ce3a-8dbb-4cc0-a550-55f9ff67b242",
+      "Name": "Accommodation"
+    },
+    "Requestor": null,
+    "AccessToken": "9E5E84E9974D4F169662AB2200F27CB1-00B343A0DDA725CACAC028E38E3EABF",
+    "CreatedUtc": "2019-12-13T14:42:52Z",
+    "IsEnabled": true,
+    "Integration": {
+      "Id": "9e5e84e9-974d-4f16-9662-ab2200f27cb1",
+      "Name": "WebhookTEST"
+    }
+  }
 }
 ```
-
-Any additional fields in the payload will be stored in the `metadata` field.
 
 ## Storage
 
@@ -29,11 +45,17 @@ Access tokens are stored in `/data/access-tokens.json` as an array of token obje
 ```json
 [
   {
-    "accessToken": "...",
-    "enterpriseId": "...",
-    "clientToken": "...",
+    "accessToken": "9E5E84E9974D4F169662AB2200F27CB1-00B343A0DDA725CACAC028E38E3EABF",
+    "enterpriseId": "8865aa96-f62d-4f9b-a912-ab2100f60f42",
+    "enterpriseName": "Sample Chain Hotel 1",
+    "serviceId": "9745ce3a-8dbb-4cc0-a550-55f9ff67b242",
+    "serviceName": "Accommodation",
+    "integrationId": "9e5e84e9-974d-4f16-9662-ab2200f27cb1",
+    "integrationName": "WebhookTEST",
+    "createdUtc": "2019-12-13T14:42:52Z",
     "receivedAt": "2026-01-31T12:00:00.000Z",
-    "metadata": { }
+    "isEnabled": true,
+    "action": "IntegrationCreated"
   }
 ]
 ```
@@ -60,8 +82,16 @@ curl https://your-domain.com/api/webhook/access-token?enterpriseId=xxx
 
 To enable this webhook:
 
-1. Deploy your application to a publicly accessible URL
-2. Configure Mews to send the webhook to: `https://your-domain.com/api/webhook/access-token`
+1. **Production:** Configure Mews to send the webhook to:
+   ```
+   https://mews-free-trial-2.onrender.com/api/webhook/access-token
+   ```
+
+2. **Local Development:** Use a tool like ngrok to expose your local server, then configure Mews to send the webhook to:
+   ```
+   https://your-ngrok-url.ngrok.io/api/webhook/access-token
+   ```
+
 3. (Optional) Set up Slack notifications by adding `SLACK_BOT_TOKEN` and `SLACK_CHANNEL_ID` to your `.env` file
 
 ## Security Considerations
