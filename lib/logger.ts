@@ -63,24 +63,34 @@ export async function updateEnvironmentLogById(id: string, updates: {
   enterpriseId?: string;
 }) {
   try {
-    return await prisma.environmentLog.update({
+    console.log('[LOGGER] Updating environment log by ID:', id, 'with updates:', updates);
+    const result = await prisma.environmentLog.update({
       where: { id },
       data: updates,
     });
+    console.log('[LOGGER] ✅ Environment log updated successfully:', id);
+    return result;
   } catch (error) {
-    console.error('Failed to update environment log by ID:', error);
+    console.error('[LOGGER] ❌ Failed to update environment log by ID:', id, error);
     throw error;
   }
 }
 
 export async function findEnvironmentLogByEnterpriseId(enterpriseId: string) {
   try {
-    return await prisma.environmentLog.findFirst({
+    console.log('[LOGGER] Searching for environment log with enterprise ID:', enterpriseId);
+    const result = await prisma.environmentLog.findFirst({
       where: { enterpriseId },
       orderBy: { timestamp: 'desc' }
     });
+    if (result) {
+      console.log('[LOGGER] ✅ Found environment log:', result.id);
+    } else {
+      console.log('[LOGGER] ⚠️  No environment log found for enterprise ID:', enterpriseId);
+    }
+    return result;
   } catch (error) {
-    console.error('Failed to find environment log:', error);
+    console.error('[LOGGER] ❌ Failed to find environment log:', error);
     return null;
   }
 }

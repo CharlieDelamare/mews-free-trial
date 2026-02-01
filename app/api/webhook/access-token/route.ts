@@ -33,8 +33,18 @@ export async function POST(request: NextRequest) {
   try {
     const payload: MewsWebhookPayload = await request.json();
 
+    console.log('[WEBHOOK] ========================================');
+    console.log('[WEBHOOK] Received webhook at:', new Date().toISOString());
+    console.log('[WEBHOOK] Full payload:', JSON.stringify(payload, null, 2));
+    console.log('[WEBHOOK] Action:', payload.Action);
+    console.log('[WEBHOOK] Enterprise ID:', payload.Data?.Enterprise?.Id);
+    console.log('[WEBHOOK] Enterprise Name:', payload.Data?.Enterprise?.Name);
+    console.log('[WEBHOOK] Access Token (first 20 chars):', payload.Data?.AccessToken?.substring(0, 20) + '...');
+    console.log('[WEBHOOK] ========================================');
+
     // Validate payload structure
     if (!payload.Data || !payload.Data.AccessToken) {
+      console.error('[WEBHOOK] ❌ Validation failed: Missing AccessToken');
       return NextResponse.json(
         { error: 'Missing AccessToken in webhook payload' },
         { status: 400 }
@@ -42,13 +52,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!payload.Data.Enterprise || !payload.Data.Enterprise.Id) {
+      console.error('[WEBHOOK] ❌ Validation failed: Missing Enterprise data');
       return NextResponse.json(
         { error: 'Missing Enterprise data in webhook payload' },
         { status: 400 }
       );
     }
 
+    console.log('[WEBHOOK] ✅ Payload validation passed');
+
     // Create new token entry in database
+    console.log('[WEBHOOK] Saving access token to database...');
     const newToken = await prisma.accessToken.create({
       data: {
         accessToken: payload.Data.AccessToken,
@@ -64,7 +78,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    console.log('[Webhook] Access token received and stored:', {
+    console.log('[WEBHOOK] ✅ Access token saved to database:', {
       id: newToken.id,
       action: newToken.action,
       enterpriseId: newToken.enterpriseId,
@@ -73,18 +87,28 @@ export async function POST(request: NextRequest) {
     });
 
     // Find and update the corresponding EnvironmentLog
+    console.log('[WEBHOOK] Looking for matching EnvironmentLog with enterprise ID:', newToken.enterpriseId);
     const log = await findEnvironmentLogByEnterpriseId(newToken.enterpriseId);
 
     if (log) {
-      console.log('[Webhook] Found matching log, updating to completed:', log.id);
+      console.log('[WEBHOOK] ✅ Found matching log:', {
+        logId: log.id,
+        propertyName: log.propertyName,
+        currentStatus: log.status,
+        customerEmail: log.customerEmail
+      });
+      console.log('[WEBHOOK] Updating log status to completed...');
 
       // Update log status to completed
       await updateEnvironmentLog(newToken.enterpriseId, {
         status: 'completed'
       });
 
+      console.log('[WEBHOOK] ✅ Log status updated to completed');
+
       // Send Slack notification with login details
       if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {
+        console.log('[WEBHOOK] Sending Slack notification...');
         try {
           await fetch('https://slack.com/api/chat.postMessage', {
             method: 'POST',
@@ -143,14 +167,31 @@ export async function POST(request: NextRequest) {
               ]
             })
           });
-          console.log('[Webhook] Slack notification sent successfully');
+          console.log('[WEBHOOK] ✅ Slack notification sent successfully');
         } catch (slackError) {
-          console.error('[Webhook] Failed to send Slack notification:', slackError);
+          console.error('[WEBHOOK] ❌ Failed to send Slack notification:', slackError);
           // Don't fail the webhook if Slack notification fails
         }
+      } else {
+        console.log('[WEBHOOK] ⚠️  Slack not configured, skipping notification');
       }
     } else {
-      console.warn('[Webhook] No matching log found for enterprise ID:', newToken.enterpriseId);
+      console.error('[WEBHOOK] ❌ No matching log found for enterprise ID:', newToken.enterpriseId);
+      console.error('[WEBHOOK] This means the enterprise was created but we cannot find the EnvironmentLog entry');
+      console.error('[WEBHOOK] Checking all logs in database...');
+
+      // Try to find any logs to help debug
+      const allLogs = await prisma.environmentLog.findMany({
+        orderBy: { timestamp: 'desc' },
+        take: 5
+      });
+      console.error('[WEBHOOK] Recent logs in database:', allLogs.map(l => ({
+        id: l.id,
+        enterpriseId: l.enterpriseId,
+        propertyName: l.propertyName,
+        status: l.status,
+        timestamp: l.timestamp
+      })));
 
       // Still send a basic Slack notification for tracking
       if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {

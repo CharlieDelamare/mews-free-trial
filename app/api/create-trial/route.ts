@@ -112,7 +112,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       apiBody.TaxPrecision = 2;
     }
 
-    console.log('Creating sample enterprise:', propertyName);
+    console.log('[CREATE-TRIAL] Creating sample enterprise:', propertyName);
+    console.log('[CREATE-TRIAL] Request payload:', JSON.stringify(apiBody, null, 2));
 
     // Create log entry immediately with "building" status
     const log = await saveEnvironmentLog({
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestorEmail
     });
 
-    console.log('Log created with building status:', log.id);
+    console.log('[CREATE-TRIAL] Log created with building status:', log.id);
 
     // Call Mews API
     const response = await fetch(MEWS_API_URL, {
@@ -139,8 +140,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const result = await response.json();
 
+    console.log('[CREATE-TRIAL] Mews API response status:', response.status);
+    console.log('[CREATE-TRIAL] Mews API response body:', JSON.stringify(result, null, 2));
+
     if (!response.ok) {
-      console.error('Mews API error:', result);
+      console.error('[CREATE-TRIAL] Mews API error:', result);
 
       // Update log to failure status
       await updateEnvironmentLogById(log.id, {
@@ -169,15 +173,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // The Mews API response structure may vary, so we check multiple possible locations
     const enterpriseId = result.EnterpriseId || result.Enterprise?.Id || result.Id;
 
+    console.log('[CREATE-TRIAL] Enterprise ID extraction attempt:');
+    console.log('[CREATE-TRIAL]   - result.EnterpriseId:', result.EnterpriseId);
+    console.log('[CREATE-TRIAL]   - result.Enterprise?.Id:', result.Enterprise?.Id);
+    console.log('[CREATE-TRIAL]   - result.Id:', result.Id);
+    console.log('[CREATE-TRIAL]   - Final enterpriseId:', enterpriseId);
+
     if (enterpriseId) {
-      console.log('Enterprise created with ID:', enterpriseId);
+      console.log('[CREATE-TRIAL] ✅ Enterprise created with ID:', enterpriseId);
 
       // Update the log with the enterprise ID
       await updateEnvironmentLogById(log.id, {
         enterpriseId
       });
+
+      console.log('[CREATE-TRIAL] Log updated with enterprise ID for log:', log.id);
     } else {
-      console.warn('Could not extract enterprise ID from response:', result);
+      console.error('[CREATE-TRIAL] ❌ CRITICAL: Could not extract enterprise ID from response!');
+      console.error('[CREATE-TRIAL] Full response object keys:', Object.keys(result));
+      console.error('[CREATE-TRIAL] Full response:', JSON.stringify(result, null, 2));
     }
 
     // Return immediately - Slack notification will be sent when access token webhook is received
