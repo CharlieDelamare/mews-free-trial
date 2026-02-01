@@ -46,7 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const serviceId = process.env.MEWS_BOOKABLE_SERVICE_ID;
     const rateId = process.env.MEWS_RATE_ID;
     const resourceCategoryId = process.env.MEWS_RESOURCE_CATEGORY_ID;
-    const apiUrl = process.env.MEWS_API_URL || 'https://api.mews.com';
+    const apiUrl = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
 
     if (!clientToken || !accessToken || !serviceId || !rateId || !resourceCategoryId) {
       console.error('Missing Mews configuration');
@@ -54,6 +54,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { success: false, error: 'Server configuration error' },
         { status: 500 }
       );
+    }
+
+    // Step 0: Cancel all existing reservations
+    console.log('[CREATE-RESERVATION] Canceling existing reservations...');
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+      const cancelResponse = await fetch(`${baseUrl}/api/reservations/cancel-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accessToken: accessToken,
+          serviceId: serviceId,
+          postCancellationFee: false,
+          sendEmail: false,
+          notes: 'Auto-canceled before creating new reservation'
+        })
+      });
+
+      const cancelData = await cancelResponse.json();
+      console.log('[CREATE-RESERVATION] ✅ Cancellation result:', cancelData.summary);
+
+      // Log warning but continue even if cancellation fails
+      if (!cancelData.success) {
+        console.warn('[CREATE-RESERVATION] ⚠️  Warning: Failed to cancel existing reservations:', cancelData.error);
+      }
+    } catch (error) {
+      console.error('[CREATE-RESERVATION] ❌ Error canceling reservations:', error);
+      // Don't fail the request - continue with reservation creation
     }
 
     // Step 1: Create or get customer
