@@ -95,7 +95,7 @@ Required variables (see `.env.example`):
 | `MEWS_BOOKABLE_SERVICE_ID` | Service ID for reservations |
 | `MEWS_RATE_ID` | Rate ID for reservations |
 | `MEWS_RESOURCE_CATEGORY_ID` | Resource category for reservations |
-| `MEWS_API_URL` | Mews API base URL (default: https://api.mews.com) |
+| `MEWS_API_URL` | Mews API base URL (default: https://api.mews-demo.com) |
 
 Optional:
 

@@ -221,7 +221,7 @@ import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 
 const server = setupServer(
-  http.post('https://api.mews.com/endpoint', () => {
+  http.post('https://api.mews-demo.com/endpoint', () => {
     return HttpResponse.json({ success: true });
   })
 );
