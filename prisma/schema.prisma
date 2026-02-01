@@ -42,6 +42,7 @@ model EnvironmentLog {
   errorMessage    String?
   enterpriseId    String?
   requestorEmail  String?
+  durationDays    Int?     // Trial duration in days (7, 30, or 60)
 
   @@index([timestamp])
   @@index([status])
