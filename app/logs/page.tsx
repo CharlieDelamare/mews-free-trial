@@ -14,8 +14,10 @@ interface EnvironmentLog {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
-  status: 'success' | 'failure';
+  status: 'building' | 'completed' | 'failure';
   errorMessage?: string;
+  enterpriseId?: string;
+  requestorEmail?: string;
 }
 
 export default function LogsPage() {
@@ -102,34 +104,43 @@ export default function LogsPage() {
                 Total environments: {logs.length}
               </div>
 
-              {logs.map((log) => (
-                <div
-                  key={log.id}
-                  className={`border rounded-lg p-6 ${
-                    log.status === 'success'
-                      ? 'bg-green-50 border-green-200'
-                      : 'bg-red-50 border-red-200'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-800">
-                        {log.propertyName}
-                      </h2>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formatDate(log.timestamp)}
-                      </p>
+              {logs.map((log) => {
+                const statusStyles = {
+                  building: {
+                    card: 'bg-blue-50 border-blue-200',
+                    badge: 'bg-blue-200 text-blue-800'
+                  },
+                  completed: {
+                    card: 'bg-green-50 border-green-200',
+                    badge: 'bg-green-200 text-green-800'
+                  },
+                  failure: {
+                    card: 'bg-red-50 border-red-200',
+                    badge: 'bg-red-200 text-red-800'
+                  }
+                };
+                const style = statusStyles[log.status] || statusStyles.failure;
+
+                return (
+                  <div
+                    key={log.id}
+                    className={`border rounded-lg p-6 ${style.card}`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-800">
+                          {log.propertyName}
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {formatDate(log.timestamp)}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${style.badge}`}>
+                        {log.status === 'building' && '🏗️ Building'}
+                        {log.status === 'completed' && '✅ Completed'}
+                        {log.status === 'failure' && '❌ Failed'}
+                      </span>
                     </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        log.status === 'success'
-                          ? 'bg-green-200 text-green-800'
-                          : 'bg-red-200 text-red-800'
-                      }`}
-                    >
-                      {log.status}
-                    </span>
-                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
@@ -150,7 +161,18 @@ export default function LogsPage() {
                     </div>
                   </div>
 
-                  {log.status === 'success' && (
+                  {log.status === 'building' && (
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                        <p className="text-sm font-medium">
+                          Environment is being created. Login details will appear when ready.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {log.status === 'completed' && (
                     <div className="border-t border-gray-200 pt-4 mt-4">
                       <h3 className="font-semibold text-gray-800 mb-3">
                         Login Details
@@ -205,7 +227,8 @@ export default function LogsPage() {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

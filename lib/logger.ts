@@ -11,13 +11,15 @@ export interface EnvironmentLog {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
-  status: 'success' | 'failure';
+  status: 'building' | 'completed' | 'failure';
   errorMessage?: string | null;
+  enterpriseId?: string | null;
+  requestorEmail?: string | null;
 }
 
 export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'timestamp'>) {
   try {
-    await prisma.environmentLog.create({
+    const created = await prisma.environmentLog.create({
       data: {
         propertyName: log.propertyName,
         customerName: log.customerName,
@@ -29,10 +31,57 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
         loginPassword: log.loginPassword,
         status: log.status,
         errorMessage: log.errorMessage,
+        enterpriseId: log.enterpriseId,
+        requestorEmail: log.requestorEmail,
       },
     });
+    return created;
   } catch (error) {
     console.error('Failed to save environment log:', error);
+    throw error;
+  }
+}
+
+export async function updateEnvironmentLog(enterpriseId: string, updates: {
+  status?: 'building' | 'completed' | 'failure';
+  errorMessage?: string;
+}) {
+  try {
+    return await prisma.environmentLog.updateMany({
+      where: { enterpriseId },
+      data: updates,
+    });
+  } catch (error) {
+    console.error('Failed to update environment log:', error);
+    throw error;
+  }
+}
+
+export async function updateEnvironmentLogById(id: string, updates: {
+  status?: 'building' | 'completed' | 'failure';
+  errorMessage?: string;
+  enterpriseId?: string;
+}) {
+  try {
+    return await prisma.environmentLog.update({
+      where: { id },
+      data: updates,
+    });
+  } catch (error) {
+    console.error('Failed to update environment log by ID:', error);
+    throw error;
+  }
+}
+
+export async function findEnvironmentLogByEnterpriseId(enterpriseId: string) {
+  try {
+    return await prisma.environmentLog.findFirst({
+      where: { enterpriseId },
+      orderBy: { timestamp: 'desc' }
+    });
+  } catch (error) {
+    console.error('Failed to find environment log:', error);
+    return null;
   }
 }
 

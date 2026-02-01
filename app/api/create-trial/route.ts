@@ -5,7 +5,7 @@ import {
   getCurrency,
   getPricingEnvironment
 } from '@/lib/codes';
-import { saveEnvironmentLog } from '@/lib/logger';
+import { saveEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 const SLACK_API_URL = 'https://slack.com/api/chat.postMessage';
@@ -114,6 +114,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     console.log('Creating sample enterprise:', propertyName);
 
+    // Create log entry immediately with "building" status
+    const log = await saveEnvironmentLog({
+      propertyName,
+      customerName: `${firstName} ${lastName}`,
+      customerEmail,
+      propertyCountry,
+      propertyType,
+      loginUrl: 'https://app.mews-demo.com',
+      loginEmail: customerEmail,
+      loginPassword: 'Sample123',
+      status: 'building',
+      requestorEmail
+    });
+
+    console.log('Log created with building status:', log.id);
+
     // Call Mews API
     const response = await fetch(MEWS_API_URL, {
       method: 'POST',
@@ -126,6 +142,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!response.ok) {
       console.error('Mews API error:', result);
 
+      // Update log to failure status
+      await updateEnvironmentLogById(log.id, {
+        status: 'failure',
+        errorMessage: JSON.stringify(result)
+      });
+
       // Send Slack failure notification
       await sendSlackNotification({
         success: false,
@@ -137,56 +159,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         error: result
       });
 
-      // Log failed environment creation
-      await saveEnvironmentLog({
-        propertyName,
-        customerName: `${firstName} ${lastName}`,
-        customerEmail,
-        propertyCountry,
-        propertyType,
-        loginUrl: 'https://app.mews-demo.com',
-        loginEmail: customerEmail,
-        loginPassword: 'Sample123',
-        status: 'failure',
-        errorMessage: JSON.stringify(result)
-      });
-
       return NextResponse.json(
         { success: false, error: 'Failed to create trial', details: result },
         { status: 500 }
       );
     }
 
-    // Send Slack success notification
-    await sendSlackNotification({
-      success: true,
-      propertyName,
-      firstName,
-      lastName,
-      requestorEmail,
-      customerEmail
-    });
+    // Extract enterprise ID from the response
+    // The Mews API response structure may vary, so we check multiple possible locations
+    const enterpriseId = result.EnterpriseId || result.Enterprise?.Id || result.Id;
 
-    // Log successful environment creation
-    await saveEnvironmentLog({
-      propertyName,
-      customerName: `${firstName} ${lastName}`,
-      customerEmail,
-      propertyCountry,
-      propertyType,
-      loginUrl: 'https://app.mews-demo.com',
-      loginEmail: customerEmail,
-      loginPassword: 'Sample123',
-      status: 'success'
-    });
+    if (enterpriseId) {
+      console.log('Enterprise created with ID:', enterpriseId);
 
+      // Update the log with the enterprise ID
+      await updateEnvironmentLogById(log.id, {
+        enterpriseId
+      });
+    } else {
+      console.warn('Could not extract enterprise ID from response:', result);
+    }
+
+    // Return immediately - Slack notification will be sent when access token webhook is received
     return NextResponse.json({
       success: true,
-      message: 'Trial created successfully! Check your email for login details.',
+      message: 'Trial environment is being created. You will receive the login details shortly.',
       propertyName,
-      loginUrl: 'https://app.mews-demo.com',
-      loginEmail: customerEmail,
-      defaultPassword: 'Sample123'
+      status: 'building'
     });
 
   } catch (error) {

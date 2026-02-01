@@ -38,9 +38,12 @@ model EnvironmentLog {
   loginUrl        String
   loginEmail      String
   loginPassword   String
-  status          String
+  status          String   // "building", "completed", "failure"
   errorMessage    String?
+  enterpriseId    String?
+  requestorEmail  String?
 
   @@index([timestamp])
   @@index([status])
+  @@index([enterpriseId])
 }

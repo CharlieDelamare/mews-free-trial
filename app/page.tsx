@@ -24,6 +24,8 @@ export default function FreeTrialPage() {
     loginEmail?: string;
     defaultPassword?: string;
     error?: string;
+    status?: string;
+    propertyName?: string;
   } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -77,7 +79,26 @@ export default function FreeTrialPage() {
           <p className="text-gray-600">Request a 45-day free trial of Mews</p>
         </div>
 
-        {result?.success ? (
+        {result?.success && result?.status === 'building' ? (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-blue-800 mb-4">
+              🏗️ Trial Environment is Being Created!
+            </h2>
+            <p className="text-blue-700 mb-4">
+              Your trial environment for <strong>{result.propertyName}</strong> is being set up.
+              This usually takes a few minutes.
+            </p>
+            <p className="text-blue-600 mb-4">
+              You can view the status and login details in the{' '}
+              <Link href="/logs" className="underline font-semibold hover:text-blue-800">
+                Environment Logs
+              </Link>.
+            </p>
+            <p className="text-sm text-blue-600">
+              When the environment is ready, the status will change to "Completed" and you'll be able to view your login credentials.
+            </p>
+          </div>
+        ) : result?.success ? (
           <div className="bg-green-50 border border-green-200 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-green-800 mb-4">Trial Created Successfully!</h2>
             <div className="space-y-2 text-green-700">
