@@ -169,30 +169,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Extract enterprise ID from the response
-    // The Mews API response structure may vary, so we check multiple possible locations
-    const enterpriseId = result.EnterpriseId || result.Enterprise?.Id || result.Id;
+    // Extract SignInUrl from response
+    const signInUrl = result.SignInUrl || 'https://app.mews-demo.com';
+    console.log('[CREATE-TRIAL] SignInUrl from response:', signInUrl);
 
-    console.log('[CREATE-TRIAL] Enterprise ID extraction attempt:');
-    console.log('[CREATE-TRIAL]   - result.EnterpriseId:', result.EnterpriseId);
-    console.log('[CREATE-TRIAL]   - result.Enterprise?.Id:', result.Enterprise?.Id);
-    console.log('[CREATE-TRIAL]   - result.Id:', result.Id);
-    console.log('[CREATE-TRIAL]   - Final enterpriseId:', enterpriseId);
+    // Try to extract enterprise ID from SignInUrl query params
+    let enterpriseId: string | undefined = undefined;
 
-    if (enterpriseId) {
-      console.log('[CREATE-TRIAL] ✅ Enterprise created with ID:', enterpriseId);
+    try {
+      const url = new URL(signInUrl);
+      const enterpriseIdParam = url.searchParams.get('enterpriseId');
 
-      // Update the log with the enterprise ID
-      await updateEnvironmentLogById(log.id, {
-        enterpriseId
-      });
-
-      console.log('[CREATE-TRIAL] Log updated with enterprise ID for log:', log.id);
-    } else {
-      console.error('[CREATE-TRIAL] ❌ CRITICAL: Could not extract enterprise ID from response!');
-      console.error('[CREATE-TRIAL] Full response object keys:', Object.keys(result));
-      console.error('[CREATE-TRIAL] Full response:', JSON.stringify(result, null, 2));
+      if (enterpriseIdParam && enterpriseIdParam.trim() !== '') {
+        enterpriseId = enterpriseIdParam;
+        console.log('[CREATE-TRIAL] ✅ Extracted enterprise ID from SignInUrl:', enterpriseId);
+      } else {
+        console.log('[CREATE-TRIAL] ⚠️  Enterprise ID parameter is empty in SignInUrl');
+      }
+    } catch (parseError) {
+      console.error('[CREATE-TRIAL] ❌ Failed to parse SignInUrl:', parseError);
     }
+
+    // Update the log with SignInUrl and enterprise ID (if found)
+    await updateEnvironmentLogById(log.id, {
+      loginUrl: signInUrl,
+      ...(enterpriseId && { enterpriseId })
+    });
+
+    console.log('[CREATE-TRIAL] Log updated with:', {
+      id: log.id,
+      loginUrl: signInUrl,
+      enterpriseId: enterpriseId || 'Not available - will use fallback matching'
+    });
 
     // Return immediately - Slack notification will be sent when access token webhook is received
     return NextResponse.json({

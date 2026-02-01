@@ -179,16 +179,33 @@ export default function LogsPage() {
                       </h3>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between bg-white rounded px-3 py-2">
-                          <div>
+                          <div className="flex-1">
                             <p className="text-xs text-gray-600">Login URL</p>
-                            <p className="font-mono text-sm text-gray-800">{log.loginUrl}</p>
+                            <a
+                              href={log.loginUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-sm text-blue-600 hover:text-blue-800 underline break-all"
+                            >
+                              {log.loginUrl}
+                            </a>
                           </div>
-                          <button
-                            onClick={() => copyToClipboard(log.loginUrl)}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            Copy
-                          </button>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => copyToClipboard(log.loginUrl)}
+                              className="text-blue-600 hover:text-blue-700 text-sm font-medium whitespace-nowrap"
+                            >
+                              Copy
+                            </button>
+                            <a
+                              href={log.loginUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-1 rounded whitespace-nowrap"
+                            >
+                              Open →
+                            </a>
+                          </div>
                         </div>
                         <div className="flex items-center justify-between bg-white rounded px-3 py-2">
                           <div>

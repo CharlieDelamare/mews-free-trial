@@ -61,6 +61,7 @@ export async function updateEnvironmentLogById(id: string, updates: {
   status?: 'building' | 'completed' | 'failure';
   errorMessage?: string;
   enterpriseId?: string;
+  loginUrl?: string;
 }) {
   try {
     console.log('[LOGGER] Updating environment log by ID:', id, 'with updates:', updates);
@@ -106,5 +107,51 @@ export async function readEnvironmentLogs(): Promise<EnvironmentLog[]> {
   } catch (error) {
     console.error('Failed to read environment logs:', error);
     return [];
+  }
+}
+
+export async function findEnvironmentLogByFallbackCriteria(
+  enterpriseId: string,
+  enterpriseName: string
+): Promise<any> {
+  try {
+    console.log('[LOGGER] Attempting fallback matching for enterprise:', enterpriseName);
+
+    // First, try by enterprise ID one more time
+    const byId = await findEnvironmentLogByEnterpriseId(enterpriseId);
+    if (byId) return byId;
+
+    // Fallback: Find recent "building" logs matching property name
+    // Within last 2 hours to account for API delays
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+    const result = await prisma.environmentLog.findFirst({
+      where: {
+        propertyName: enterpriseName,
+        status: 'building',
+        timestamp: { gte: twoHoursAgo },
+        OR: [
+          { enterpriseId: null },
+          { enterpriseId: enterpriseId }
+        ]
+      },
+      orderBy: { timestamp: 'desc' }
+    });
+
+    if (result) {
+      console.log('[LOGGER] ✅ Found log via fallback matching:', result.id);
+
+      // Update with enterprise ID now that we have it
+      await updateEnvironmentLogById(result.id, {
+        enterpriseId: enterpriseId
+      });
+    } else {
+      console.log('[LOGGER] ⚠️  No matching log found via fallback');
+    }
+
+    return result;
+  } catch (error) {
+    console.error('[LOGGER] ❌ Fallback matching failed:', error);
+    return null;
   }
 }

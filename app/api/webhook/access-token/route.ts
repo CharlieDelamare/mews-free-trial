@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
+import { findEnvironmentLogByEnterpriseId, findEnvironmentLogByFallbackCriteria, updateEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
 
 interface MewsWebhookPayload {
   Action: string;
@@ -86,25 +86,29 @@ export async function POST(request: NextRequest) {
       receivedAt: newToken.receivedAt.toISOString()
     });
 
-    // Find and update the corresponding EnvironmentLog
-    console.log('[WEBHOOK] Looking for matching EnvironmentLog with enterprise ID:', newToken.enterpriseId);
-    const log = await findEnvironmentLogByEnterpriseId(newToken.enterpriseId);
+    // Find matching EnvironmentLog
+    console.log('[WEBHOOK] Looking for log with enterprise ID:', newToken.enterpriseId);
+    let log = await findEnvironmentLogByEnterpriseId(newToken.enterpriseId);
+
+    // If not found, try fallback matching
+    if (!log) {
+      console.log('[WEBHOOK] No direct match, trying fallback matching...');
+      log = await findEnvironmentLogByFallbackCriteria(
+        newToken.enterpriseId,
+        newToken.enterpriseName
+      );
+    }
 
     if (log) {
-      console.log('[WEBHOOK] ✅ Found matching log:', {
-        logId: log.id,
-        propertyName: log.propertyName,
-        currentStatus: log.status,
-        customerEmail: log.customerEmail
-      });
-      console.log('[WEBHOOK] Updating log status to completed...');
+      console.log('[WEBHOOK] ✅ Found matching log:', log.id);
 
-      // Update log status to completed
-      await updateEnvironmentLog(newToken.enterpriseId, {
-        status: 'completed'
+      // Update to completed status
+      await updateEnvironmentLogById(log.id, {
+        status: 'completed',
+        enterpriseId: newToken.enterpriseId // Ensure it's set
       });
 
-      console.log('[WEBHOOK] ✅ Log status updated to completed');
+      console.log('[WEBHOOK] ✅ Log updated to completed');
 
       // Send Slack notification with login details
       if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {
@@ -152,7 +156,7 @@ export async function POST(request: NextRequest) {
                   type: 'section',
                   text: {
                     type: 'mrkdwn',
-                    text: `*Login Details:*\n• URL: ${log.loginUrl}\n• Email: ${log.loginEmail}\n• Password: \`${log.loginPassword}\``
+                    text: `*Login Details:*\n• URL: <${log.loginUrl}|Open Login Page>\n• Email: ${log.loginEmail}\n• Password: \`${log.loginPassword}\``
                   }
                 },
                 {
