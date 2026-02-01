@@ -47,3 +47,20 @@ model EnvironmentLog {
   @@index([status])
   @@index([enterpriseId])
 }
+
+model CustomerCreationLog {
+  id              Int      @id @default(autoincrement())
+  enterpriseId    String
+  accessTokenId   Int
+  totalCustomers  Int
+  successCount    Int
+  failureCount    Int
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  status          String   // 'processing' | 'completed' | 'failed'
+  errorSummary    String?  @db.Text
+  customerResults Json?
+
+  @@index([enterpriseId])
+  @@index([status])
+}
