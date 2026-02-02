@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
-import { fetchReservations, cancelReservation } from '@/lib/reservations';
 
 interface ConfigurationRequest {
   ClientToken: string;
@@ -132,38 +131,7 @@ export async function POST(request: NextRequest) {
       enterpriseName: newToken.enterpriseName
     });
 
-    // Step 1: Cancel all existing reservations
-    console.log('[ADD-ENVIRONMENT] Canceling existing reservations...');
-    let canceledCount = 0;
-    try {
-      const { reservations } = await fetchReservations({
-        accessToken: accessToken,
-        serviceId: configData.Service?.Id,
-        states: ['Confirmed', 'Started']
-      });
-
-      if (reservations.length > 0) {
-        console.log(`[ADD-ENVIRONMENT] Found ${reservations.length} reservations to cancel`);
-        for (const reservation of reservations) {
-          const result = await cancelReservation({
-            accessToken: accessToken,
-            reservationId: reservation.Id,
-            postCancellationFee: false,
-            sendEmail: false,
-            notes: 'Auto-canceled on manual environment addition'
-          });
-          if (result.success) canceledCount++;
-        }
-        console.log(`[ADD-ENVIRONMENT] ✅ Canceled ${canceledCount} reservations`);
-      } else {
-        console.log('[ADD-ENVIRONMENT] No reservations to cancel');
-      }
-    } catch (error) {
-      console.error('[ADD-ENVIRONMENT] ⚠️  Failed to cancel reservations:', error);
-      // Continue - non-blocking
-    }
-
-    // Step 2: Find matching EnvironmentLog and create customer
+    // Find matching EnvironmentLog and create customer
     console.log('[ADD-ENVIRONMENT] Looking for matching EnvironmentLog...');
     const log = await findEnvironmentLogByEnterpriseId(configData.Enterprise.Id);
 
@@ -248,7 +216,7 @@ export async function POST(request: NextRequest) {
                 type: 'section',
                 text: {
                   type: 'mrkdwn',
-                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ${customerCreated ? '✅' : '⚠️'} Customer ${customerCreated ? 'created' : 'creation attempted'}\n• ✅ Log status updated to completed`
+                  text: `*Operations:*\n• ${customerCreated ? '✅' : '⚠️'} Customer ${customerCreated ? 'created' : 'creation attempted'}\n• ✅ Log status updated to completed`
                 }
               },
               {
@@ -282,7 +250,7 @@ export async function POST(request: NextRequest) {
                 type: 'section',
                 text: {
                   type: 'mrkdwn',
-                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ⚠️ No matching EnvironmentLog found`
+                  text: `*Operations:*\n• ⚠️ No matching EnvironmentLog found`
                 }
               }
             ];
@@ -318,7 +286,6 @@ export async function POST(request: NextRequest) {
         receivedAt: newToken.receivedAt
       },
       operations: {
-        reservationsCanceled: canceledCount,
         customerCreated: customerCreated,
         logFound: !!log,
         logUpdated: !!log
