@@ -25,9 +25,20 @@ export default function LogsPage() {
   const [logs, setLogs] = useState<EnvironmentLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
+    // Initial fetch
     fetchLogs();
+
+    // Set up polling interval (10 seconds)
+    const intervalId = setInterval(() => {
+      fetchLogsInBackground();
+    }, 10000);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchLogs = async () => {
@@ -38,6 +49,7 @@ export default function LogsPage() {
 
       if (data.success) {
         setLogs(data.logs);
+        setLastUpdated(new Date());
       } else {
         setError('Failed to load logs');
       }
@@ -47,6 +59,29 @@ export default function LogsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchLogsInBackground = async () => {
+    try {
+      const response = await fetch('/api/logs');
+      const data = await response.json();
+
+      if (data.success) {
+        setLogs(data.logs);
+        setLastUpdated(new Date());
+      }
+    } catch (err) {
+      // Silent failure - log to console but don't disrupt UI
+      console.error('Background log fetch failed:', err);
+    }
+  };
+
+  const getTimeAgo = (date: Date) => {
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    return `${Math.floor(seconds / 3600)}h ago`;
   };
 
   const formatDate = (timestamp: string) => {
@@ -75,9 +110,33 @@ export default function LogsPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">
-            Environment Logs
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-800">
+              Environment Logs
+            </h1>
+
+            <div className="flex items-center gap-3">
+              {lastUpdated && (
+                <span className="text-xs text-gray-500">
+                  Last updated: {getTimeAgo(lastUpdated)}
+                </span>
+              )}
+              <button
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  await fetchLogs();
+                  setIsRefreshing(false);
+                }}
+                disabled={isRefreshing}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
 
           {loading && (
             <div className="text-center py-12">
