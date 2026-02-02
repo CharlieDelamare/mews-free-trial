@@ -28,6 +28,18 @@ export default function FreeTrialPage() {
     status?: string;
     propertyName?: string;
   } | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [manualAccessToken, setManualAccessToken] = useState('');
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalResult, setModalResult] = useState<{
+    success?: boolean;
+    message?: string;
+    error?: string;
+    data?: {
+      enterpriseName?: string;
+      enterpriseId?: string;
+    };
+  } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value = e.target.name === 'durationDays' ? Number(e.target.value) : e.target.value;
@@ -66,10 +78,46 @@ export default function FreeTrialPage() {
     }
   };
 
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalLoading(true);
+    setModalResult(null);
+
+    try {
+      const response = await fetch('/api/add-environment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: manualAccessToken })
+      });
+
+      const data = await response.json();
+      setModalResult(data);
+
+      if (data.success) {
+        // Close modal after 2 seconds on success
+        setTimeout(() => {
+          setShowModal(false);
+          setManualAccessToken('');
+          setModalResult(null);
+        }, 2000);
+      }
+    } catch {
+      setModalResult({ success: false, error: 'Network error' });
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-between mb-4">
+          <button
+            onClick={() => setShowModal(true)}
+            className="text-blue-600 hover:text-blue-700 font-medium"
+          >
+            + Add environment manually
+          </button>
           <Link
             href="/logs"
             className="text-blue-600 hover:text-blue-700 font-medium"
@@ -283,6 +331,83 @@ export default function FreeTrialPage() {
           </form>
         )}
       </div>
+
+      {/* Manual Environment Addition Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Add Environment Manually</h2>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setManualAccessToken('');
+                  setModalResult(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleManualSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Access Token *
+                </label>
+                <textarea
+                  value={manualAccessToken}
+                  onChange={(e) => setManualAccessToken(e.target.value)}
+                  required
+                  rows={4}
+                  placeholder="Paste your access token here..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {modalResult?.error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                  {modalResult.error}
+                </div>
+              )}
+
+              {modalResult?.success && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-green-700 text-sm">
+                  <p className="font-semibold">{modalResult.message}</p>
+                  {modalResult.data && (
+                    <p className="mt-1">
+                      Enterprise: {modalResult.data.enterpriseName} (ID: {modalResult.data.enterpriseId})
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setManualAccessToken('');
+                    setModalResult(null);
+                  }}
+                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalLoading}
+                  className="flex-1 py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {modalLoading ? 'Adding...' : 'Add Environment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
