@@ -14,7 +14,7 @@ interface EnvironmentLog {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
-  status: 'building' | 'completed' | 'failure';
+  status: 'building' | 'Updating' | 'completed' | 'failure';
   errorMessage?: string;
   enterpriseId?: string;
   requestorEmail?: string;
@@ -175,6 +175,10 @@ export default function LogsPage() {
                     card: 'bg-blue-50 border-blue-200',
                     badge: 'bg-blue-200 text-blue-800'
                   },
+                  Updating: {
+                    card: 'bg-yellow-50 border-yellow-200',
+                    badge: 'bg-yellow-200 text-yellow-800'
+                  },
                   completed: {
                     card: 'bg-green-50 border-green-200',
                     badge: 'bg-green-200 text-green-800'
@@ -202,6 +206,7 @@ export default function LogsPage() {
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${style.badge}`}>
                         {log.status === 'building' && '🏗️ Building'}
+                        {log.status === 'Updating' && '⚙️ Setting Up'}
                         {log.status === 'completed' && '✅ Completed'}
                         {log.status === 'failure' && '❌ Failed'}
                       </span>
@@ -232,12 +237,13 @@ export default function LogsPage() {
                     </div>
                   </div>
 
-                  {log.status === 'building' && (
+                  {(log.status === 'building' || log.status === 'Updating') && (
                     <div className="border-t border-gray-200 pt-3 mt-3">
-                      <div className="flex items-center gap-2 text-blue-700">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
+                      <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
+                        <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
                         <p className="text-xs font-medium">
-                          Environment is being created. Login details will appear when ready.
+                          {log.status === 'building' && 'Environment is being created. Login details will appear when ready.'}
+                          {log.status === 'Updating' && 'Setting up customers and reservations. Login details will appear when ready.'}
                         </p>
                       </div>
                     </div>
