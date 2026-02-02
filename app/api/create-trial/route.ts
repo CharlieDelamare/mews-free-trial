@@ -124,7 +124,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       EndOffset: 4,
       AutomaticCheckIn: true,
       AutomaticCheckOut: true,
-      Occupancy: 0.5,
+      Occupancy: 0,
       Lifetime: convertDaysToISO8601(durationDays),
       User: { Email: customerEmail },
       Users: [{ Email: 'trial@mews.li' }],
