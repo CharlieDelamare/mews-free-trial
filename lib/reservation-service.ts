@@ -87,8 +87,6 @@ export async function createReservationsForEnvironment(
     // Step 3: Filter resource categories based on what was actually created
     const filteredCategories = filterResourceCategories(mewsData.resourceCategories, envData);
     console.log(`[RESERVATIONS] Filtered resource categories: ${filteredCategories.length}`);
-    // Filter resource categories by property type
-    const filteredCategories = filterResourceCategories(mewsData.resourceCategories, envData.propertyType);
 
     if (filteredCategories.length === 0) {
       throw new Error(`No resource categories found for property type: ${envData.propertyType}`);
@@ -103,14 +101,10 @@ export async function createReservationsForEnvironment(
       console.log(`[RESERVATIONS]   - ${ct.categoryName}: ${ct.resourceCount} units → ${ct.targetReservations} reservations (${ct.targetOccupancy}% target)`);
     });
     console.log(`[RESERVATIONS] Total target reservations: ${totalReservations}`);
-    // Calculate bookable units and total reservations needed
-    const bookableUnits = calculateBookableUnits(envData);
-    const totalReservations = calculateTotalReservations(bookableUnits, envData.durationDays);
 
     console.log(`[RESERVATIONS] Setup:`, {
       propertyType: envData.propertyType,
       duration: `${envData.durationDays} days`,
-      bookableUnits,
       targetReservations: totalReservations
     });
 
