@@ -1,10 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { languageOptions, countryOptions } from '@/lib/codes';
 
+interface Environment {
+  enterpriseId: string;
+  enterpriseName: string;
+  propertyName?: string;
+  type: 'trial' | 'manual';
+  status?: string;
+  customerEmail?: string;
+  createdAt: Date;
+  accessTokenId: number;
+}
+
 export default function FreeTrialPage() {
+  const [activeTab, setActiveTab] = useState<'create' | 'reset'>('create');
   const [formData, setFormData] = useState({
     requestorEmail: '',
     firstName: '',
@@ -40,6 +52,30 @@ export default function FreeTrialPage() {
       enterpriseId?: string;
     };
   } | null>(null);
+  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const [selectedEnvironment, setSelectedEnvironment] = useState('');
+  const [environmentsLoading, setEnvironmentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'reset') {
+      fetchEnvironments();
+    }
+  }, [activeTab]);
+
+  const fetchEnvironments = async () => {
+    setEnvironmentsLoading(true);
+    try {
+      const response = await fetch('/api/environments/list');
+      const data = await response.json();
+      if (data.success) {
+        setEnvironments(data.environments || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch environments:', error);
+    } finally {
+      setEnvironmentsLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const value = e.target.name === 'durationDays' ? Number(e.target.value) : e.target.value;
@@ -94,6 +130,10 @@ export default function FreeTrialPage() {
       setModalResult(data);
 
       if (data.success) {
+        // Refresh environments list if on reset tab
+        if (activeTab === 'reset') {
+          fetchEnvironments();
+        }
         // Close modal after 2 seconds on success
         setTimeout(() => {
           setShowModal(false);
@@ -111,13 +151,32 @@ export default function FreeTrialPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="flex justify-between mb-4">
+        {/* Tab Navigation */}
+        <div className="flex border-b border-gray-200 mb-6">
           <button
-            onClick={() => setShowModal(true)}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            onClick={() => setActiveTab('create')}
+            className={`px-6 py-3 font-medium text-sm transition-colors ${
+              activeTab === 'create'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
           >
-            + Add environment manually
+            Create Free Trial
           </button>
+          <button
+            onClick={() => setActiveTab('reset')}
+            className={`px-6 py-3 font-medium text-sm transition-colors ${
+              activeTab === 'reset'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Reset Demo Environment
+          </button>
+        </div>
+
+        {/* View Logs Link */}
+        <div className="flex justify-end mb-4">
           <Link
             href="/logs"
             className="text-blue-600 hover:text-blue-700 font-medium"
@@ -125,12 +184,22 @@ export default function FreeTrialPage() {
             View Environment Logs →
           </Link>
         </div>
+
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Free Trial</h1>
-          <p className="text-gray-600">Request a free trial of Mews</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {activeTab === 'create' ? 'Mews Free Trial' : 'Reset Demo Environment'}
+          </h1>
+          <p className="text-gray-600">
+            {activeTab === 'create'
+              ? 'Request a free trial of Mews'
+              : 'Reset an existing demo environment'}
+          </p>
         </div>
 
-        {result?.success && result?.status === 'building' ? (
+        {/* Create Trial Tab Content */}
+        {activeTab === 'create' && (
+          <>
+            {result?.success && result?.status === 'building' ? (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-blue-800 mb-4">
               🏗️ Trial Environment is Being Created!
@@ -329,6 +398,67 @@ export default function FreeTrialPage() {
               Trial properties are valid for {formData.durationDays} days. Login details will be sent to the customer email.
             </p>
           </form>
+        )}
+          </>
+        )}
+
+        {/* Reset Demo Environment Tab Content */}
+        {activeTab === 'reset' && (
+          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+            {/* Add Manually Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowModal(true)}
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                + Add environment manually
+              </button>
+            </div>
+
+            {/* Environment Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Environment *
+              </label>
+              {environmentsLoading ? (
+                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                  Loading environments...
+                </div>
+              ) : (
+                <select
+                  name="selectedEnvironment"
+                  value={selectedEnvironment}
+                  onChange={(e) => setSelectedEnvironment(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">-- Select an environment --</option>
+                  {environments.map((env) => (
+                    <option key={env.enterpriseId} value={env.enterpriseId}>
+                      {env.propertyName || env.enterpriseName} ({env.enterpriseId})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {!environmentsLoading && environments.length === 0 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  No environments found. Create a trial or add one manually.
+                </p>
+              )}
+            </div>
+
+            {/* Reset Button (non-functional for now) */}
+            <button
+              disabled
+              className="w-full py-3 px-4 bg-gray-400 text-white font-semibold rounded-lg cursor-not-allowed opacity-60"
+              title="Reset functionality coming soon"
+            >
+              Reset Environment
+            </button>
+
+            <p className="text-xs text-gray-500 text-center">
+              Resetting will clear all data and restore sample customers (coming soon)
+            </p>
+          </div>
         )}
       </div>
 
