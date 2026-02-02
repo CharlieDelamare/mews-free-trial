@@ -113,6 +113,34 @@ export async function findEnvironmentLogByEnterpriseId(enterpriseId: string) {
   }
 }
 
+export async function findEnvironmentLogByPropertyName(
+  propertyName: string,
+  requireBuilding: boolean = true
+) {
+  try {
+    console.log('[LOGGER] Searching for environment log with property name:', propertyName);
+
+    const whereClause = requireBuilding
+      ? { propertyName, status: 'building' as const }
+      : { propertyName };
+
+    const result = await prisma.environmentLog.findFirst({
+      where: whereClause,
+      orderBy: { timestamp: 'desc' }
+    });
+
+    if (result) {
+      console.log('[LOGGER] ✅ Found environment log by property name:', result.id);
+    } else {
+      console.log('[LOGGER] ⚠️  No environment log found for property name:', propertyName);
+    }
+    return result;
+  } catch (error) {
+    console.error('[LOGGER] ❌ Failed to find environment log by property name:', error);
+    return null;
+  }
+}
+
 export async function readEnvironmentLogs(): Promise<EnvironmentLog[]> {
   try {
     const logs = await prisma.environmentLog.findMany({
