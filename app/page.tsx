@@ -85,7 +85,7 @@ export default function FreeTrialPage() {
     }
   };
 
-  // Check if requestor is Charlie (gets special treatment for duration and Salesforce ID)
+  // Check if requestor is Charlie (gets auto-populated test data and special treatment for duration and Salesforce ID)
   const isCharlie = formData.requestorEmail === 'charlie.delamare@gmail.com' ||
                     formData.requestorEmail === 'charlie.delamare@mews.com';
 
@@ -99,10 +99,13 @@ export default function FreeTrialPage() {
         [name]: processedValue
       };
 
-      // Auto-set duration to 7 days for Charlie's emails
+      // Auto-set duration to 7 days and populate test data for Charlie's emails
       if (name === 'requestorEmail' &&
           (value === 'charlie.delamare@gmail.com' || value === 'charlie.delamare@mews.com')) {
         updated.durationDays = 7;
+        updated.firstName = 'Charlie';
+        updated.lastName = 'Delamare';
+        updated.customerEmail = 'charlie@charlie.com';
       }
 
       return updated;
@@ -270,7 +273,10 @@ export default function FreeTrialPage() {
             {/* Customer Details */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Customer First Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer First Name *
+                  {isCharlie && <span className="text-xs text-gray-500 ml-2">(Auto-populated for testing)</span>}
+                </label>
                 <input
                   type="text"
                   name="firstName"
@@ -281,7 +287,10 @@ export default function FreeTrialPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Customer Last Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer Last Name *
+                  {isCharlie && <span className="text-xs text-gray-500 ml-2">(Auto-populated for testing)</span>}
+                </label>
                 <input
                   type="text"
                   name="lastName"
@@ -295,7 +304,10 @@ export default function FreeTrialPage() {
 
             {/* Customer Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Customer Email (for login) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Customer Email (for login) *
+                {isCharlie && <span className="text-xs text-gray-500 ml-2">(Auto-populated for testing)</span>}
+              </label>
               <input
                 type="email"
                 name="customerEmail"
