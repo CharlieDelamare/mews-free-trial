@@ -23,6 +23,17 @@ export interface ReservationCreationResult {
   durationSeconds: number;
 }
 
+interface EnvironmentData {
+  roomCount: number;
+  dormCount: number;
+  apartmentCount: number;
+  bedCount: number;
+  durationDays: number;
+  timezone: string;
+  propertyType: 'hotel' | 'hostel' | 'apartments';
+  createdAt: Date;
+}
+
 interface ReservationData {
   customerId: string;
   resourceCategoryId: string;
@@ -166,7 +177,7 @@ export async function createReservationsForEnvironment(
 /**
  * Fetch environment data from database
  */
-async function fetchEnvironmentData(enterpriseId: string) {
+async function fetchEnvironmentData(enterpriseId: string): Promise<EnvironmentData> {
   const envLog = await prisma.environmentLog.findFirst({
     where: { enterpriseId },
     orderBy: { timestamp: 'desc' }
@@ -216,7 +227,7 @@ function filterResourceCategories(
 /**
  * Calculate bookable units based on property type
  */
-function calculateBookableUnits(envData: ReturnType<typeof fetchEnvironmentData>): number {
+function calculateBookableUnits(envData: EnvironmentData): number {
   switch (envData.propertyType) {
     case 'hotel':
       return envData.roomCount;
@@ -328,16 +339,16 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
       AccessToken: accessToken,
       Client: 'Free Trial Generator',
       Customers: [{
-        FirstName: customer.firstName,
-        LastName: customer.lastName,
-        Email: customer.email,
-        Phone: customer.phone,
-        BirthDate: customer.birthDate,
-        NationalityCode: customer.nationality,
-        LanguageCode: customer.language,
-        Gender: customer.gender,
-        Title: customer.title,
-        ...(customer.company && { Company: { Name: customer.company } })
+        FirstName: customer.FirstName,
+        LastName: customer.LastName,
+        Email: customer.Email,
+        Phone: customer.Phone,
+        BirthDate: customer.BirthDate,
+        NationalityCode: customer.NationalityCode,
+        LanguageCode: customer.PreferredLanguageCode,
+        Sex: customer.Sex,
+        Title: customer.Title,
+        ...(customer.CompanyIdentifier && { Company: { Name: customer.CompanyIdentifier.Name } })
       }]
     })
   });
@@ -358,7 +369,7 @@ function generateReservationData(
   customerIds: string[],
   categories: MewsData['resourceCategories'],
   rates: MewsData['rates'],
-  envData: ReturnType<typeof fetchEnvironmentData>,
+  envData: EnvironmentData,
   adultAgeCategoryId: string
 ): ReservationData[] {
   console.log(`[RESERVATIONS] Generating ${totalReservations} reservation templates...`);
@@ -488,7 +499,7 @@ function groupReservationsForAPI(reservations: ReservationData[]): ReservationDa
 
   // Split large groups into batches of 2-4
   const groups: ReservationData[][] = [];
-  for (const [, reservationList] of grouped) {
+  for (const [, reservationList] of Array.from(grouped.entries())) {
     for (let i = 0; i < reservationList.length; i += 4) {
       const batch = reservationList.slice(i, Math.min(i + 4, reservationList.length));
       groups.push(batch);
