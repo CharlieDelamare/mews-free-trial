@@ -6,6 +6,7 @@ import {
   getPricingEnvironment
 } from '@/lib/codes';
 import { saveEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
+import { convertDaysToISO8601, isValidDuration } from '@/lib/duration';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 const SLACK_API_URL = 'https://slack.com/api/chat.postMessage';
@@ -19,6 +20,7 @@ interface TrialRequest {
   propertyName: string;
   propertyCountry: string;
   propertyType: 'hotel' | 'hostel' | 'apartments';
+  durationDays: number;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -33,13 +35,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       preferredLanguage,
       propertyName,
       propertyCountry,
-      propertyType
+      propertyType,
+      durationDays
     } = body;
 
     // Validate required fields
     if (!firstName || !lastName || !customerEmail || !propertyName || !propertyCountry) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate duration
+    if (!isValidDuration(durationDays)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid duration. Must be 7, 30, or 60 days' },
         { status: 400 }
       );
     }
@@ -73,7 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       AutomaticCheckIn: true,
       AutomaticCheckOut: true,
       Occupancy: 0.5,
-      Lifetime: 'P0Y0M45DT0H0M0S', // 45 days trial
+      Lifetime: convertDaysToISO8601(durationDays),
       User: { Email: customerEmail },
       Users: [{ Email: 'trial@mews.li' }],
     };
@@ -126,7 +137,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       loginEmail: customerEmail,
       loginPassword: 'Sample123',
       status: 'building',
-      requestorEmail
+      requestorEmail,
+      durationDays
     });
 
     console.log('[CREATE-TRIAL] Log created with building status:', log.id);

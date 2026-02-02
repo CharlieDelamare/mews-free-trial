@@ -15,6 +15,7 @@ export interface EnvironmentLog {
   errorMessage?: string | null;
   enterpriseId?: string | null;
   requestorEmail?: string | null;
+  durationDays?: number | null;
 }
 
 export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'timestamp'>) {
@@ -33,6 +34,7 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
         errorMessage: log.errorMessage,
         enterpriseId: log.enterpriseId,
         requestorEmail: log.requestorEmail,
+        durationDays: log.durationDays,
       },
     });
     return created;

@@ -18,6 +18,7 @@ interface EnvironmentLog {
   errorMessage?: string;
   enterpriseId?: string;
   requestorEmail?: string;
+  durationDays?: number;
 }
 
 export default function LogsPage() {
@@ -158,6 +159,12 @@ export default function LogsPage() {
                     <div>
                       <p className="text-sm text-gray-600">Property Type</p>
                       <p className="font-medium text-gray-800 capitalize">{log.propertyType}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Trial Duration</p>
+                      <p className="font-medium text-gray-800">
+                        {log.durationDays ? `${log.durationDays} days` : 'N/A'}
+                      </p>
                     </div>
                   </div>
 

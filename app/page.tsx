@@ -14,6 +14,7 @@ export default function FreeTrialPage() {
     propertyName: '',
     propertyCountry: 'United Kingdom',
     propertyType: 'hotel' as 'hotel' | 'hostel' | 'apartments',
+    durationDays: 30,
     salesforceAccountId: ''
   });
   const [loading, setLoading] = useState(false);
@@ -29,9 +30,10 @@ export default function FreeTrialPage() {
   } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const value = e.target.name === 'durationDays' ? Number(e.target.value) : e.target.value;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     }));
   };
 
@@ -40,8 +42,9 @@ export default function FreeTrialPage() {
     setLoading(true);
     setResult(null);
 
-    // Validate Salesforce Account ID
-    if (!formData.salesforceAccountId.startsWith('001')) {
+    // Only validate Salesforce Account ID for non-Charlie users
+    const isCharlie = formData.requestorEmail === 'charlie.delamare@mews.com';
+    if (!isCharlie && !formData.salesforceAccountId.startsWith('001')) {
       setResult({ success: false, error: 'The Salesforce Account ID is incorrect' });
       setLoading(false);
       return;
@@ -76,7 +79,7 @@ export default function FreeTrialPage() {
         </div>
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Free Trial</h1>
-          <p className="text-gray-600">Request a 45-day free trial of Mews</p>
+          <p className="text-gray-600">Request a free trial of Mews</p>
         </div>
 
         {result?.success && result?.status === 'building' ? (
@@ -228,15 +231,33 @@ export default function FreeTrialPage() {
               </select>
             </div>
 
+            {/* Trial Duration */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Trial Duration *</label>
+              <select
+                name="durationDays"
+                value={formData.durationDays}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value={7}>7 days</option>
+                <option value={30}>30 days (recommended)</option>
+                <option value={60}>60 days</option>
+              </select>
+            </div>
+
             {/* Salesforce Account ID */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Salesforce Account ID *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Salesforce Account ID {formData.requestorEmail !== 'charlie.delamare@mews.com' && '*'}
+              </label>
               <input
                 type="text"
                 name="salesforceAccountId"
                 value={formData.salesforceAccountId}
                 onChange={handleChange}
-                required
+                required={formData.requestorEmail !== 'charlie.delamare@mews.com'}
                 placeholder="001..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -257,7 +278,7 @@ export default function FreeTrialPage() {
             </button>
 
             <p className="text-xs text-gray-500 text-center">
-              Trial properties are valid for 45 days. Login details will be sent to the customer email.
+              Trial properties are valid for {formData.durationDays} days. Login details will be sent to the customer email.
             </p>
           </form>
         )}
