@@ -77,12 +77,28 @@ export default function FreeTrialPage() {
     }
   };
 
+  // Check if requestor is Charlie (gets special treatment for duration and Salesforce ID)
+  const isCharlie = formData.requestorEmail === 'charlie.delamare@gmail.com' ||
+                    formData.requestorEmail === 'charlie.delamare@mews.com';
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const value = e.target.name === 'durationDays' ? Number(e.target.value) : e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: value
-    }));
+    const { name, value } = e.target;
+    const processedValue = name === 'durationDays' ? Number(value) : value;
+
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [name]: processedValue
+      };
+
+      // Auto-set duration to 7 days for Charlie's emails
+      if (name === 'requestorEmail' &&
+          (value === 'charlie.delamare@gmail.com' || value === 'charlie.delamare@mews.com')) {
+        updated.durationDays = 7;
+      }
+
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,7 +107,6 @@ export default function FreeTrialPage() {
     setResult(null);
 
     // Only validate Salesforce Account ID for non-Charlie users
-    const isCharlie = formData.requestorEmail === 'charlie.delamare@mews.com';
     if (!isCharlie && !formData.salesforceAccountId.startsWith('001')) {
       setResult({ success: false, error: 'The Salesforce Account ID is incorrect' });
       setLoading(false);
@@ -350,13 +365,17 @@ export default function FreeTrialPage() {
 
             {/* Trial Duration */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Trial Duration *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Trial Duration *
+                {isCharlie && <span className="text-xs text-gray-500 ml-2">(Fixed at 7 days for internal use)</span>}
+              </label>
               <select
                 name="durationDays"
                 value={formData.durationDays}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isCharlie}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value={7}>7 days</option>
                 <option value={30}>30 days (recommended)</option>
@@ -367,14 +386,14 @@ export default function FreeTrialPage() {
             {/* Salesforce Account ID */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Salesforce Account ID {formData.requestorEmail !== 'charlie.delamare@mews.com' && '*'}
+                Salesforce Account ID {!isCharlie && '*'}
               </label>
               <input
                 type="text"
                 name="salesforceAccountId"
                 value={formData.salesforceAccountId}
                 onChange={handleChange}
-                required={formData.requestorEmail !== 'charlie.delamare@mews.com'}
+                required={!isCharlie}
                 placeholder="001..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
