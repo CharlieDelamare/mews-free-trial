@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
+import { fetchReservations, cancelReservation } from '@/lib/reservations';
+import { sendZapierNotification } from '@/lib/zapier';
 import { createSampleCustomers } from '@/lib/customer-service';
 
 // Hardcoded configuration for Mews demo environment
@@ -242,6 +244,34 @@ export async function POST(request: NextRequest) {
       console.log('[ADD-ENVIRONMENT] ⚠️  No matching log found');
     }
 
+    // Step 3: Send Zapier notification
+    try {
+      if (log) {
+        // Full environment configuration notification
+        await sendZapierNotification('manual_environment_configured', {
+          status: 'success',
+          propertyName: log.propertyName,
+          customerName: log.customerName,
+          customerEmail: log.customerEmail,
+          requestorEmail: log.requestorEmail || undefined,
+          loginUrl: log.loginUrl,
+          loginEmail: log.loginEmail,
+          loginPassword: log.loginPassword,
+          enterpriseId: configData.Enterprise.Id,
+          enterpriseName: configData.Enterprise.Name,
+          reservationsCanceled: canceledCount,
+          customerCreated: customerCreated,
+          logUpdated: true
+        });
+      } else {
+        // Access token added without matching log
+        await sendZapierNotification('manual_environment_added', {
+          status: 'info',
+          action: 'manual-addition',
+          enterpriseName: configData.Enterprise.Name,
+          enterpriseId: configData.Enterprise.Id,
+          reservationsCanceled: canceledCount,
+          logFound: false
     // Create 100 sample customers in the background
     console.log('[ADD-ENVIRONMENT] Starting sample customer creation for enterprise:', configData.Enterprise.Id);
     createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id)
@@ -341,12 +371,9 @@ export async function POST(request: NextRequest) {
             blocks
           })
         });
-        console.log('[ADD-ENVIRONMENT] ✅ Slack notification sent');
-      } catch (error) {
-        console.error('[ADD-ENVIRONMENT] ⚠️  Failed to send Slack notification:', error);
       }
-    } else {
-      console.log('[ADD-ENVIRONMENT] ⚠️  Slack not configured, skipping notification');
+    } catch (error) {
+      console.error('[ADD-ENVIRONMENT] Failed to send Zapier notification:', error);
     }
 
     return NextResponse.json({
