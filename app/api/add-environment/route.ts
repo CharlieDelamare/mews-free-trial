@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
+import { fetchReservations, cancelReservation } from '@/lib/reservations';
 
 interface ConfigurationRequest {
   ClientToken: string;
@@ -20,6 +22,24 @@ interface ConfigurationResponse {
     [key: string]: any;
   };
   [key: string]: any;
+}
+
+/**
+ * Parses a full name into firstName and lastName
+ * Handles edge cases like empty names or single names
+ */
+function parseCustomerName(fullName: string): { firstName: string; lastName: string } {
+  const cleaned = fullName.trim().replace(/\s+/g, ' ');
+  const parts = cleaned.split(' ');
+
+  if (parts.length === 0 || cleaned === '') {
+    return { firstName: 'Customer', lastName: 'Trial' };
+  } else if (parts.length === 1) {
+    return { firstName: parts[0], lastName: 'Trial' };
+  } else {
+    const [firstName, ...lastNameParts] = parts;
+    return { firstName, lastName: lastNameParts.join(' ') };
+  }
 }
 
 /**
@@ -112,9 +132,183 @@ export async function POST(request: NextRequest) {
       enterpriseName: newToken.enterpriseName
     });
 
+    // Step 1: Cancel all existing reservations
+    console.log('[ADD-ENVIRONMENT] Canceling existing reservations...');
+    let canceledCount = 0;
+    try {
+      const { reservations } = await fetchReservations({
+        accessToken: accessToken,
+        serviceId: configData.Service?.Id,
+        states: ['Confirmed', 'Started']
+      });
+
+      if (reservations.length > 0) {
+        console.log(`[ADD-ENVIRONMENT] Found ${reservations.length} reservations to cancel`);
+        for (const reservation of reservations) {
+          const result = await cancelReservation({
+            accessToken: accessToken,
+            reservationId: reservation.Id,
+            postCancellationFee: false,
+            sendEmail: false,
+            notes: 'Auto-canceled on manual environment addition'
+          });
+          if (result.success) canceledCount++;
+        }
+        console.log(`[ADD-ENVIRONMENT] ✅ Canceled ${canceledCount} reservations`);
+      } else {
+        console.log('[ADD-ENVIRONMENT] No reservations to cancel');
+      }
+    } catch (error) {
+      console.error('[ADD-ENVIRONMENT] ⚠️  Failed to cancel reservations:', error);
+      // Continue - non-blocking
+    }
+
+    // Step 2: Find matching EnvironmentLog and create customer
+    console.log('[ADD-ENVIRONMENT] Looking for matching EnvironmentLog...');
+    const log = await findEnvironmentLogByEnterpriseId(configData.Enterprise.Id);
+
+    let customerCreated = false;
+    if (log) {
+      console.log('[ADD-ENVIRONMENT] ✅ Found log:', log.id);
+
+      // Create customer from log data
+      try {
+        const { firstName, lastName } = parseCustomerName(log.customerName);
+        console.log('[ADD-ENVIRONMENT] Creating customer:', firstName, lastName);
+
+        const customerResponse = await fetch(`${mewsApiUrl}/api/connector/v1/customers/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ClientToken: process.env.MEWS_CLIENT_TOKEN,
+            AccessToken: accessToken,
+            Client: 'Mews Free Trial App v1.0',
+            FirstName: firstName,
+            LastName: lastName,
+            Email: log.customerEmail
+          })
+        });
+
+        const customerData = await customerResponse.json();
+
+        if (customerResponse.ok && customerData.Id) {
+          console.log('[ADD-ENVIRONMENT] ✅ Customer created:', customerData.Id);
+          customerCreated = true;
+        } else {
+          console.warn('[ADD-ENVIRONMENT] ⚠️  Customer creation failed:', customerData.Message);
+          // Customer might already exist - continue
+        }
+      } catch (error) {
+        console.error('[ADD-ENVIRONMENT] ⚠️  Error creating customer:', error);
+        // Continue - non-blocking
+      }
+
+      // Update log status to completed
+      try {
+        await updateEnvironmentLog(configData.Enterprise.Id, { status: 'completed' });
+        console.log('[ADD-ENVIRONMENT] ✅ Log status updated to completed');
+      } catch (error) {
+        console.error('[ADD-ENVIRONMENT] ⚠️  Failed to update log:', error);
+      }
+    } else {
+      console.log('[ADD-ENVIRONMENT] ⚠️  No matching log found');
+    }
+
+    // Step 3: Send Slack notification
+    if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {
+      console.log('[ADD-ENVIRONMENT] Sending Slack notification...');
+      try {
+        const blocks = log
+          ? [
+              {
+                type: 'header',
+                text: {
+                  type: 'plain_text',
+                  text: '✅ Manual Environment Added & Configured!',
+                  emoji: true
+                }
+              },
+              {
+                type: 'section',
+                fields: [
+                  { type: 'mrkdwn', text: `*Property Name:*\n${log.propertyName}` },
+                  { type: 'mrkdwn', text: `*Contact:*\n${log.customerName}` },
+                  { type: 'mrkdwn', text: `*Requested By:*\n${log.requestorEmail || 'N/A'}` },
+                  { type: 'mrkdwn', text: `*Customer Email:*\n${log.customerEmail}` }
+                ]
+              },
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Login Details:*\n• URL: ${log.loginUrl}\n• Email: ${log.loginEmail}\n• Password: \`${log.loginPassword}\``
+                }
+              },
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ${customerCreated ? '✅' : '⚠️'} Customer ${customerCreated ? 'created' : 'creation attempted'}\n• ✅ Log status updated to completed`
+                }
+              },
+              {
+                type: 'context',
+                elements: [
+                  {
+                    type: 'mrkdwn',
+                    text: `Enterprise ID: ${configData.Enterprise.Id} | Added At: ${new Date().toLocaleString()}`
+                  }
+                ]
+              }
+            ]
+          : [
+              {
+                type: 'header',
+                text: {
+                  type: 'plain_text',
+                  text: '🔑 Access Token Added Manually'
+                }
+              },
+              {
+                type: 'section',
+                fields: [
+                  { type: 'mrkdwn', text: `*Action:*\nmanual-addition` },
+                  { type: 'mrkdwn', text: `*Enterprise:*\n${configData.Enterprise.Name}` },
+                  { type: 'mrkdwn', text: `*Enterprise ID:*\n${configData.Enterprise.Id}` },
+                  { type: 'mrkdwn', text: `*Received At:*\n${new Date().toLocaleString()}` }
+                ]
+              },
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ⚠️ No matching EnvironmentLog found`
+                }
+              }
+            ];
+
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`
+          },
+          body: JSON.stringify({
+            channel: process.env.SLACK_CHANNEL_ID,
+            blocks
+          })
+        });
+        console.log('[ADD-ENVIRONMENT] ✅ Slack notification sent');
+      } catch (error) {
+        console.error('[ADD-ENVIRONMENT] ⚠️  Failed to send Slack notification:', error);
+      }
+    } else {
+      console.log('[ADD-ENVIRONMENT] ⚠️  Slack not configured, skipping notification');
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Environment added successfully',
+      message: 'Environment added successfully and configured',
       data: {
         id: newToken.id,
         enterpriseId: newToken.enterpriseId,
@@ -122,6 +316,12 @@ export async function POST(request: NextRequest) {
         serviceId: newToken.serviceId,
         serviceName: newToken.serviceName,
         receivedAt: newToken.receivedAt
+      },
+      operations: {
+        reservationsCanceled: canceledCount,
+        customerCreated: customerCreated,
+        logFound: !!log,
+        logUpdated: !!log
       }
     });
 
