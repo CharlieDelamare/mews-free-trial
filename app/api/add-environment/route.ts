@@ -60,6 +60,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate database connection early
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch (dbError) {
+      console.error('[ADD-ENVIRONMENT] Database connection failed:', dbError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database connection error. Please ensure DATABASE_URL is configured.',
+          details: process.env.NODE_ENV === 'development' ? (dbError as Error).message : undefined
+        },
+        { status: 500 }
+      );
+    }
+
     console.log('[ADD-ENVIRONMENT] Validating access token with Mews Configuration API...');
 
     // Call Mews Configuration API to validate token and get enterprise details
@@ -139,11 +154,16 @@ export async function POST(request: NextRequest) {
     console.log('[ADD-ENVIRONMENT] Canceling existing reservations...');
     let canceledCount = 0;
     try {
-      const { reservations } = await fetchReservations({
+      const { reservations, error: fetchError } = await fetchReservations({
         accessToken: accessToken,
         serviceId: configData.Service?.Id,
         states: ['Confirmed', 'Started']
       });
+
+      if (fetchError) {
+        console.error('[ADD-ENVIRONMENT] Failed to fetch reservations:', fetchError);
+        // Continue - non-blocking, but logged
+      }
 
       if (reservations.length > 0) {
         console.log(`[ADD-ENVIRONMENT] Found ${reservations.length} reservations to cancel`);
@@ -330,8 +350,25 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[ADD-ENVIRONMENT] Error:', error);
+
+    // Provide specific error message based on error type
+    let errorMessage = 'Internal server error';
+    if (error instanceof Error) {
+      if (error.message.includes('database') || error.message.includes('prisma')) {
+        errorMessage = 'Database connection error. Please check server configuration.';
+      } else if (error.message.includes('fetch') || error.message.includes('network')) {
+        errorMessage = 'Failed to connect to Mews API. Please try again.';
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      {
+        success: false,
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      },
       { status: 500 }
     );
   }
