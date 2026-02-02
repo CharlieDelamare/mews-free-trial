@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
-import { fetchReservations, cancelReservation } from '@/lib/reservations';
+import { createSampleCustomers } from '@/lib/customer-service';
 
 // Hardcoded configuration for Mews demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -25,24 +25,6 @@ interface ConfigurationResponse {
     [key: string]: any;
   };
   [key: string]: any;
-}
-
-/**
- * Parses a full name into firstName and lastName
- * Handles edge cases like empty names or single names
- */
-function parseCustomerName(fullName: string): { firstName: string; lastName: string } {
-  const cleaned = fullName.trim().replace(/\s+/g, ' ');
-  const parts = cleaned.split(' ');
-
-  if (parts.length === 0 || cleaned === '') {
-    return { firstName: 'Customer', lastName: 'Trial' };
-  } else if (parts.length === 1) {
-    return { firstName: parts[0], lastName: 'Trial' };
-  } else {
-    const [firstName, ...lastNameParts] = parts;
-    return { firstName, lastName: lastNameParts.join(' ') };
-  }
 }
 
 /**
@@ -135,42 +117,10 @@ export async function POST(request: NextRequest) {
       enterpriseName: newToken.enterpriseName
     });
 
-    // Step 1: Cancel all existing reservations
-    console.log('[ADD-ENVIRONMENT] Canceling existing reservations...');
-    let canceledCount = 0;
-    try {
-      const { reservations } = await fetchReservations({
-        accessToken: accessToken,
-        serviceId: configData.Service?.Id,
-        states: ['Confirmed', 'Started']
-      });
-
-      if (reservations.length > 0) {
-        console.log(`[ADD-ENVIRONMENT] Found ${reservations.length} reservations to cancel`);
-        for (const reservation of reservations) {
-          const result = await cancelReservation({
-            accessToken: accessToken,
-            reservationId: reservation.Id,
-            postCancellationFee: false,
-            sendEmail: false,
-            notes: 'Auto-canceled on manual environment addition'
-          });
-          if (result.success) canceledCount++;
-        }
-        console.log(`[ADD-ENVIRONMENT] ✅ Canceled ${canceledCount} reservations`);
-      } else {
-        console.log('[ADD-ENVIRONMENT] No reservations to cancel');
-      }
-    } catch (error) {
-      console.error('[ADD-ENVIRONMENT] ⚠️  Failed to cancel reservations:', error);
-      // Continue - non-blocking
-    }
-
-    // Step 2: Find matching EnvironmentLog and create customer
+    // Find matching EnvironmentLog and update status
     console.log('[ADD-ENVIRONMENT] Looking for matching EnvironmentLog...');
     const log = await findEnvironmentLogByEnterpriseId(configData.Enterprise.Id);
 
-    let customerCreated = false;
     if (log) {
       console.log('[ADD-ENVIRONMENT] ✅ Found log:', log.id);
 
@@ -217,6 +167,21 @@ export async function POST(request: NextRequest) {
       console.log('[ADD-ENVIRONMENT] ⚠️  No matching log found');
     }
 
+    // Create 100 sample customers in the background
+    console.log('[ADD-ENVIRONMENT] Starting sample customer creation for enterprise:', configData.Enterprise.Id);
+    createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id)
+      .then(result => {
+        console.log('[ADD-ENVIRONMENT] ✅ Customer creation completed:', {
+          enterpriseId: configData.Enterprise.Id,
+          totalCustomers: result.totalCustomers,
+          successCount: result.successCount,
+          failureCount: result.failureCount
+        });
+      })
+      .catch(error => {
+        console.error('[ADD-ENVIRONMENT] ❌ Customer creation failed:', error);
+      });
+
     // Step 3: Send Slack notification
     if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {
       console.log('[ADD-ENVIRONMENT] Sending Slack notification...');
@@ -251,7 +216,7 @@ export async function POST(request: NextRequest) {
                 type: 'section',
                 text: {
                   type: 'mrkdwn',
-                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ${customerCreated ? '✅' : '⚠️'} Customer ${customerCreated ? 'created' : 'creation attempted'}\n• ✅ Log status updated to completed`
+                  text: `*Operations:*\n• ✅ 100 sample customers being created\n• ✅ Log status updated to completed`
                 }
               },
               {
@@ -285,7 +250,7 @@ export async function POST(request: NextRequest) {
                 type: 'section',
                 text: {
                   type: 'mrkdwn',
-                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ⚠️ No matching EnvironmentLog found`
+                  text: `*Operations:*\n• ✅ 100 sample customers being created\n• ⚠️ No matching EnvironmentLog found`
                 }
               }
             ];
@@ -321,8 +286,7 @@ export async function POST(request: NextRequest) {
         receivedAt: newToken.receivedAt
       },
       operations: {
-        reservationsCanceled: canceledCount,
-        customerCreated: customerCreated,
+        sampleCustomersCreating: true,
         logFound: !!log,
         logUpdated: !!log
       }
