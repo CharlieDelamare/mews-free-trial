@@ -72,6 +72,43 @@ async function main() {
     process.exit(0);
   }
 
+  // Check if error is P3018 (migration failed - already exists)
+  if (errorOutput.includes('P3018')) {
+    console.log('⚠️  Migration failed because database objects already exist.');
+
+    // Extract the migration name from the error output
+    const migrationMatch = errorOutput.match(/Migration name: (\S+)/);
+    if (migrationMatch && migrationMatch[1]) {
+      const failedMigration = migrationMatch[1];
+      console.log(`  → Marking failed migration as applied: ${failedMigration}`);
+
+      const resolveResult = runCommand(`npx prisma migrate resolve --applied "${failedMigration}"`);
+
+      if (resolveResult.success) {
+        console.log('  ✅ Migration marked as applied. Retrying deployment...');
+
+        // Try to deploy remaining migrations
+        const retryResult = runCommand('npx prisma migrate deploy');
+        if (retryResult.success) {
+          console.log('✅ All migrations deployed successfully!');
+          process.exit(0);
+        } else {
+          console.error('❌ Failed to deploy remaining migrations:');
+          console.error(retryResult.stderr || retryResult.stdout || retryResult.error);
+          process.exit(1);
+        }
+      } else {
+        console.error('  ❌ Failed to mark migration as applied');
+        console.error(resolveResult.stderr || resolveResult.error);
+        process.exit(1);
+      }
+    } else {
+      console.error('Could not extract migration name from error output.');
+      console.error(errorOutput);
+      process.exit(1);
+    }
+  }
+
   // Some other error occurred
   console.error('❌ Migration deployment failed with an unexpected error:');
   console.error(errorOutput);
