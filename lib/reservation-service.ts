@@ -597,7 +597,9 @@ async function createReservationGroups(
       // Start past-dated reservations immediately (fire-and-forget)
       if (needsImmediateStart.length > 0) {
         callStateTransitionAPI('start', needsImmediateStart, accessToken).catch(err => {
-          console.error('[RESERVATIONS] Failed to start past reservations:', err);
+          console.error('[RESERVATIONS] ⚠️  Failed to start past reservations (fire-and-forget)');
+          console.error('[RESERVATIONS] Error details:', err.message);
+          console.error('[RESERVATIONS] Affected reservation IDs:', needsImmediateStart.join(', '));
         });
       }
 
@@ -624,11 +626,24 @@ async function applyStateTransitions(
   if (startedIds.length > 0) {
     await callStateTransitionAPI('start', startedIds, accessToken);
   }
+  console.log(`[RESERVATIONS] Applying state transitions: ${startedIds.length} Started, ${processedIds.length} Processed`);
 
-  // Process reservations (must start first, then process)
-  if (processedIds.length > 0) {
-    await callStateTransitionAPI('start', processedIds, accessToken);
-    await callStateTransitionAPI('process', processedIds, accessToken);
+  try {
+    // Start reservations
+    if (startedIds.length > 0) {
+      await callStateTransitionAPI('start', startedIds, accessToken);
+    }
+
+    // Process reservations (must start first, then process)
+    if (processedIds.length > 0) {
+      await callStateTransitionAPI('start', processedIds, accessToken);
+      await callStateTransitionAPI('process', processedIds, accessToken);
+    }
+
+    console.log(`[RESERVATIONS] ✅ State transitions completed successfully`);
+  } catch (error) {
+    console.error(`[RESERVATIONS] ❌ State transition error:`, error);
+    throw error; // Re-throw to be caught by caller
   }
 }
 
@@ -642,6 +657,8 @@ async function callStateTransitionAPI(
 ): Promise<void> {
   const endpoint = action === 'start' ? 'reservations/start' : 'reservations/process';
 
+  console.log(`[RESERVATIONS] Calling ${action} API for ${reservationIds.length} reservation(s)`);
+
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -654,6 +671,25 @@ async function callStateTransitionAPI(
   });
 
   if (!response.ok) {
-    console.error(`[RESERVATIONS] ${action} transition failed: ${response.status}`);
+    // Capture the full error response body
+    const errorText = await response.text();
+    let errorDetails = errorText;
+
+    // Try to parse as JSON for structured error info
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorDetails = JSON.stringify(errorJson, null, 2);
+    } catch {
+      // Keep as plain text if not JSON
+    }
+
+    console.error(`[RESERVATIONS] ❌ ${action} transition FAILED`);
+    console.error(`[RESERVATIONS] HTTP Status: ${response.status} ${response.statusText}`);
+    console.error(`[RESERVATIONS] Reservation IDs: ${reservationIds.join(', ')}`);
+    console.error(`[RESERVATIONS] Error Response:`, errorDetails);
+
+    throw new Error(`Failed to ${action} reservations: ${response.status} - ${errorText}`);
   }
+
+  console.log(`[RESERVATIONS] ✅ Successfully ${action === 'start' ? 'started' : 'processed'} ${reservationIds.length} reservation(s)`);
 }
