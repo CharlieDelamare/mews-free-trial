@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendZapierNotification } from '@/lib/zapier';
 
 // Hardcoded client token for Mews demo environment (fallback)
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -154,31 +155,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       details: reservationData
     };
 
-    // Send notification to Zapier webhook
-    const zapierWebhookUrl = process.env.ZAPIER_WEBHOOK_URL;
-    if (zapierWebhookUrl) {
-      try {
-        await fetch(zapierWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            firstName,
-            lastName,
-            email,
-            phone,
-            companyName,
-            startDate,
-            endDate,
-            notes,
-            reservationId: result.reservationId,
-            confirmationNumber: result.confirmationNumber
-          })
-        });
-      } catch (error) {
-        // Log error but don't fail the request
-        console.error('Failed to send Zapier webhook:', error);
-      }
-    }
+    // Send notification to Zapier
+    await sendZapierNotification('reservation_created', {
+      status: 'success',
+      firstName,
+      lastName,
+      customerEmail: email,
+      phone,
+      companyName,
+      startDate,
+      endDate,
+      notes,
+      reservationId: result.reservationId,
+      confirmationNumber: result.confirmationNumber
+    });
 
     return NextResponse.json(result);
 
