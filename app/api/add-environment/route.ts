@@ -196,12 +196,12 @@ export async function POST(request: NextRequest) {
     // Find matching EnvironmentLog and update status
     console.log('[ADD-ENVIRONMENT] Looking for matching EnvironmentLog...');
     const log = await findEnvironmentLogByEnterpriseId(configData.Enterprise.Id);
+    let customerCreated = false;
 
     if (log) {
       console.log('[ADD-ENVIRONMENT] ✅ Found log:', log.id);
 
       // Create customer from log data
-      let customerCreated = false;
       try {
         const { firstName, lastName } = parseCustomerName(log.customerName);
         console.log('[ADD-ENVIRONMENT] Creating customer:', firstName, lastName);
@@ -244,7 +244,22 @@ export async function POST(request: NextRequest) {
       console.log('[ADD-ENVIRONMENT] ⚠️  No matching log found');
     }
 
-    // Step 3: Send Zapier notification
+    // Step 3: Create 100 sample customers in the background
+    console.log('[ADD-ENVIRONMENT] Starting sample customer creation for enterprise:', configData.Enterprise.Id);
+    createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id)
+      .then(result => {
+        console.log('[ADD-ENVIRONMENT] ✅ Customer creation completed:', {
+          enterpriseId: configData.Enterprise.Id,
+          totalCustomers: result.totalCustomers,
+          successCount: result.successCount,
+          failureCount: result.failureCount
+        });
+      })
+      .catch(error => {
+        console.error('[ADD-ENVIRONMENT] ❌ Customer creation failed:', error);
+      });
+
+    // Step 4: Send Zapier notification
     try {
       if (log) {
         // Full environment configuration notification
@@ -272,104 +287,6 @@ export async function POST(request: NextRequest) {
           enterpriseId: configData.Enterprise.Id,
           reservationsCanceled: canceledCount,
           logFound: false
-    // Create 100 sample customers in the background
-    console.log('[ADD-ENVIRONMENT] Starting sample customer creation for enterprise:', configData.Enterprise.Id);
-    createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id)
-      .then(result => {
-        console.log('[ADD-ENVIRONMENT] ✅ Customer creation completed:', {
-          enterpriseId: configData.Enterprise.Id,
-          totalCustomers: result.totalCustomers,
-          successCount: result.successCount,
-          failureCount: result.failureCount
-        });
-      })
-      .catch(error => {
-        console.error('[ADD-ENVIRONMENT] ❌ Customer creation failed:', error);
-      });
-
-    // Step 3: Send Slack notification
-    if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {
-      console.log('[ADD-ENVIRONMENT] Sending Slack notification...');
-      try {
-        const blocks = log
-          ? [
-              {
-                type: 'header',
-                text: {
-                  type: 'plain_text',
-                  text: '✅ Manual Environment Added & Configured!',
-                  emoji: true
-                }
-              },
-              {
-                type: 'section',
-                fields: [
-                  { type: 'mrkdwn', text: `*Property Name:*\n${log.propertyName}` },
-                  { type: 'mrkdwn', text: `*Contact:*\n${log.customerName}` },
-                  { type: 'mrkdwn', text: `*Requested By:*\n${log.requestorEmail || 'N/A'}` },
-                  { type: 'mrkdwn', text: `*Customer Email:*\n${log.customerEmail}` }
-                ]
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Login Details:*\n• URL: ${log.loginUrl}\n• Email: ${log.loginEmail}\n• Password: \`${log.loginPassword}\``
-                }
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Operations:*\n• ✅ 100 sample customers being created\n• ✅ Log status updated to completed`
-                }
-              },
-              {
-                type: 'context',
-                elements: [
-                  {
-                    type: 'mrkdwn',
-                    text: `Enterprise ID: ${configData.Enterprise.Id} | Added At: ${new Date().toLocaleString()}`
-                  }
-                ]
-              }
-            ]
-          : [
-              {
-                type: 'header',
-                text: {
-                  type: 'plain_text',
-                  text: '🔑 Access Token Added Manually'
-                }
-              },
-              {
-                type: 'section',
-                fields: [
-                  { type: 'mrkdwn', text: `*Action:*\nmanual-addition` },
-                  { type: 'mrkdwn', text: `*Enterprise:*\n${configData.Enterprise.Name}` },
-                  { type: 'mrkdwn', text: `*Enterprise ID:*\n${configData.Enterprise.Id}` },
-                  { type: 'mrkdwn', text: `*Received At:*\n${new Date().toLocaleString()}` }
-                ]
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Operations:*\n• ✅ 100 sample customers being created\n• ⚠️ No matching EnvironmentLog found`
-                }
-              }
-            ];
-
-        await fetch('https://slack.com/api/chat.postMessage', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`
-          },
-          body: JSON.stringify({
-            channel: process.env.SLACK_CHANNEL_ID,
-            blocks
-          })
         });
       }
     } catch (error) {
