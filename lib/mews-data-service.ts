@@ -320,17 +320,29 @@ function mapRatesByName(rates: MewsRate[]): MewsData['rates'] {
  * Fetch vouchers from Mews API
  */
 async function fetchVouchers(clientToken: string, accessToken: string, serviceId: string): Promise<MewsVoucher[]> {
-  console.log('[MEWS-DATA] Fetching vouchers...');
+  const endpoint = `${MEWS_API_URL}/api/connector/v1/vouchers/getAll`;
+  const payload = {
+    ClientToken: clientToken,
+    AccessToken: accessToken,
+    Client: 'Free Trial Generator',
+    ServiceIds: [serviceId],
+    Extent: {
+      VoucherAssignments: true
+    }
+  };
 
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/vouchers/getAll`, {
+  console.log('[MEWS-DATA] Fetching vouchers...');
+  console.log('[MEWS-DATA] Endpoint:', endpoint);
+  console.log('[MEWS-DATA] Payload:', JSON.stringify({
+    ...payload,
+    ClientToken: '***REDACTED***',
+    AccessToken: '***REDACTED***'
+  }, null, 2));
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ClientToken: clientToken,
-      AccessToken: accessToken,
-      Client: 'Free Trial Generator',
-      ServiceIds: [serviceId]
-    })
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
@@ -410,4 +422,54 @@ function mapVoucherCodesToRates(vouchers: MewsVoucher[], voucherCodes: MewsVouch
   }
 
   return rateToCodeMap;
+}
+
+/**
+ * Update the "Best Price" rate price to 90 for all resource categories
+ */
+export async function updateBestPriceRate(
+  clientToken: string,
+  accessToken: string,
+  bestPriceRateId: string
+): Promise<boolean> {
+  const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
+
+  const payload = {
+    ClientToken: clientToken,
+    AccessToken: accessToken,
+    RateId: bestPriceRateId,
+    PriceUpdates: [
+      {
+        Value: 90
+      }
+    ]
+  };
+
+  console.log('[MEWS-DATA] Updating Best Price rate...');
+  console.log('[MEWS-DATA] Endpoint:', endpoint);
+  console.log('[MEWS-DATA] Payload:', JSON.stringify({
+    ...payload,
+    ClientToken: '***REDACTED***',
+    AccessToken: '***REDACTED***'
+  }, null, 2));
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[MEWS-DATA] Rate price update failed: ${response.status} - ${errorText}`);
+      return false;
+    }
+
+    console.log('[MEWS-DATA] ✓ Best Price rate updated to 90 for all categories');
+    return true;
+  } catch (error) {
+    console.error('[MEWS-DATA] Rate price update error:', error);
+    return false;
+  }
 }

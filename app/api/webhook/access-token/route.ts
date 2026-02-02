@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByPropertyName, updateEnvironmentLogById, updateEnvironmentLog } from '@/lib/logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
+import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
 
 // Disable caching for GET endpoint - webhook debug data needs to be fresh
 export const dynamic = 'force-dynamic';
@@ -269,7 +270,22 @@ export async function POST(request: NextRequest) {
           await updateEnvironmentLog(newToken.enterpriseId, { timezone });
           console.log('[WEBHOOK-SETUP] ✅ Timezone updated:', timezone);
 
-          // Step 3: Create customers and reservations
+          // Step 3: Fetch Mews data and update Best Price rate
+          console.log('[WEBHOOK-SETUP] Fetching Mews data...');
+          const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, newToken.accessToken);
+
+          if (mewsData.rates.bestPrice) {
+            console.log('[WEBHOOK-SETUP] Updating Best Price rate to 90...');
+            await updateBestPriceRate(
+              MEWS_CLIENT_TOKEN,
+              newToken.accessToken,
+              mewsData.rates.bestPrice
+            );
+          } else {
+            console.warn('[WEBHOOK-SETUP] ⚠️  Best Price rate not found, skipping rate update');
+          }
+
+          // Step 4: Create customers and reservations
           const result = await createReservationsForEnvironment(
             newToken.accessToken,
             newToken.enterpriseId,
@@ -283,7 +299,7 @@ export async function POST(request: NextRequest) {
             durationSeconds: result.durationSeconds
           });
 
-          // Step 4: Send Zapier notification after everything completes
+          // Step 5: Send Zapier notification after everything completes
           await sendZapierNotification('environment_ready', {
             status: 'success',
             propertyName: log.propertyName,
