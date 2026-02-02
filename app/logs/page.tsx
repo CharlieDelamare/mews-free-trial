@@ -57,20 +57,25 @@ export default function LogsPage() {
     navigator.clipboard.writeText(text);
   };
 
+  const copyAllLoginDetails = (log: EnvironmentLog) => {
+    const loginDetails = `Login URL: ${log.loginUrl}\nEmail: ${log.loginEmail}\nPassword: ${log.loginPassword}`;
+    navigator.clipboard.writeText(loginDetails);
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
+        <div className="mb-6">
           <Link
             href="/"
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
           >
             ← Back to Home
           </Link>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">
             Environment Logs
           </h1>
 
@@ -100,8 +105,8 @@ export default function LogsPage() {
           )}
 
           {!loading && !error && logs.length > 0 && (
-            <div className="space-y-4">
-              <div className="mb-4 text-sm text-gray-600">
+            <div className="space-y-3">
+              <div className="mb-3 text-xs text-gray-600">
                 Total environments: {logs.length}
               </div>
 
@@ -125,43 +130,43 @@ export default function LogsPage() {
                 return (
                   <div
                     key={log.id}
-                    className={`border rounded-lg p-6 ${style.card}`}
+                    className={`border rounded-lg p-4 ${style.card}`}
                   >
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800">
+                        <h2 className="text-lg font-semibold text-gray-800">
                           {log.propertyName}
                         </h2>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-xs text-gray-600 mt-0.5">
                           {formatDate(log.timestamp)}
                         </p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${style.badge}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${style.badge}`}>
                         {log.status === 'building' && '🏗️ Building'}
                         {log.status === 'completed' && '✅ Completed'}
                         {log.status === 'failure' && '❌ Failed'}
                       </span>
                     </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3 text-sm">
                     <div>
-                      <p className="text-sm text-gray-600">Customer Name</p>
+                      <p className="text-xs text-gray-600">Customer</p>
                       <p className="font-medium text-gray-800">{log.customerName}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Customer Email</p>
+                      <p className="text-xs text-gray-600">Email</p>
                       <p className="font-medium text-gray-800">{log.customerEmail}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Country</p>
+                      <p className="text-xs text-gray-600">Country</p>
                       <p className="font-medium text-gray-800">{log.propertyCountry}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Property Type</p>
+                      <p className="text-xs text-gray-600">Type</p>
                       <p className="font-medium text-gray-800 capitalize">{log.propertyType}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Trial Duration</p>
+                      <p className="text-xs text-gray-600">Duration</p>
                       <p className="font-medium text-gray-800">
                         {log.durationDays ? `${log.durationDays} days` : 'N/A'}
                       </p>
@@ -169,10 +174,10 @@ export default function LogsPage() {
                   </div>
 
                   {log.status === 'building' && (
-                    <div className="border-t border-gray-200 pt-4 mt-4">
+                    <div className="border-t border-gray-200 pt-3 mt-3">
                       <div className="flex items-center gap-2 text-blue-700">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-700"></div>
-                        <p className="text-sm font-medium">
+                        <p className="text-xs font-medium">
                           Environment is being created. Login details will appear when ready.
                         </p>
                       </div>
@@ -180,55 +185,39 @@ export default function LogsPage() {
                   )}
 
                   {log.status === 'completed' && (
-                    <div className="border-t border-gray-200 pt-4 mt-4">
-                      <h3 className="font-semibold text-gray-800 mb-3">
-                        Login Details
-                      </h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between bg-white rounded px-3 py-2">
-                          <div>
-                            <p className="text-xs text-gray-600">Login URL</p>
-                            <p className="font-mono text-sm text-gray-800">{log.loginUrl}</p>
-                          </div>
-                          <button
-                            onClick={() => copyToClipboard(log.loginUrl)}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            Copy
-                          </button>
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-gray-800 text-sm">
+                          Login Details
+                        </h3>
+                        <button
+                          onClick={() => copyAllLoginDetails(log)}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors"
+                        >
+                          Copy All
+                        </button>
+                      </div>
+                      <div className="bg-white rounded p-3 space-y-1">
+                        <div>
+                          <span className="text-xs text-gray-600">URL: </span>
+                          <span className="font-mono text-xs text-gray-800">{log.loginUrl}</span>
                         </div>
-                        <div className="flex items-center justify-between bg-white rounded px-3 py-2">
-                          <div>
-                            <p className="text-xs text-gray-600">Email</p>
-                            <p className="font-mono text-sm text-gray-800">{log.loginEmail}</p>
-                          </div>
-                          <button
-                            onClick={() => copyToClipboard(log.loginEmail)}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            Copy
-                          </button>
+                        <div>
+                          <span className="text-xs text-gray-600">Email: </span>
+                          <span className="font-mono text-xs text-gray-800">{log.loginEmail}</span>
                         </div>
-                        <div className="flex items-center justify-between bg-white rounded px-3 py-2">
-                          <div>
-                            <p className="text-xs text-gray-600">Password</p>
-                            <p className="font-mono text-sm text-gray-800">{log.loginPassword}</p>
-                          </div>
-                          <button
-                            onClick={() => copyToClipboard(log.loginPassword)}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            Copy
-                          </button>
+                        <div>
+                          <span className="text-xs text-gray-600">Password: </span>
+                          <span className="font-mono text-xs text-gray-800">{log.loginPassword}</span>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {log.status === 'failure' && log.errorMessage && (
-                    <div className="border-t border-gray-200 pt-4 mt-4">
-                      <h3 className="font-semibold text-gray-800 mb-2">Error Details</h3>
-                      <pre className="bg-white rounded p-3 text-xs overflow-x-auto text-gray-700">
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
+                      <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
                         {log.errorMessage}
                       </pre>
                     </div>
