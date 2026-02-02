@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { readEnvironmentLogs } from '@/lib/logger';
 
+// Disable caching - this endpoint needs fresh data on every request
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const logs = await readEnvironmentLogs();
