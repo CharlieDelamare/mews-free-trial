@@ -26,6 +26,112 @@ interface MewsWebhookPayload {
   };
 }
 
+interface IntegrationDeletedPayload {
+  Action: 'IntegrationDeleted';
+  Data: {
+    DeletedUtc: string;
+    Integration: {
+      Id: string;
+      Name: string;
+    };
+  };
+}
+
+type MewsWebhook = MewsWebhookPayload | IntegrationDeletedPayload;
+
+/**
+ * Handle IntegrationDeleted webhook
+ * Soft deletes access tokens by setting isEnabled = false
+ */
+async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
+  console.log('[WEBHOOK] ========================================');
+  console.log('[WEBHOOK] Handling IntegrationDeleted at:', new Date().toISOString());
+  console.log('[WEBHOOK] Integration ID:', payload.Data.Integration.Id);
+  console.log('[WEBHOOK] Integration Name:', payload.Data.Integration.Name);
+  console.log('[WEBHOOK] Deleted UTC:', payload.Data.DeletedUtc);
+  console.log('[WEBHOOK] ========================================');
+
+  const integrationId = payload.Data.Integration.Id;
+  const integrationName = payload.Data.Integration.Name;
+  const deletedUtc = payload.Data.DeletedUtc;
+
+  try {
+    // Find all AccessToken records with this integrationId
+    console.log('[WEBHOOK] Searching for AccessTokens with integrationId:', integrationId);
+
+    const matchingTokens = await prisma.accessToken.findMany({
+      where: {
+        integrationId,
+        isEnabled: true  // Only find enabled tokens
+      },
+      select: {
+        id: true,
+        enterpriseId: true,
+        enterpriseName: true,
+        integrationId: true,
+        integrationName: true,
+        receivedAt: true,
+        isEnabled: true
+      }
+    });
+
+    console.log(`[WEBHOOK] Found ${matchingTokens.length} enabled token(s) for integration ${integrationId}`);
+
+    if (matchingTokens.length === 0) {
+      console.log('[WEBHOOK] ⚠️  No enabled tokens found for this integration');
+      console.log('[WEBHOOK] This may indicate:');
+      console.log('[WEBHOOK]   - Integration was already disabled');
+      console.log('[WEBHOOK]   - Integration was deleted before any tokens were created');
+      console.log('[WEBHOOK]   - Integration ID mismatch');
+
+      return NextResponse.json({
+        success: true,
+        message: 'Integration deleted event received, but no enabled tokens found',
+        integrationId,
+        tokensDisabled: 0
+      });
+    }
+
+    // Log details about tokens that will be disabled
+    console.log('[WEBHOOK] Tokens to be disabled:');
+    matchingTokens.forEach(token => {
+      console.log(`[WEBHOOK]   - Token ID ${token.id}: ${token.enterpriseName} (Enterprise: ${token.enterpriseId})`);
+    });
+
+    // Soft delete: set isEnabled = false for all matching tokens
+    console.log('[WEBHOOK] Disabling tokens...');
+    const updateResult = await prisma.accessToken.updateMany({
+      where: {
+        integrationId,
+        isEnabled: true
+      },
+      data: {
+        isEnabled: false
+      }
+    });
+
+    console.log(`[WEBHOOK] ✅ Successfully disabled ${updateResult.count} token(s)`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Integration deleted and tokens disabled',
+      integrationId,
+      tokensDisabled: updateResult.count,
+      affectedTokenIds: matchingTokens.map(t => t.id)
+    });
+
+  } catch (error) {
+    console.error('[WEBHOOK] ❌ Error handling IntegrationDeleted:', error);
+
+    return NextResponse.json(
+      {
+        error: 'Internal server error processing IntegrationDeleted',
+        details: (error as Error).message
+      },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * POST /api/webhook/access-token
@@ -33,19 +139,44 @@ interface MewsWebhookPayload {
  */
 export async function POST(request: NextRequest) {
   try {
-    const payload: MewsWebhookPayload = await request.json();
+    const payload: MewsWebhook = await request.json();
 
     console.log('[WEBHOOK] ========================================');
     console.log('[WEBHOOK] Received webhook at:', new Date().toISOString());
     console.log('[WEBHOOK] Full payload:', JSON.stringify(payload, null, 2));
     console.log('[WEBHOOK] Action:', payload.Action);
-    console.log('[WEBHOOK] Enterprise ID:', payload.Data?.Enterprise?.Id);
-    console.log('[WEBHOOK] Enterprise Name:', payload.Data?.Enterprise?.Name);
-    console.log('[WEBHOOK] Access Token (first 20 chars):', payload.Data?.AccessToken?.substring(0, 20) + '...');
     console.log('[WEBHOOK] ========================================');
 
+    // Route based on action type
+    if (payload.Action === 'IntegrationDeleted') {
+      // Validate IntegrationDeleted payload
+      if (!payload.Data?.Integration?.Id) {
+        console.error('[WEBHOOK] ❌ Validation failed: Missing Integration.Id');
+        return NextResponse.json(
+          { error: 'Missing Integration.Id in IntegrationDeleted payload' },
+          { status: 400 }
+        );
+      }
+      return handleIntegrationDeleted(payload as IntegrationDeletedPayload);
+    }
+
+    // Validate for IntegrationCreated
+    if (payload.Action !== 'IntegrationCreated') {
+      console.warn('[WEBHOOK] ⚠️  Unknown action type:', payload.Action);
+      return NextResponse.json(
+        { error: `Unsupported webhook action: ${payload.Action}` },
+        { status: 400 }
+      );
+    }
+
+    // Continue with existing IntegrationCreated logic
+    const createdPayload = payload as MewsWebhookPayload;
+    console.log('[WEBHOOK] Enterprise ID:', createdPayload.Data?.Enterprise?.Id);
+    console.log('[WEBHOOK] Enterprise Name:', createdPayload.Data?.Enterprise?.Name);
+    console.log('[WEBHOOK] Access Token (first 20 chars):', createdPayload.Data?.AccessToken?.substring(0, 20) + '...');
+
     // Validate payload structure
-    if (!payload.Data || !payload.Data.AccessToken) {
+    if (!createdPayload.Data || !createdPayload.Data.AccessToken) {
       console.error('[WEBHOOK] ❌ Validation failed: Missing AccessToken');
       return NextResponse.json(
         { error: 'Missing AccessToken in webhook payload' },
@@ -53,7 +184,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!payload.Data.Enterprise || !payload.Data.Enterprise.Id) {
+    if (!createdPayload.Data.Enterprise || !createdPayload.Data.Enterprise.Id) {
       console.error('[WEBHOOK] ❌ Validation failed: Missing Enterprise data');
       return NextResponse.json(
         { error: 'Missing Enterprise data in webhook payload' },
@@ -67,16 +198,16 @@ export async function POST(request: NextRequest) {
     console.log('[WEBHOOK] Saving access token to database...');
     const newToken = await prisma.accessToken.create({
       data: {
-        accessToken: payload.Data.AccessToken,
-        enterpriseId: payload.Data.Enterprise.Id,
-        enterpriseName: payload.Data.Enterprise.Name,
-        serviceId: payload.Data.Service?.Id,
-        serviceName: payload.Data.Service?.Name,
-        integrationId: payload.Data.Integration?.Id,
-        integrationName: payload.Data.Integration?.Name,
-        createdUtc: payload.Data.CreatedUtc,
-        isEnabled: payload.Data.IsEnabled,
-        action: payload.Action
+        accessToken: createdPayload.Data.AccessToken,
+        enterpriseId: createdPayload.Data.Enterprise.Id,
+        enterpriseName: createdPayload.Data.Enterprise.Name,
+        serviceId: createdPayload.Data.Service?.Id,
+        serviceName: createdPayload.Data.Service?.Name,
+        integrationId: createdPayload.Data.Integration?.Id,
+        integrationName: createdPayload.Data.Integration?.Name,
+        createdUtc: createdPayload.Data.CreatedUtc,
+        isEnabled: createdPayload.Data.IsEnabled,
+        action: createdPayload.Action
       }
     });
 
