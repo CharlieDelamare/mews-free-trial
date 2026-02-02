@@ -25,6 +25,7 @@ model AccessToken {
   action          String
 
   @@index([enterpriseId])
+  @@index([integrationId])
 }
 
 model EnvironmentLog {
