@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
 import { fetchReservations, cancelReservation } from '@/lib/reservations';
 
+// Hardcoded configuration for Mews demo environment
+const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+
 interface ConfigurationRequest {
   ClientToken: string;
   AccessToken: string;
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
     const configUrl = `${mewsApiUrl}/api/connector/v1/configuration/get`;
 
     const configRequest: ConfigurationRequest = {
-      ClientToken: process.env.MEWS_CLIENT_TOKEN || '',
+      ClientToken: MEWS_CLIENT_TOKEN,
       AccessToken: accessToken,
       Client: 'Mews Free Trial App v1.0'
     };
@@ -180,7 +183,7 @@ export async function POST(request: NextRequest) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ClientToken: process.env.MEWS_CLIENT_TOKEN,
+            ClientToken: MEWS_CLIENT_TOKEN,
             AccessToken: accessToken,
             Client: 'Mews Free Trial App v1.0',
             FirstName: firstName,
