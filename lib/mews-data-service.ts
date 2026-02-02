@@ -30,7 +30,10 @@ export interface MewsData {
 interface MewsService {
   Id: string;
   Name: string;
-  Type: string;
+  Data: {
+    Discriminator: 'Bookable' | 'Additional';
+    Value?: any;
+  };
 }
 
 interface MewsRate {
@@ -61,9 +64,9 @@ export async function fetchMewsData(
   console.log('[MEWS-DATA] Starting Mews data fetch...');
 
   try {
-    // Step 1: Fetch services
+    // Step 1: Fetch services (already filtered by ServiceType: 'Bookable')
     const services = await fetchServices(clientToken, accessToken);
-    const bookableService = services.find((s: MewsService) => s.Type === 'Bookable');
+    const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
 
     if (!bookableService) {
       throw new Error('No bookable service found');
@@ -131,7 +134,8 @@ async function fetchServices(clientToken: string, accessToken: string): Promise<
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
-      Client: 'Free Trial Generator'
+      Client: 'Free Trial Generator',
+      ServiceType: 'Bookable' // Filter for bookable services only
     })
   });
 
