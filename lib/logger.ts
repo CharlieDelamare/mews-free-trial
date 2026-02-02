@@ -11,7 +11,7 @@ export interface EnvironmentLog {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
-  status: 'building' | 'completed' | 'failure';
+  status: 'building' | 'Updating' | 'completed' | 'failure';
   errorMessage?: string | null;
   enterpriseId?: string | null;
   requestorEmail?: string | null;
@@ -61,7 +61,7 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
 }
 
 export async function updateEnvironmentLog(enterpriseId: string, updates: {
-  status?: 'building' | 'completed' | 'failure';
+  status?: 'building' | 'Updating' | 'completed' | 'failure';
   errorMessage?: string;
   timezone?: string;
 }) {
@@ -93,7 +93,7 @@ export async function updateEnvironmentLog(enterpriseId: string, updates: {
 }
 
 export async function updateEnvironmentLogById(id: string, updates: {
-  status?: 'building' | 'completed' | 'failure';
+  status?: 'building' | 'Updating' | 'completed' | 'failure';
   errorMessage?: string;
   enterpriseId?: string;
 }) {

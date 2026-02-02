@@ -39,7 +39,7 @@ model EnvironmentLog {
   loginUrl        String
   loginEmail      String
   loginPassword   String
-  status          String   // "building", "completed", "failure"
+  status          String   // "building", "Updating", "completed", "failure"
   errorMessage    String?
   enterpriseId    String?
   requestorEmail  String?
