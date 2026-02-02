@@ -85,8 +85,8 @@ export async function createReservationsForEnvironment(
     // Step 2: Fetch Mews data
     const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
 
-    // Step 3: Filter resource categories by property type
-    const filteredCategories = filterResourceCategories(mewsData.resourceCategories, envData.propertyType);
+    // Step 3: Filter resource categories based on what was actually created
+    const filteredCategories = filterResourceCategories(mewsData.resourceCategories, envData);
     console.log(`[RESERVATIONS] Filtered resource categories: ${filteredCategories.length}`);
 
     if (filteredCategories.length === 0) {
@@ -214,24 +214,36 @@ async function fetchEnvironmentData(enterpriseId: string): Promise<EnvironmentDa
 }
 
 /**
- * Filter resource categories by property type
+ * Filter resource categories based on what was actually created in the environment
+ * Uses the environment counts to determine which category types should have reservations
  */
 function filterResourceCategories(
   categories: MewsData['resourceCategories'],
-  propertyType: string
+  envData: EnvironmentData
 ): MewsData['resourceCategories'] {
-  const typeMap: Record<string, string> = {
-    'hotel': 'Room',
-    'apartments': 'Apartment',
-    'hostel': 'Bed' // Note: NOT "Dorm" - beds are bookable units
-  };
+  const allowedTypes: string[] = [];
 
-  const targetType = typeMap[propertyType];
-  if (!targetType) {
-    throw new Error(`Unknown property type: ${propertyType}`);
+  // Include category types based on what was configured
+  if (envData.roomCount > 0) {
+    allowedTypes.push('Room');
+  }
+  if (envData.apartmentCount > 0) {
+    allowedTypes.push('Apartment');
+  }
+  if (envData.dormCount > 0) {
+    allowedTypes.push('Bed'); // Beds are bookable units in hostels, not dorms
   }
 
-  return categories.filter(c => c.type === targetType);
+  console.log(`[RESERVATIONS] Allowing category types: ${allowedTypes.join(', ')}`);
+
+  const filtered = categories.filter(c => allowedTypes.includes(c.type));
+
+  // Log what we found
+  filtered.forEach(cat => {
+    console.log(`[RESERVATIONS]   ✓ Including ${cat.name} (${cat.type}): ${cat.resourceCount} units`);
+  });
+
+  return filtered;
 }
 
 /**
