@@ -28,6 +28,28 @@ interface ConfigurationResponse {
 }
 
 /**
+ * Parse a full name string into first and last name components
+ */
+function parseCustomerName(fullName: string): { firstName: string; lastName: string } {
+  const trimmed = fullName.trim();
+
+  if (!trimmed) {
+    return { firstName: 'Guest', lastName: 'User' };
+  }
+
+  const parts = trimmed.split(/\s+/);
+
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: parts[0] };
+  }
+
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(' ');
+
+  return { firstName, lastName };
+}
+
+/**
  * POST /api/add-environment
  * Manually add an environment by providing an access token
  */
@@ -125,6 +147,7 @@ export async function POST(request: NextRequest) {
       console.log('[ADD-ENVIRONMENT] ✅ Found log:', log.id);
 
       // Create customer from log data
+      let customerCreated = false;
       try {
         const { firstName, lastName } = parseCustomerName(log.customerName);
         console.log('[ADD-ENVIRONMENT] Creating customer:', firstName, lastName);
