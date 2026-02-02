@@ -69,6 +69,18 @@ interface MewsVoucherCode {
   IsActive: boolean;
 }
 
+interface MewsVoucherAssignment {
+  VoucherId: string;
+  RateId: string;
+  UpdatedUtc: string;
+}
+
+interface VouchersGetAllResponse {
+  Vouchers: MewsVoucher[] | null;
+  VoucherAssignments: MewsVoucherAssignment[] | null;
+  VoucherCodes: MewsVoucherCode[] | null;
+}
+
 /**
  * Fetch all required Mews data for reservation creation
  */
@@ -100,21 +112,28 @@ export async function fetchMewsData(
     // Step 3: Map rates by hardcoded names
     const rateMap = mapRatesByName(rates);
 
-    // Step 3b: Fetch vouchers and voucher codes (sequential)
-    console.log('[MEWS-DATA] Fetching vouchers and voucher codes...');
-    const vouchers = await fetchVouchers(clientToken, accessToken, serviceId);
-    const activeVouchers = vouchers.filter((v: MewsVoucher) => v.IsActive);
-    console.log(`[MEWS-DATA] Found ${vouchers.length} vouchers (${activeVouchers.length} active)`);
+    // Step 3b: Fetch voucher assignments and voucher codes
+    console.log('[MEWS-DATA] Fetching voucher assignments and voucher codes...');
+    const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId);
+    console.log(`[MEWS-DATA] Found ${voucherAssignments.length} voucher assignments`);
 
     let vouchersByRate = new Map<string, string>();
-    if (activeVouchers.length > 0) {
-      const voucherIds = activeVouchers.map((v: MewsVoucher) => v.Id);
+    if (voucherAssignments.length > 0) {
+      // Extract unique voucher IDs from assignments
+      const voucherIds = Array.from(
+        new Set(voucherAssignments.map((assignment: MewsVoucherAssignment) => assignment.VoucherId))
+      );
+      console.log(`[MEWS-DATA] Found ${voucherIds.length} unique voucher(s) with rate assignments`);
+
+      // Fetch voucher codes for these vouchers
       const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds);
       console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
-      vouchersByRate = mapVoucherCodesToRates(activeVouchers, voucherCodes);
+
+      // Map voucher codes to rates using assignments
+      vouchersByRate = mapVoucherCodesToRates(voucherAssignments, voucherCodes);
       console.log(`[MEWS-DATA] Mapped ${vouchersByRate.size} rate(s) to voucher codes`);
     } else {
-      console.log('[MEWS-DATA] No active vouchers found, proceeding without voucher codes');
+      console.log('[MEWS-DATA] No voucher assignments found, proceeding without voucher codes');
     }
 
     // Step 4: Map resource categories
@@ -317,9 +336,10 @@ function mapRatesByName(rates: MewsRate[]): MewsData['rates'] {
 }
 
 /**
- * Fetch vouchers from Mews API
+ * Fetch voucher assignments from Mews API
+ * Returns VoucherAssignments which directly map VoucherId to RateId
  */
-async function fetchVouchers(clientToken: string, accessToken: string, serviceId: string): Promise<MewsVoucher[]> {
+async function fetchVoucherAssignments(clientToken: string, accessToken: string, serviceId: string): Promise<MewsVoucherAssignment[]> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/vouchers/getAll`;
   const payload = {
     ClientToken: clientToken,
@@ -331,7 +351,7 @@ async function fetchVouchers(clientToken: string, accessToken: string, serviceId
     }
   };
 
-  console.log('[MEWS-DATA] Fetching vouchers...');
+  console.log('[MEWS-DATA] Fetching voucher assignments...');
   console.log('[MEWS-DATA] Endpoint:', endpoint);
   console.log('[MEWS-DATA] Payload:', JSON.stringify({
     ...payload,
@@ -339,21 +359,35 @@ async function fetchVouchers(clientToken: string, accessToken: string, serviceId
     AccessToken: '***REDACTED***'
   }, null, 2));
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[MEWS-DATA] Vouchers fetch failed: ${response.status} - ${errorText}`);
-    // Don't throw - continue without vouchers
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[MEWS-DATA] Voucher assignments fetch failed: ${response.status} - ${errorText}`);
+      return [];
+    }
+
+    const data: VouchersGetAllResponse = await response.json();
+
+    // Log response structure for debugging
+    console.log('[MEWS-DATA] Vouchers response structure:', {
+      hasVouchers: data.Vouchers !== null,
+      hasAssignments: data.VoucherAssignments !== null,
+      assignmentsCount: data.VoucherAssignments?.length || 0
+    });
+
+    // Return VoucherAssignments (the new structure we need)
+    return data.VoucherAssignments || [];
+
+  } catch (error) {
+    console.error('[MEWS-DATA] Error fetching voucher assignments:', error);
     return [];
   }
-
-  const data = await response.json();
-  return data.Vouchers || [];
 }
 
 /**
@@ -389,36 +423,45 @@ async function fetchVoucherCodes(
 }
 
 /**
- * Map voucher codes to rates
+ * Map voucher codes to rates using VoucherAssignments
+ * @param assignments - VoucherAssignment array mapping VoucherId to RateId
+ * @param voucherCodes - VoucherCode array with code values
+ * @returns Map of rateId -> voucherCode string
  */
-function mapVoucherCodesToRates(vouchers: MewsVoucher[], voucherCodes: MewsVoucherCode[]): Map<string, string> {
+function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCodes: MewsVoucherCode[]): Map<string, string> {
   const rateToCodeMap = new Map<string, string>();
 
   // Filter active voucher codes only
   const activeVoucherCodes = voucherCodes.filter((vc: MewsVoucherCode) => vc.IsActive);
 
-  // For each active voucher code, map its rates to the code value
+  console.log(`[MEWS-DATA] Processing ${activeVoucherCodes.length} active voucher codes with ${assignments.length} assignments`);
+
+  // For each active voucher code, find its rate assignments
   for (const voucherCode of activeVoucherCodes) {
-    // Find the parent voucher
-    const parentVoucher = vouchers.find((v: MewsVoucher) => v.Id === voucherCode.VoucherId);
+    // Find all assignments for this voucher
+    const voucherAssignments = assignments.filter(
+      (assignment: MewsVoucherAssignment) => assignment.VoucherId === voucherCode.VoucherId
+    );
 
-    if (!parentVoucher) {
-      console.warn(`[MEWS-DATA] ⚠️  Voucher code ${voucherCode.Id} has no parent voucher`);
+    if (voucherAssignments.length === 0) {
+      console.warn(`[MEWS-DATA] ⚠️  Voucher code ${voucherCode.Value} (ID: ${voucherCode.VoucherId}) has no rate assignments`);
       continue;
     }
 
-    if (!parentVoucher.AssignedRateIds || parentVoucher.AssignedRateIds.length === 0) {
-      console.warn(`[MEWS-DATA] ⚠️  Voucher ${parentVoucher.Name} has no assigned rates`);
-      continue;
-    }
-
-    // Map each assigned rate to this voucher code (use first code found for each rate)
-    for (const rateId of parentVoucher.AssignedRateIds) {
-      if (!rateToCodeMap.has(rateId)) {
-        rateToCodeMap.set(rateId, voucherCode.Value);
-        console.log(`[MEWS-DATA] Mapped rate ${rateId} to voucher code: ${voucherCode.Value}`);
+    // Map each assigned rate to this voucher code
+    // Note: If multiple codes exist for the same rate, first one wins
+    for (const assignment of voucherAssignments) {
+      if (!rateToCodeMap.has(assignment.RateId)) {
+        rateToCodeMap.set(assignment.RateId, voucherCode.Value);
+        console.log(`[MEWS-DATA] ✓ Mapped rate ${assignment.RateId} to voucher code: "${voucherCode.Value}"`);
+      } else {
+        console.log(`[MEWS-DATA] Rate ${assignment.RateId} already has voucher code "${rateToCodeMap.get(assignment.RateId)}", skipping "${voucherCode.Value}"`);
       }
     }
+  }
+
+  if (rateToCodeMap.size === 0) {
+    console.log('[MEWS-DATA] No voucher code mappings created (no active codes with assignments)');
   }
 
   return rateToCodeMap;
