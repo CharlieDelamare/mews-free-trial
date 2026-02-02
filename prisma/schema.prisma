@@ -44,6 +44,11 @@ model EnvironmentLog {
   enterpriseId    String?
   requestorEmail  String?
   durationDays    Int?     // Trial duration in days (7, 30, or 60)
+  roomCount       Int?     // For hotels/hostels
+  dormCount       Int?     // For hostels
+  apartmentCount  Int?     // For apartments
+  bedCount        Int?     // For hostels (beds per dorm)
+  timezone        String?  // IANA timezone from Mews configuration/get API
 
   @@index([timestamp])
   @@index([status])
@@ -62,6 +67,23 @@ model CustomerCreationLog {
   status          String   // 'processing' | 'completed' | 'failed'
   errorSummary    String?  @db.Text
   customerResults Json?
+
+  @@index([enterpriseId])
+  @@index([status])
+}
+
+model ReservationCreationLog {
+  id                  Int       @id @default(autoincrement())
+  enterpriseId        String
+  accessTokenId       Int
+  totalReservations   Int
+  successCount        Int
+  failureCount        Int
+  startedAt           DateTime  @default(now())
+  completedAt         DateTime?
+  status              String    // 'processing' | 'completed' | 'failed'
+  errorSummary        String?   @db.Text
+  reservationResults  Json?     // Array of individual reservation results
 
   @@index([enterpriseId])
   @@index([status])

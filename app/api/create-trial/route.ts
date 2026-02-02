@@ -131,6 +131,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
 
     // Add property type specific configuration
+    let roomCount: number | undefined;
+    let dormCount: number | undefined;
+    let apartmentCount: number | undefined;
+    let bedCount: number | undefined;
+
     if (propertyType === 'hostel') {
       Object.assign(apiBody, {
         CategoryCount: 4,
@@ -139,6 +144,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         FloorDormCount: 2,
         DormBedCount: 4,
       });
+      // Calculate room counts for hostel
+      roomCount = 4 * 5; // FloorCount × FloorRoomCount = 20
+      dormCount = 4 * 2; // FloorCount × FloorDormCount = 8
+      bedCount = 4; // DormBedCount
     } else if (propertyType === 'apartments') {
       Object.assign(apiBody, {
         CategoryCount: 4,
@@ -148,6 +157,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         FloorDormCount: 0,
         DormBedCount: 0,
       });
+      // Calculate apartment count
+      apartmentCount = 4 * 5; // FloorCount × FloorApartmentCount = 20
     } else {
       // Default hotel configuration
       Object.assign(apiBody, {
@@ -157,6 +168,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         FloorDormCount: 0,
         DormBedCount: 0,
       });
+      // Calculate room count for hotel
+      roomCount = 4 * 5; // FloorCount × FloorRoomCount = 20
     }
 
     // Add tax precision for Gross pricing
@@ -182,7 +195,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         loginPassword: 'Sample123',
         status: 'building',
         requestorEmail,
-        durationDays
+        durationDays,
+        roomCount,
+        dormCount,
+        apartmentCount,
+        bedCount,
+        // timezone will be updated later from webhook via configuration/get API
       });
       console.log('[CREATE-TRIAL] Log created with building status:', log.id);
     } catch (dbError) {
