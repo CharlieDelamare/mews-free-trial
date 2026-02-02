@@ -39,6 +39,14 @@ export default function FreeTrialPage() {
     error?: string;
     status?: string;
     propertyName?: string;
+    existingEnvironment?: {
+      propertyName: string;
+      customerEmail: string;
+      status: string;
+      createdAt: Date;
+      enterpriseId?: string;
+    };
+    suggestion?: string;
   } | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [manualAccessToken, setManualAccessToken] = useState('');
@@ -399,7 +407,43 @@ export default function FreeTrialPage() {
               />
             </div>
 
-            {result?.error && (
+            {result?.existingEnvironment && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <h3 className="text-sm font-medium text-yellow-800">
+                      Environment Already Exists
+                    </h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <p className="mb-2">{result.error}</p>
+                      <div className="bg-white rounded border border-yellow-300 p-3 space-y-1">
+                        <p><strong>Property:</strong> {result.existingEnvironment.propertyName}</p>
+                        <p><strong>Customer Email:</strong> {result.existingEnvironment.customerEmail}</p>
+                        <p><strong>Status:</strong> <span className="capitalize">{result.existingEnvironment.status}</span></p>
+                        <p><strong>Created:</strong> {new Date(result.existingEnvironment.createdAt).toLocaleString()}</p>
+                        {result.existingEnvironment.enterpriseId && (
+                          <p><strong>Enterprise ID:</strong> {result.existingEnvironment.enterpriseId}</p>
+                        )}
+                      </div>
+                      <p className="mt-3">{result.suggestion}</p>
+                      <a
+                        href="/logs"
+                        className="inline-block mt-2 text-yellow-800 underline hover:text-yellow-900 font-semibold"
+                      >
+                        View Environment Logs →
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {result?.error && !result?.existingEnvironment && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
                 {result.error}
               </div>
