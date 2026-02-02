@@ -232,16 +232,13 @@ export default function FreeTrialPage() {
             </h2>
             <p className="text-blue-700 mb-4">
               Your trial environment for <strong>{result.propertyName}</strong> is being set up.
-              This usually takes a few minutes.
+              This usually takes a few minutes, but you'll receive a Slack DM when it is finished.
             </p>
             <p className="text-blue-600 mb-4">
               You can view the status and login details in the{' '}
               <Link href="/logs" className="underline font-semibold hover:text-blue-800">
                 Environment Logs
               </Link>.
-            </p>
-            <p className="text-sm text-blue-600">
-              When the environment is ready, the status will change to "Completed" and you'll be able to view your login credentials.
             </p>
           </div>
         ) : result?.success ? (
