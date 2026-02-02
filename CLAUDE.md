@@ -4,7 +4,7 @@ This document provides an overview of the Mews Free Trial application for AI ass
 
 ## Project Overview
 
-**Mews Free Trial** is a Next.js web application that allows Mews sales representatives to create 45-day trial hotel environments in the Mews demo system. The app integrates with the Mews API to provision sample hotels, stores environment logs in PostgreSQL, and sends notifications via Slack.
+**Mews Free Trial** is a Next.js web application that allows Mews sales representatives to create 45-day trial hotel environments in the Mews demo system. The app integrates with the Mews API to provision sample hotels, stores environment logs in PostgreSQL, and sends notifications via Zapier webhooks.
 
 ### Key Features
 
@@ -13,8 +13,8 @@ This document provides an overview of the Mews Free Trial application for AI ass
 - Webhook endpoint to receive and store access tokens from Mews
 - **Automatic customer creation**: 100 sample customers automatically added to each trial environment
 - Environment logs dashboard to view created trials
-- Slack notifications for trial creation success/failure
-- Zapier webhook integration for CRM updates
+- Zapier webhook notifications for trial creation and environment setup
+- CRM integration via Zapier webhooks
 
 ## Tech Stack
 
@@ -46,7 +46,8 @@ mews-free-trial-2/
 │   ├── customer-service.ts       # Automatic customer creation service
 │   ├── logger.ts                 # Environment log functions
 │   ├── prisma.ts                 # Prisma client singleton
-│   └── sample-customers.ts       # 100 predetermined customer profiles
+│   ├── sample-customers.ts       # 100 predetermined customer profiles
+│   └── zapier.ts                 # Zapier webhook notification utility
 ├── prisma/
 │   ├── schema.prisma             # Database schema
 │   └── migrations/               # Database migrations
@@ -104,9 +105,7 @@ Optional:
 
 | Variable | Description |
 |----------|-------------|
-| `SLACK_BOT_TOKEN` | Slack bot token for notifications |
-| `SLACK_CHANNEL_ID` | Slack channel ID for notifications |
-| `ZAPIER_WEBHOOK_URL` | Zapier webhook for CRM integration |
+| `ZAPIER_WEBHOOK_URL` | Zapier webhook for all notifications (Slack, CRM, etc.) |
 
 ## API Endpoints
 
@@ -260,10 +259,11 @@ All customer creation attempts are logged in the `CustomerCreationLog` table wit
 |------|---------|
 | `app/page.tsx` | Main trial creation form (client component) |
 | `app/logs/page.tsx` | Environment logs dashboard (client component) |
-| `app/api/create-trial/route.ts` | Core trial creation logic, Mews API calls, Slack notifications |
+| `app/api/create-trial/route.ts` | Core trial creation logic, Mews API calls, Zapier notifications |
 | `lib/codes.ts` | Country/language mappings for 50+ countries with legal environment codes, currencies, and tax configurations |
 | `lib/logger.ts` | Database logging functions for environment creation |
 | `lib/prisma.ts` | Prisma client singleton pattern for Next.js |
+| `lib/zapier.ts` | Zapier webhook notification utility for all notification types |
 
 ## Code Conventions
 
@@ -305,15 +305,13 @@ All customer creation attempts are logged in the `CustomerCreationLog` table wit
 - Default login password for trials: `Sample123`
 - Trial lifetime: 45 days
 
-### Slack API
-
-- Uses Block Kit for rich message formatting
-- Sends notifications on trial success/failure and access token receipt
-- Bot token required with `chat:write` scope
-
 ### Zapier
 
-- Webhook integration for pushing reservation data to external CRM
+- Webhook integration for all notifications (Slack, CRM, etc.)
+- Simple JSON payload with messageType for routing in Zapier
+- Configured via `ZAPIER_WEBHOOK_URL` environment variable
+- Notifications include trial creation, environment setup, and manual operations
+- Message types: trial_generation_failure, environment_ready, access_token_no_match, manual_environment_configured, manual_environment_added
 
 ## Production Deployment
 

@@ -10,9 +10,9 @@ import {
 import { saveEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
 import { convertDaysToISO8601, isValidDuration } from '@/lib/duration';
 import { prisma } from '@/lib/prisma';
+import { sendZapierNotification } from '@/lib/zapier';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
-const SLACK_API_URL = 'https://slack.com/api/chat.postMessage';
 
 interface TrialRequest {
   requestorEmail: string;
@@ -229,16 +229,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // Don't fail the request here - we already have the Mews API error to report
       }
 
-      // Send Slack failure notification
-      await sendSlackNotification({
-        success: false,
-        propertyName,
-        firstName,
-        lastName,
-        requestorEmail,
-        customerEmail,
-        error: result
-      });
+      // Send Zapier failure notification
+      try {
+        await sendZapierNotification('trial_generation_failure', {
+          status: 'failure',
+          propertyName,
+          firstName,
+          lastName,
+          customerName: `${firstName} ${lastName}`,
+          requestorEmail,
+          customerEmail,
+          error: 'Failed to create trial environment',
+          errorDetails: JSON.stringify(result)
+        });
+      } catch (error) {
+        console.error('[CREATE-TRIAL] Failed to send Zapier notification:', error);
+      }
 
       return NextResponse.json(
         { success: false, error: 'Failed to create trial', details: result },
@@ -323,127 +329,3 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Slack API notification helper
-async function sendSlackNotification(data: {
-  success: boolean;
-  propertyName: string;
-  firstName: string;
-  lastName: string;
-  requestorEmail: string;
-  customerEmail: string;
-  error?: unknown;
-}) {
-  const slackBotToken = process.env.SLACK_BOT_TOKEN;
-  const slackChannelId = process.env.SLACK_CHANNEL_ID;
-
-  if (!slackBotToken || !slackChannelId) {
-    console.log('Slack API not configured, skipping notification');
-    return;
-  }
-
-  // Build Block Kit message for richer formatting
-  const blocks = data.success
-    ? [
-        {
-          type: 'header',
-          text: {
-            type: 'plain_text',
-            text: '✅ New Trial Generated!',
-            emoji: true
-          }
-        },
-        {
-          type: 'section',
-          fields: [
-            {
-              type: 'mrkdwn',
-              text: `*Property Name:*\n${data.propertyName}`
-            },
-            {
-              type: 'mrkdwn',
-              text: `*Contact:*\n${data.firstName} ${data.lastName}`
-            },
-            {
-              type: 'mrkdwn',
-              text: `*Requested By:*\n${data.requestorEmail}`
-            },
-            {
-              type: 'mrkdwn',
-              text: `*Customer Email:*\n${data.customerEmail}`
-            }
-          ]
-        },
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `*Login Details:*\n• URL: https://app.mews-demo.com\n• Email: ${data.customerEmail}\n• Password: \`Sample123\``
-          }
-        }
-      ]
-    : [
-        {
-          type: 'header',
-          text: {
-            type: 'plain_text',
-            text: '❌ Trial Generation Failed!',
-            emoji: true
-          }
-        },
-        {
-          type: 'section',
-          fields: [
-            {
-              type: 'mrkdwn',
-              text: `*Property Name:*\n${data.propertyName}`
-            },
-            {
-              type: 'mrkdwn',
-              text: `*Contact:*\n${data.firstName} ${data.lastName}`
-            },
-            {
-              type: 'mrkdwn',
-              text: `*Requested By:*\n${data.requestorEmail}`
-            },
-            {
-              type: 'mrkdwn',
-              text: `*Customer Email:*\n${data.customerEmail}`
-            }
-          ]
-        },
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `*Error Details:*\n\`\`\`${JSON.stringify(data.error, null, 2)}\`\`\``
-          }
-        }
-      ];
-
-  const fallbackText = data.success
-    ? `New trial generated for ${data.propertyName}`
-    : `Trial generation failed for ${data.propertyName}`;
-
-  try {
-    const response = await fetch(SLACK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${slackBotToken}`
-      },
-      body: JSON.stringify({
-        channel: slackChannelId,
-        text: fallbackText,
-        blocks: blocks
-      })
-    });
-
-    const result = await response.json();
-
-    if (!result.ok) {
-      console.error('Slack API error:', result.error);
-    }
-  } catch (err) {
-    console.error('Failed to send Slack notification:', err);
-  }
-}

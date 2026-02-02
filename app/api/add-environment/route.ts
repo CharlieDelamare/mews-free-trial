@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
 import { fetchReservations, cancelReservation } from '@/lib/reservations';
+import { sendZapierNotification } from '@/lib/zapier';
 
 // Hardcoded configuration for Mews demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -217,96 +218,38 @@ export async function POST(request: NextRequest) {
       console.log('[ADD-ENVIRONMENT] ⚠️  No matching log found');
     }
 
-    // Step 3: Send Slack notification
-    if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {
-      console.log('[ADD-ENVIRONMENT] Sending Slack notification...');
-      try {
-        const blocks = log
-          ? [
-              {
-                type: 'header',
-                text: {
-                  type: 'plain_text',
-                  text: '✅ Manual Environment Added & Configured!',
-                  emoji: true
-                }
-              },
-              {
-                type: 'section',
-                fields: [
-                  { type: 'mrkdwn', text: `*Property Name:*\n${log.propertyName}` },
-                  { type: 'mrkdwn', text: `*Contact:*\n${log.customerName}` },
-                  { type: 'mrkdwn', text: `*Requested By:*\n${log.requestorEmail || 'N/A'}` },
-                  { type: 'mrkdwn', text: `*Customer Email:*\n${log.customerEmail}` }
-                ]
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Login Details:*\n• URL: ${log.loginUrl}\n• Email: ${log.loginEmail}\n• Password: \`${log.loginPassword}\``
-                }
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ${customerCreated ? '✅' : '⚠️'} Customer ${customerCreated ? 'created' : 'creation attempted'}\n• ✅ Log status updated to completed`
-                }
-              },
-              {
-                type: 'context',
-                elements: [
-                  {
-                    type: 'mrkdwn',
-                    text: `Enterprise ID: ${configData.Enterprise.Id} | Added At: ${new Date().toLocaleString()}`
-                  }
-                ]
-              }
-            ]
-          : [
-              {
-                type: 'header',
-                text: {
-                  type: 'plain_text',
-                  text: '🔑 Access Token Added Manually'
-                }
-              },
-              {
-                type: 'section',
-                fields: [
-                  { type: 'mrkdwn', text: `*Action:*\nmanual-addition` },
-                  { type: 'mrkdwn', text: `*Enterprise:*\n${configData.Enterprise.Name}` },
-                  { type: 'mrkdwn', text: `*Enterprise ID:*\n${configData.Enterprise.Id}` },
-                  { type: 'mrkdwn', text: `*Received At:*\n${new Date().toLocaleString()}` }
-                ]
-              },
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `*Operations:*\n• ${canceledCount > 0 ? '✅' : 'ℹ️'} Reservations canceled: ${canceledCount}\n• ⚠️ No matching EnvironmentLog found`
-                }
-              }
-            ];
-
-        await fetch('https://slack.com/api/chat.postMessage', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`
-          },
-          body: JSON.stringify({
-            channel: process.env.SLACK_CHANNEL_ID,
-            blocks
-          })
+    // Step 3: Send Zapier notification
+    try {
+      if (log) {
+        // Full environment configuration notification
+        await sendZapierNotification('manual_environment_configured', {
+          status: 'success',
+          propertyName: log.propertyName,
+          customerName: log.customerName,
+          customerEmail: log.customerEmail,
+          requestorEmail: log.requestorEmail || undefined,
+          loginUrl: log.loginUrl,
+          loginEmail: log.loginEmail,
+          loginPassword: log.loginPassword,
+          enterpriseId: configData.Enterprise.Id,
+          enterpriseName: configData.Enterprise.Name,
+          reservationsCanceled: canceledCount,
+          customerCreated: customerCreated,
+          logUpdated: true
         });
-        console.log('[ADD-ENVIRONMENT] ✅ Slack notification sent');
-      } catch (error) {
-        console.error('[ADD-ENVIRONMENT] ⚠️  Failed to send Slack notification:', error);
+      } else {
+        // Access token added without matching log
+        await sendZapierNotification('manual_environment_added', {
+          status: 'info',
+          action: 'manual-addition',
+          enterpriseName: configData.Enterprise.Name,
+          enterpriseId: configData.Enterprise.Id,
+          reservationsCanceled: canceledCount,
+          logFound: false
+        });
       }
-    } else {
-      console.log('[ADD-ENVIRONMENT] ⚠️  Slack not configured, skipping notification');
+    } catch (error) {
+      console.error('[ADD-ENVIRONMENT] Failed to send Zapier notification:', error);
     }
 
     return NextResponse.json({
