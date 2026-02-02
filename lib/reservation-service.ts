@@ -354,7 +354,13 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
   });
 
   if (!response.ok) {
-    throw new Error(`Customer API failed: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    console.error(`[RESERVATIONS] Customer API error for ${customer.Email}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      errorData: errorData
+    });
+    throw new Error(`Customer API failed: ${response.status} - ${errorData.Message || errorData.error || JSON.stringify(errorData)}`);
   }
 
   const data = await response.json();
