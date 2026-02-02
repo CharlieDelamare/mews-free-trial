@@ -118,10 +118,7 @@ export async function fetchMewsData(
     // Map rates by hardcoded names
     const rateMap = mapRatesByName(rates);
 
-    // Fetch vouchers and voucher codes (sequential)
-    const vouchers = await fetchVouchers(clientToken, accessToken, serviceId);
-    const activeVouchers = vouchers.filter((v: MewsVoucher) => v.IsActive);
-    // Step 3b: Fetch voucher assignments and voucher codes
+    // Fetch voucher assignments and voucher codes
     console.log('[MEWS-DATA] Fetching voucher assignments and voucher codes...');
     const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId);
     console.log(`[MEWS-DATA] Found ${voucherAssignments.length} voucher assignments`);
@@ -136,7 +133,6 @@ export async function fetchMewsData(
 
       // Fetch voucher codes for these vouchers
       const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds);
-      vouchersByRate = mapVoucherCodesToRates(activeVouchers, voucherCodes);
       console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
 
       // Map voucher codes to rates using assignments
@@ -496,10 +492,6 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
       continue;
     }
 
-    // Map each assigned rate to this voucher code (use first code found for each rate)
-    for (const rateId of parentVoucher.AssignedRateIds) {
-      if (!rateToCodeMap.has(rateId)) {
-        rateToCodeMap.set(rateId, voucherCode.Value);
     // Map each assigned rate to this voucher code
     // Note: If multiple codes exist for the same rate, first one wins
     for (const assignment of voucherAssignments) {
