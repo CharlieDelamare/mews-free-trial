@@ -96,10 +96,8 @@ export async function fetchMewsData(
   clientToken: string,
   accessToken: string
 ): Promise<MewsData> {
-  console.log('[MEWS-DATA] Starting Mews data fetch...');
-
   try {
-    // Step 1: Fetch services (already filtered by ServiceType: 'Bookable')
+    // Fetch services (already filtered by ServiceType: 'Bookable')
     const services = await fetchServices(clientToken, accessToken);
     const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
 
@@ -108,7 +106,6 @@ export async function fetchMewsData(
     }
 
     const serviceId = bookableService.Id;
-    console.log('[MEWS-DATA] Found bookable service:', serviceId);
 
     // Step 2: Fetch rates, resource categories, age categories, and resources in parallel
     const [rates, resourceCategories, ageCategories, resources] = await Promise.all([
@@ -118,9 +115,12 @@ export async function fetchMewsData(
       fetchResources(clientToken, accessToken, serviceId)
     ]);
 
-    // Step 3: Map rates by hardcoded names
+    // Map rates by hardcoded names
     const rateMap = mapRatesByName(rates);
 
+    // Fetch vouchers and voucher codes (sequential)
+    const vouchers = await fetchVouchers(clientToken, accessToken, serviceId);
+    const activeVouchers = vouchers.filter((v: MewsVoucher) => v.IsActive);
     // Step 3b: Fetch voucher assignments and voucher codes
     console.log('[MEWS-DATA] Fetching voucher assignments and voucher codes...');
     const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId);
@@ -136,6 +136,7 @@ export async function fetchMewsData(
 
       // Fetch voucher codes for these vouchers
       const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds);
+      vouchersByRate = mapVoucherCodesToRates(activeVouchers, voucherCodes);
       console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
 
       // Map voucher codes to rates using assignments
@@ -180,6 +181,12 @@ export async function fetchMewsData(
     console.log(`[MEWS-DATA] - Total resources: ${resources.length}`);
     console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
     console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
+    console.log('[MEWS-DATA] ✅ Fetch complete:', {
+      serviceId,
+      rates: Object.keys(rateMap).length,
+      resourceCategories: resourceCategoryList.length,
+      voucherMappings: vouchersByRate.size
+    });
 
     return {
       serviceId,
@@ -202,8 +209,6 @@ export async function fetchMewsData(
  * Fetch services from Mews API
  */
 async function fetchServices(clientToken: string, accessToken: string): Promise<MewsService[]> {
-  console.log('[MEWS-DATA] Fetching services...');
-
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/services/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -221,8 +226,6 @@ async function fetchServices(clientToken: string, accessToken: string): Promise<
   }
 
   const data = await response.json();
-  console.log(`[MEWS-DATA] Found ${data.Services?.length || 0} services`);
-
   return data.Services || [];
 }
 
@@ -230,8 +233,6 @@ async function fetchServices(clientToken: string, accessToken: string): Promise<
  * Fetch rates from Mews API
  */
 async function fetchRates(clientToken: string, accessToken: string, serviceId: string): Promise<MewsRate[]> {
-  console.log('[MEWS-DATA] Fetching rates...');
-
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/rates/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -249,8 +250,6 @@ async function fetchRates(clientToken: string, accessToken: string, serviceId: s
   }
 
   const data = await response.json();
-  console.log(`[MEWS-DATA] Found ${data.Rates?.length || 0} rates`);
-
   return data.Rates || [];
 }
 
@@ -262,8 +261,6 @@ async function fetchResourceCategories(
   accessToken: string,
   serviceId: string
 ): Promise<MewsResourceCategory[]> {
-  console.log('[MEWS-DATA] Fetching resource categories...');
-
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceCategories/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -281,8 +278,6 @@ async function fetchResourceCategories(
   }
 
   const data = await response.json();
-  console.log(`[MEWS-DATA] Found ${data.ResourceCategories?.length || 0} resource categories`);
-
   return data.ResourceCategories || [];
 }
 
@@ -294,8 +289,6 @@ async function fetchAgeCategories(
   accessToken: string,
   serviceId: string
 ): Promise<MewsAgeCategory[]> {
-  console.log('[MEWS-DATA] Fetching age categories...');
-
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/ageCategories/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -313,8 +306,6 @@ async function fetchAgeCategories(
   }
 
   const data = await response.json();
-  console.log(`[MEWS-DATA] Found ${data.AgeCategories?.length || 0} age categories`);
-
   return data.AgeCategories || [];
 }
 
@@ -363,19 +354,15 @@ function mapRatesByName(rates: MewsRate[]): MewsData['rates'] {
   };
 
   const rateMap: any = {};
-  const foundRates: string[] = [];
 
   for (const [key, name] of Object.entries(rateNames)) {
     const rate = rates.find((r: MewsRate) => r.Name === name);
     if (rate) {
       rateMap[key] = rate.Id;
-      foundRates.push(name);
     } else {
-      console.warn(`[MEWS-DATA] ⚠️  Rate "${name}" not found`);
+      console.warn(`[MEWS-DATA] Rate "${name}" not found`);
     }
   }
-
-  console.log(`[MEWS-DATA] Mapped rates: ${foundRates.join(', ')}`);
 
   // Verify all required rates were found
   if (Object.keys(rateMap).length < 5) {
@@ -406,6 +393,11 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
     }
   };
 
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
   console.log('[MEWS-DATA] Fetching voucher assignments...');
   console.log('[MEWS-DATA] Endpoint:', endpoint);
   console.log('[MEWS-DATA] Payload:', JSON.stringify({
@@ -453,8 +445,6 @@ async function fetchVoucherCodes(
   accessToken: string,
   voucherIds: string[]
 ): Promise<MewsVoucherCode[]> {
-  console.log('[MEWS-DATA] Fetching voucher codes...');
-
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/voucherCodes/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -506,6 +496,10 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
       continue;
     }
 
+    // Map each assigned rate to this voucher code (use first code found for each rate)
+    for (const rateId of parentVoucher.AssignedRateIds) {
+      if (!rateToCodeMap.has(rateId)) {
+        rateToCodeMap.set(rateId, voucherCode.Value);
     // Map each assigned rate to this voucher code
     // Note: If multiple codes exist for the same rate, first one wins
     for (const assignment of voucherAssignments) {
@@ -546,14 +540,6 @@ export async function updateBestPriceRate(
     ]
   };
 
-  console.log('[MEWS-DATA] Updating Best Price rate...');
-  console.log('[MEWS-DATA] Endpoint:', endpoint);
-  console.log('[MEWS-DATA] Payload:', JSON.stringify({
-    ...payload,
-    ClientToken: '***REDACTED***',
-    AccessToken: '***REDACTED***'
-  }, null, 2));
-
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -567,7 +553,7 @@ export async function updateBestPriceRate(
       return false;
     }
 
-    console.log('[MEWS-DATA] ✓ Best Price rate updated to 90 for all categories');
+    console.log('[MEWS-DATA] ✓ Best Price rate updated to 90');
     return true;
   } catch (error) {
     console.error('[MEWS-DATA] Rate price update error:', error);

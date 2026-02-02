@@ -51,13 +51,7 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
     });
     return created;
   } catch (error) {
-    console.error('[LOGGER] Failed to save environment log:', error);
-    console.error('[LOGGER] Error details:', {
-      name: (error as Error).name,
-      message: (error as Error).message,
-      code: (error as any).code
-    });
-    console.error('[LOGGER] Attempted to save log for:', log.propertyName);
+    console.error('[LOGGER] Failed to save environment log:', (error as Error).message);
     throw new Error(`Database error: Failed to save environment log - ${(error as Error).message}`);
   }
 }
@@ -68,28 +62,18 @@ export async function updateEnvironmentLog(enterpriseId: string, updates: {
   timezone?: string;
 }) {
   try {
-    console.log('[LOGGER] Attempting to update environment log for enterpriseId:', enterpriseId);
-    console.log('[LOGGER] Updates to apply:', updates);
-
     const result = await prisma.environmentLog.updateMany({
       where: { enterpriseId },
       data: updates,
     });
 
-    console.log('[LOGGER] Update result - records affected:', result.count);
-
     if (result.count === 0) {
-      console.warn('[LOGGER] ⚠️  WARNING: updateMany returned count 0 - no records matched enterpriseId:', enterpriseId);
+      console.warn('[LOGGER] No records matched enterpriseId:', enterpriseId);
     }
 
     return result;
   } catch (error) {
-    console.error('[LOGGER] Failed to update environment log for enterpriseId:', enterpriseId, error);
-    console.error('[LOGGER] Error details:', {
-      name: (error as Error).name,
-      message: (error as Error).message,
-      code: (error as any).code
-    });
+    console.error('[LOGGER] Failed to update environment log:', enterpriseId, (error as Error).message);
     throw new Error(`Database error: Failed to update environment log - ${(error as Error).message}`);
   }
 }
@@ -100,39 +84,26 @@ export async function updateEnvironmentLogById(id: string, updates: {
   enterpriseId?: string;
 }) {
   try {
-    console.log('[LOGGER] Updating environment log by ID:', id, 'with updates:', updates);
     const result = await prisma.environmentLog.update({
       where: { id },
       data: updates,
     });
-    console.log('[LOGGER] ✅ Environment log updated successfully:', id);
     return result;
   } catch (error) {
-    console.error('[LOGGER] ❌ Failed to update environment log by ID:', id, error);
-    console.error('[LOGGER] Error details:', {
-      name: (error as Error).name,
-      message: (error as Error).message,
-      code: (error as any).code
-    });
+    console.error('[LOGGER] Failed to update log by ID:', id, (error as Error).message);
     throw new Error(`Database error: Failed to update environment log by ID - ${(error as Error).message}`);
   }
 }
 
 export async function findEnvironmentLogByEnterpriseId(enterpriseId: string) {
   try {
-    console.log('[LOGGER] Searching for environment log with enterprise ID:', enterpriseId);
     const result = await prisma.environmentLog.findFirst({
       where: { enterpriseId },
       orderBy: { timestamp: 'desc' }
     });
-    if (result) {
-      console.log('[LOGGER] ✅ Found environment log:', result.id);
-    } else {
-      console.log('[LOGGER] ⚠️  No environment log found for enterprise ID:', enterpriseId);
-    }
     return result;
   } catch (error) {
-    console.error('[LOGGER] ❌ Failed to find environment log:', error);
+    console.error('[LOGGER] Failed to find log:', (error as Error).message);
     return null;
   }
 }
@@ -142,8 +113,6 @@ export async function findEnvironmentLogByPropertyName(
   requireBuilding: boolean = true
 ) {
   try {
-    console.log('[LOGGER] Searching for environment log with property name:', propertyName);
-
     const whereClause = requireBuilding
       ? { propertyName, status: 'building' as const }
       : { propertyName };
@@ -153,14 +122,9 @@ export async function findEnvironmentLogByPropertyName(
       orderBy: { timestamp: 'desc' }
     });
 
-    if (result) {
-      console.log('[LOGGER] ✅ Found environment log by property name:', result.id);
-    } else {
-      console.log('[LOGGER] ⚠️  No environment log found for property name:', propertyName);
-    }
     return result;
   } catch (error) {
-    console.error('[LOGGER] ❌ Failed to find environment log by property name:', error);
+    console.error('[LOGGER] Failed to find log by property name:', (error as Error).message);
     return null;
   }
 }
