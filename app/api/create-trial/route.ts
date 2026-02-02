@@ -3,10 +3,13 @@ import {
   getPreferredLanguage,
   getLegalEnvironmentCode,
   getCurrency,
-  getPricingEnvironment
+  getPricingEnvironment,
+  languageOptions,
+  countryOptions
 } from '@/lib/codes';
 import { saveEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
 import { convertDaysToISO8601, isValidDuration } from '@/lib/duration';
+import { prisma } from '@/lib/prisma';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 const SLACK_API_URL = 'https://slack.com/api/chat.postMessage';
@@ -21,6 +24,7 @@ interface TrialRequest {
   propertyCountry: string;
   propertyType: 'hotel' | 'hostel' | 'apartments';
   durationDays: number;
+  salesforceAccountId?: string;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -55,11 +59,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Validate language and country codes
+    if (preferredLanguage && !languageOptions.includes(preferredLanguage)) {
+      console.error('[CREATE-TRIAL] Invalid preferred language:', preferredLanguage);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid preferred language: "${preferredLanguage}". Please select from the dropdown.`
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!countryOptions.includes(propertyCountry)) {
+      console.error('[CREATE-TRIAL] Invalid property country:', propertyCountry);
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid property country: "${propertyCountry}". Please select from the dropdown.`
+        },
+        { status: 400 }
+      );
+    }
+
     const accessToken = process.env.MEWS_SAMPLE_TOKEN;
     if (!accessToken) {
       return NextResponse.json(
         { success: false, error: 'Server configuration error' },
         { status: 500 }
+      );
+    }
+
+    // Validate database connection early
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+    } catch (dbError) {
+      console.error('[CREATE-TRIAL] Database connection failed:', dbError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database connection unavailable. Please try again later.'
+        },
+        { status: 503 }
       );
     }
 
@@ -127,21 +168,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     console.log('[CREATE-TRIAL] Request payload:', JSON.stringify(apiBody, null, 2));
 
     // Create log entry immediately with "building" status
-    const log = await saveEnvironmentLog({
-      propertyName,
-      customerName: `${firstName} ${lastName}`,
-      customerEmail,
-      propertyCountry,
-      propertyType,
-      loginUrl: 'https://app.mews-demo.com',
-      loginEmail: customerEmail,
-      loginPassword: 'Sample123',
-      status: 'building',
-      requestorEmail,
-      durationDays
-    });
+    let log;
+    try {
+      console.log('[CREATE-TRIAL] Saving environment log to database');
+      log = await saveEnvironmentLog({
+        propertyName,
+        customerName: `${firstName} ${lastName}`,
+        customerEmail,
+        propertyCountry,
+        propertyType,
+        loginUrl: 'https://app.mews-demo.com',
+        loginEmail: customerEmail,
+        loginPassword: 'Sample123',
+        status: 'building',
+        requestorEmail,
+        durationDays
+      });
+      console.log('[CREATE-TRIAL] Log created with building status:', log.id);
+    } catch (dbError) {
+      console.error('[CREATE-TRIAL] Database error - failed to save environment log:', dbError);
+      console.error('[CREATE-TRIAL] Error details:', {
+        name: (dbError as Error).name,
+        message: (dbError as Error).message,
+        stack: (dbError as Error).stack
+      });
 
-    console.log('[CREATE-TRIAL] Log created with building status:', log.id);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database error: Failed to create trial log. Please contact support if this persists.',
+          details: process.env.NODE_ENV === 'development' ? (dbError as Error).message : undefined
+        },
+        { status: 500 }
+      );
+    }
 
     // Call Mews API
     const response = await fetch(MEWS_API_URL, {
@@ -159,10 +219,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.error('[CREATE-TRIAL] Mews API error:', result);
 
       // Update log to failure status
-      await updateEnvironmentLogById(log.id, {
-        status: 'failure',
-        errorMessage: JSON.stringify(result)
-      });
+      try {
+        await updateEnvironmentLogById(log.id, {
+          status: 'failure',
+          errorMessage: JSON.stringify(result)
+        });
+      } catch (dbError) {
+        console.error('[CREATE-TRIAL] Database error - failed to update log to failure status:', dbError);
+        // Don't fail the request here - we already have the Mews API error to report
+      }
 
       // Send Slack failure notification
       await sendSlackNotification({
@@ -195,11 +260,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log('[CREATE-TRIAL] ✅ Enterprise created with ID:', enterpriseId);
 
       // Update the log with the enterprise ID
-      await updateEnvironmentLogById(log.id, {
-        enterpriseId
-      });
-
-      console.log('[CREATE-TRIAL] Log updated with enterprise ID for log:', log.id);
+      try {
+        await updateEnvironmentLogById(log.id, {
+          enterpriseId
+        });
+        console.log('[CREATE-TRIAL] Log updated with enterprise ID for log:', log.id);
+      } catch (dbError) {
+        console.error('[CREATE-TRIAL] Database error - failed to update log with enterprise ID:', dbError);
+        // Don't fail the request here - the trial was created successfully
+      }
     } else {
       console.error('[CREATE-TRIAL] ❌ CRITICAL: Could not extract enterprise ID from response!');
       console.error('[CREATE-TRIAL] Full response object keys:', Object.keys(result));
@@ -215,9 +284,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('[CREATE-TRIAL] Unexpected error in trial creation:', error);
+    console.error('[CREATE-TRIAL] Error details:', {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      stack: (error as Error).stack
+    });
+
+    // Determine error type and provide specific message
+    let errorMessage = 'Internal server error';
+    let errorDetails: string | undefined;
+
+    if (error instanceof SyntaxError) {
+      errorMessage = 'Invalid request format';
+      errorDetails = process.env.NODE_ENV === 'development' ? error.message : undefined;
+    } else if ((error as any).code === 'ECONNREFUSED' || (error as any).code === 'ETIMEDOUT') {
+      errorMessage = 'Network error: Unable to reach external services';
+      errorDetails = process.env.NODE_ENV === 'development' ? (error as Error).message : undefined;
+    } else if ((error as Error).message?.includes('fetch')) {
+      errorMessage = 'Failed to communicate with Mews API';
+      errorDetails = process.env.NODE_ENV === 'development' ? (error as Error).message : undefined;
+    } else if ((error as Error).message?.includes('prisma') || (error as Error).message?.includes('database')) {
+      errorMessage = 'Database error: Unable to process request';
+      errorDetails = process.env.NODE_ENV === 'development' ? (error as Error).message : undefined;
+    } else {
+      errorMessage = 'An unexpected error occurred';
+      errorDetails = process.env.NODE_ENV === 'development' ? (error as Error).message : undefined;
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      {
+        success: false,
+        error: errorMessage,
+        details: errorDetails
+      },
       { status: 500 }
     );
   }
