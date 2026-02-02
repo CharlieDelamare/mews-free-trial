@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
+import { createSampleCustomers } from '@/lib/customer-service';
 
 interface MewsWebhookPayload {
   Action: string;
@@ -105,6 +106,21 @@ export async function POST(request: NextRequest) {
       });
 
       console.log('[WEBHOOK] ✅ Log status updated to completed');
+
+      // Create sample customers in the background
+      console.log('[WEBHOOK] Starting sample customer creation for enterprise:', newToken.enterpriseId);
+      createSampleCustomers(newToken.accessToken, newToken.enterpriseId, newToken.id)
+        .then(result => {
+          console.log('[WEBHOOK] ✅ Customer creation completed:', {
+            enterpriseId: newToken.enterpriseId,
+            totalCustomers: result.totalCustomers,
+            successCount: result.successCount,
+            failureCount: result.failureCount
+          });
+        })
+        .catch(error => {
+          console.error('[WEBHOOK] ❌ Customer creation failed:', error);
+        });
 
       // Send Slack notification with login details
       if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {

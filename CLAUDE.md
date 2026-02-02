@@ -11,6 +11,7 @@ This document provides an overview of the Mews Free Trial application for AI ass
 - Create trial hotel environments with customizable property types (hotel, hostel, apartments)
 - Support for 50+ countries with proper legal environment, currency, and tax configurations
 - Webhook endpoint to receive and store access tokens from Mews
+- **Automatic customer creation**: 100 sample customers automatically added to each trial environment
 - Environment logs dashboard to view created trials
 - Slack notifications for trial creation success/failure
 - Zapier webhook integration for CRM updates
@@ -42,8 +43,10 @@ mews-free-trial-2/
 │   └── page.tsx                  # Main form page
 ├── lib/                          # Shared utilities
 │   ├── codes.ts                  # Country/language code mappings
+│   ├── customer-service.ts       # Automatic customer creation service
 │   ├── logger.ts                 # Environment log functions
-│   └── prisma.ts                 # Prisma client singleton
+│   ├── prisma.ts                 # Prisma client singleton
+│   └── sample-customers.ts       # 100 predetermined customer profiles
 ├── prisma/
 │   ├── schema.prisma             # Database schema
 │   └── migrations/               # Database migrations
@@ -183,6 +186,73 @@ model EnvironmentLog {
   errorMessage    String?
 }
 ```
+
+### CustomerCreationLog
+
+Tracks automatic creation of sample customers in trial environments:
+
+```prisma
+model CustomerCreationLog {
+  id              Int      @id @default(autoincrement())
+  enterpriseId    String
+  accessTokenId   Int
+  totalCustomers  Int
+  successCount    Int
+  failureCount    Int
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  status          String   // 'processing' | 'completed' | 'failed'
+  errorSummary    String?
+  customerResults Json?    // Array of individual customer results
+}
+```
+
+## Automatic Customer Creation
+
+When a trial environment is created, 100 sample customer profiles are automatically added to the Mews demo environment after the webhook access token is received.
+
+### Process Flow
+
+1. Trial created via `/api/create-trial`
+2. Mews sends webhook to `/api/webhook/access-token` with access token
+3. Webhook triggers automatic customer creation in background (fire-and-forget)
+4. 100 predetermined customers created via Mews Connector API
+5. Results logged to `CustomerCreationLog` database table
+
+### Customer Profiles
+
+- **Static list** of 100 diverse customers (same every time, not randomly generated)
+- **Full profiles** including: name, email, phone, birth date, nationality, language, gender, title, company
+- **Mix**: 70% personal travelers, 30% business travelers
+- **Diversity**: 20+ nationalities represented (GB, US, FR, DE, IT, ES, PL, SE, PT, CZ, etc.)
+- **Realistic data**: Hand-crafted profiles with appropriate email domains and phone numbers
+
+### Technical Details
+
+- **Endpoint**: `https://api.mews-demo.com/api/connector/v1/customers/add`
+- **Client Token**: `B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0` (hardcoded)
+- **Access Token**: Received from webhook (enterprise-specific)
+- **Concurrency**: 5 customers processed at a time
+- **Duration**: ~20-30 seconds for all 100 customers
+- **Error Handling**: Continues processing even if some fail; tracks individual results
+- **No retries**: Failures are logged but not automatically retried
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `lib/sample-customers.ts` | 100 predetermined customer profiles |
+| `lib/customer-service.ts` | Batch processing logic, Mews API integration |
+| `app/api/webhook/access-token/route.ts` | Triggers customer creation after token receipt |
+
+### Database Tracking
+
+All customer creation attempts are logged in the `CustomerCreationLog` table with:
+- Total customers attempted
+- Success/failure counts
+- Individual results (stored as JSON)
+- Start and completion timestamps
+- Status tracking (processing → completed/failed)
 
 ## Key Files and Their Purpose
 
