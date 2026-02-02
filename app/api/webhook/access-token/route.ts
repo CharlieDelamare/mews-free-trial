@@ -51,12 +51,11 @@ type MewsWebhook = MewsWebhookPayload | IntegrationDeletedPayload;
  * Soft deletes access tokens by setting isEnabled = false
  */
 async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
-  console.log('[WEBHOOK] ========================================');
-  console.log('[WEBHOOK] Handling IntegrationDeleted at:', new Date().toISOString());
-  console.log('[WEBHOOK] Integration ID:', payload.Data.Integration.Id);
-  console.log('[WEBHOOK] Integration Name:', payload.Data.Integration.Name);
-  console.log('[WEBHOOK] Deleted UTC:', payload.Data.DeletedUtc);
-  console.log('[WEBHOOK] ========================================');
+  console.log('[WEBHOOK] Handling IntegrationDeleted:', {
+    integrationId: payload.Data.Integration.Id,
+    integrationName: payload.Data.Integration.Name,
+    deletedUtc: payload.Data.DeletedUtc
+  });
 
   const integrationId = payload.Data.Integration.Id;
   const integrationName = payload.Data.Integration.Name;
@@ -64,8 +63,6 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
 
   try {
     // Find all AccessToken records with this integrationId
-    console.log('[WEBHOOK] Searching for AccessTokens with integrationId:', integrationId);
-
     const matchingTokens = await prisma.accessToken.findMany({
       where: {
         integrationId,
@@ -82,15 +79,8 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
       }
     });
 
-    console.log(`[WEBHOOK] Found ${matchingTokens.length} enabled token(s) for integration ${integrationId}`);
-
     if (matchingTokens.length === 0) {
-      console.log('[WEBHOOK] ⚠️  No enabled tokens found for this integration');
-      console.log('[WEBHOOK] This may indicate:');
-      console.log('[WEBHOOK]   - Integration was already disabled');
-      console.log('[WEBHOOK]   - Integration was deleted before any tokens were created');
-      console.log('[WEBHOOK]   - Integration ID mismatch');
-
+      console.log('[WEBHOOK] No enabled tokens found for integration:', integrationId);
       return NextResponse.json({
         success: true,
         message: 'Integration deleted event received, but no enabled tokens found',
@@ -99,14 +89,7 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
       });
     }
 
-    // Log details about tokens that will be disabled
-    console.log('[WEBHOOK] Tokens to be disabled:');
-    matchingTokens.forEach(token => {
-      console.log(`[WEBHOOK]   - Token ID ${token.id}: ${token.enterpriseName} (Enterprise: ${token.enterpriseId})`);
-    });
-
     // Soft delete: set isEnabled = false for all matching tokens
-    console.log('[WEBHOOK] Disabling tokens...');
     const updateResult = await prisma.accessToken.updateMany({
       where: {
         integrationId,
@@ -117,7 +100,7 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
       }
     });
 
-    console.log(`[WEBHOOK] ✅ Successfully disabled ${updateResult.count} token(s)`);
+    console.log(`[WEBHOOK] ✅ Disabled ${updateResult.count} token(s) for integration:`, integrationId);
 
     return NextResponse.json({
       success: true,
@@ -148,11 +131,10 @@ export async function POST(request: NextRequest) {
   try {
     const payload: MewsWebhook = await request.json();
 
-    console.log('[WEBHOOK] ========================================');
-    console.log('[WEBHOOK] Received webhook at:', new Date().toISOString());
-    console.log('[WEBHOOK] Full payload:', JSON.stringify(payload, null, 2));
-    console.log('[WEBHOOK] Action:', payload.Action);
-    console.log('[WEBHOOK] ========================================');
+    console.log('[WEBHOOK] Received webhook:', {
+      action: payload.Action,
+      timestamp: new Date().toISOString()
+    });
 
     // Route based on action type
     if (payload.Action === 'IntegrationDeleted') {
@@ -178,9 +160,10 @@ export async function POST(request: NextRequest) {
 
     // Continue with existing IntegrationCreated logic
     const createdPayload = payload as MewsWebhookPayload;
-    console.log('[WEBHOOK] Enterprise ID:', createdPayload.Data?.Enterprise?.Id);
-    console.log('[WEBHOOK] Enterprise Name:', createdPayload.Data?.Enterprise?.Name);
-    console.log('[WEBHOOK] Access Token (first 20 chars):', createdPayload.Data?.AccessToken?.substring(0, 20) + '...');
+    console.log('[WEBHOOK] IntegrationCreated:', {
+      enterpriseId: createdPayload.Data?.Enterprise?.Id,
+      enterpriseName: createdPayload.Data?.Enterprise?.Name
+    });
 
     // Validate payload structure
     if (!createdPayload.Data || !createdPayload.Data.AccessToken) {
@@ -199,10 +182,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[WEBHOOK] ✅ Payload validation passed');
-
     // Create new token entry in database
-    console.log('[WEBHOOK] Saving access token to database...');
     const newToken = await prisma.accessToken.create({
       data: {
         accessToken: createdPayload.Data.AccessToken,
@@ -238,17 +218,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[WEBHOOK] Looking for matching EnvironmentLog with property name:', enterpriseName);
     const log = await findEnvironmentLogByPropertyName(enterpriseName);
 
     if (log) {
-      console.log('[WEBHOOK] ✅ Found matching log:', {
-        logId: log.id,
-        propertyName: log.propertyName,
-        currentStatus: log.status,
-        customerEmail: log.customerEmail
-      });
-      console.log('[WEBHOOK] Updating log with enterpriseId and status...');
+      console.log('[WEBHOOK] ✅ Matched environment log:', log.id);
 
       // Backfill enterpriseId and update status to Updating
       await updateEnvironmentLogById(log.id, {
@@ -256,50 +229,42 @@ export async function POST(request: NextRequest) {
         status: 'Updating'
       });
 
-      console.log('[WEBHOOK] ✅ Log updated with enterpriseId and Updating status');
-
       // Start full environment setup in the background (fire-and-forget)
-      console.log('[WEBHOOK] Starting environment setup for enterprise:', newToken.enterpriseId);
+      console.log('[WEBHOOK] Starting background setup for:', newToken.enterpriseId);
       (async () => {
         try {
-          // Step 1: Fetch timezone from configuration/get API
-          console.log('[WEBHOOK-SETUP] Fetching timezone from configuration API...');
+          // Fetch timezone from configuration API
           const timezone = await fetchTimezoneFromConfiguration(newToken.accessToken);
-
-          // Step 2: Update EnvironmentLog with timezone
           await updateEnvironmentLog(newToken.enterpriseId, { timezone });
-          console.log('[WEBHOOK-SETUP] ✅ Timezone updated:', timezone);
 
-          // Step 3: Fetch Mews data and update Best Price rate
-          console.log('[WEBHOOK-SETUP] Fetching Mews data...');
+          // Fetch Mews data and update Best Price rate
           const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, newToken.accessToken);
 
           if (mewsData.rates.bestPrice) {
-            console.log('[WEBHOOK-SETUP] Updating Best Price rate to 90...');
             await updateBestPriceRate(
               MEWS_CLIENT_TOKEN,
               newToken.accessToken,
               mewsData.rates.bestPrice
             );
           } else {
-            console.warn('[WEBHOOK-SETUP] ⚠️  Best Price rate not found, skipping rate update');
+            console.warn('[WEBHOOK-SETUP] Best Price rate not found, skipping rate update');
           }
 
-          // Step 4: Create customers and reservations
+          // Create customers and reservations
           const result = await createReservationsForEnvironment(
             newToken.accessToken,
             newToken.enterpriseId,
             newToken.id
           );
 
-          console.log('[WEBHOOK-SETUP] ✅ Environment setup complete:', {
+          console.log('[WEBHOOK-SETUP] ✅ Setup complete:', {
             enterpriseId: newToken.enterpriseId,
-            customersCreated: result.totalCustomers,
-            reservationsCreated: result.totalReservations,
-            durationSeconds: result.durationSeconds
+            customers: result.totalCustomers,
+            reservations: result.totalReservations,
+            duration: `${result.durationSeconds}s`
           });
 
-          // Step 5: Send Zapier notification after everything completes
+          // Send Zapier notification
           await sendZapierNotification('environment_ready', {
             status: 'success',
             propertyName: log.propertyName,
@@ -316,52 +281,34 @@ export async function POST(request: NextRequest) {
             customersCreated: result.totalCustomers,
             reservationsCreated: result.totalReservations
           });
-          console.log('[WEBHOOK-SETUP] ✅ Zapier notification sent');
 
-          // Update status to completed after all processing is done
+          // Update status to completed
           await updateEnvironmentLog(newToken.enterpriseId, { status: 'completed' });
-          console.log('[WEBHOOK-SETUP] ✅ Status updated to completed');
 
         } catch (error) {
-          console.error('[WEBHOOK-SETUP] ❌ Environment setup failed:', error);
-          console.error('[WEBHOOK-SETUP] Error details:', {
-            name: (error as Error).name,
-            message: (error as Error).message,
-            stack: (error as Error).stack
+          console.error('[WEBHOOK-SETUP] ❌ Setup failed:', {
+            enterpriseId: newToken.enterpriseId,
+            error: (error as Error).message
           });
         }
       })();
     } else {
       // No matching log found - this token doesn't match any pending environment
-      console.error('[WEBHOOK] ❌ No matching log found for property name:', enterpriseName);
-      console.error('[WEBHOOK] Enterprise ID:', newToken.enterpriseId);
-      console.error('[WEBHOOK] This may indicate a manual environment creation or timing issue');
-
-      // Debug: Show recent logs
-      const allLogs = await prisma.environmentLog.findMany({
-        where: { status: 'building' },
-        orderBy: { timestamp: 'desc' },
-        take: 5
+      console.error('[WEBHOOK] ❌ No matching log found:', {
+        propertyName: enterpriseName,
+        enterpriseId: newToken.enterpriseId
       });
-      console.error('[WEBHOOK] Recent "building" logs in database:', allLogs.map(l => ({
-        id: l.id,
-        propertyName: l.propertyName,
-        status: l.status,
-        timestamp: l.timestamp
-      })));
 
       // Send notification for unmatched token
       try {
         await sendZapierNotification('access_token_no_match', {
           enterpriseId: newToken.enterpriseId,
           enterpriseName: newToken.enterpriseName,
-          accessToken: newToken.accessToken.substring(0, 20) + '...',
           receivedAt: newToken.receivedAt.toISOString(),
           tokenId: newToken.id
         });
-        console.log('[WEBHOOK] ✅ Zapier notification sent for unmatched token');
       } catch (error) {
-        console.error('[WEBHOOK] Failed to send Zapier notification for unmatched token:', error);
+        console.error('[WEBHOOK] Failed to send notification for unmatched token:', (error as Error).message);
       }
     }
 

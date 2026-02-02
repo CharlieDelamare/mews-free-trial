@@ -57,8 +57,7 @@ export async function createSampleCustomers(
 ): Promise<CustomerCreationResult> {
   const startTime = Date.now();
 
-  console.log(`[CUSTOMERS] Starting customer creation for enterprise ${enterpriseId}`);
-  console.log(`[CUSTOMERS] Will create ${getSampleCustomers().length} customers`);
+  console.log(`[CUSTOMERS] Starting creation of ${getSampleCustomers().length} customers for:`, enterpriseId);
 
   // Create log entry with status 'processing'
   const log = await prisma.customerCreationLog.create({
@@ -72,8 +71,6 @@ export async function createSampleCustomers(
       customerResults: []
     }
   });
-
-  console.log(`[CUSTOMERS] Created log entry with ID ${log.id}`);
 
   try {
     // Get sample customers
@@ -89,8 +86,11 @@ export async function createSampleCustomers(
     const duration = Date.now() - startTime;
     const durationSeconds = (duration / 1000).toFixed(2);
 
-    console.log(`[CUSTOMERS] ✅ Batch processing complete in ${durationSeconds}s`);
-    console.log(`[CUSTOMERS] Success: ${successCount}, Failed: ${failureCount}`);
+    console.log(`[CUSTOMERS] ✅ Complete:`, {
+      success: successCount,
+      failed: failureCount,
+      duration: `${durationSeconds}s`
+    });
 
     // Update log with final results
     const updatedLog = await prisma.customerCreationLog.update({
@@ -106,8 +106,6 @@ export async function createSampleCustomers(
           : null
       }
     });
-
-    console.log(`[CUSTOMERS] ✅ Log updated with final results`);
 
     return {
       id: updatedLog.id,
@@ -159,10 +157,6 @@ async function processBatch(
   // Process in chunks to control concurrency
   for (let i = 0; i < customers.length; i += concurrency) {
     const chunk = customers.slice(i, i + concurrency);
-    const chunkNumber = Math.floor(i / concurrency) + 1;
-    const totalChunks = Math.ceil(customers.length / concurrency);
-
-    console.log(`[CUSTOMERS] Processing chunk ${chunkNumber}/${totalChunks} (${chunk.length} customers)`);
 
     // Process this chunk in parallel
     const promises = chunk.map(customer => createSingleCustomer(accessToken, customer));
@@ -183,10 +177,6 @@ async function processBatch(
     });
 
     results.push(...chunkResults);
-
-    // Log chunk results
-    const chunkSuccess = chunkResults.filter(r => r.success).length;
-    console.log(`[CUSTOMERS] Chunk ${chunkNumber} complete: ${chunkSuccess}/${chunk.length} succeeded`);
 
     // Small delay between chunks to be nice to the API
     if (i + concurrency < customers.length) {
