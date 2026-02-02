@@ -252,34 +252,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Extract enterprise ID from the response
-    // The Mews API response structure may vary, so we check multiple possible locations
+    // Extract enterprise ID from the response (for debugging only)
+    // Note: The Mews API may not reliably return an enterpriseId in the response.
+    // The webhook will backfill the correct enterpriseId when it arrives.
     const enterpriseId = result.EnterpriseId || result.Enterprise?.Id || result.Id;
 
-    console.log('[CREATE-TRIAL] Enterprise ID extraction attempt:');
-    console.log('[CREATE-TRIAL]   - result.EnterpriseId:', result.EnterpriseId);
-    console.log('[CREATE-TRIAL]   - result.Enterprise?.Id:', result.Enterprise?.Id);
-    console.log('[CREATE-TRIAL]   - result.Id:', result.Id);
-    console.log('[CREATE-TRIAL]   - Final enterpriseId:', enterpriseId);
-
     if (enterpriseId) {
-      console.log('[CREATE-TRIAL] ✅ Enterprise created with ID:', enterpriseId);
-
-      // Update the log with the enterprise ID
-      try {
-        await updateEnvironmentLogById(log.id, {
-          enterpriseId
-        });
-        console.log('[CREATE-TRIAL] Log updated with enterprise ID for log:', log.id);
-      } catch (dbError) {
-        console.error('[CREATE-TRIAL] Database error - failed to update log with enterprise ID:', dbError);
-        // Don't fail the request here - the trial was created successfully
-      }
+      console.log('[CREATE-TRIAL] ℹ️  Enterprise ID found in response:', enterpriseId);
     } else {
-      console.error('[CREATE-TRIAL] ❌ CRITICAL: Could not extract enterprise ID from response!');
-      console.error('[CREATE-TRIAL] Full response object keys:', Object.keys(result));
-      console.error('[CREATE-TRIAL] Full response:', JSON.stringify(result, null, 2));
+      console.log('[CREATE-TRIAL] ℹ️  No enterprise ID in response - will be backfilled by webhook');
     }
+
+    console.log('[CREATE-TRIAL] Response structure:', Object.keys(result));
 
     // Return immediately - Slack notification will be sent when access token webhook is received
     return NextResponse.json({
