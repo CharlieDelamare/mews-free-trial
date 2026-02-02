@@ -407,7 +407,10 @@ async function fetchVoucherCodes(
       ClientToken: clientToken,
       AccessToken: accessToken,
       Client: 'Free Trial Generator',
-      VoucherIds: voucherIds
+      VoucherIds: voucherIds,
+      Limitation: {
+        Count: 1000
+      }
     })
   });
 
