@@ -25,6 +25,7 @@ export interface MewsData {
     adult: string;  // Adult age category ID
     child?: string; // Child age category ID (if exists)
   };
+  vouchersByRate: Map<string, string>; // Maps rateId -> voucher code string
 }
 
 interface MewsService {
@@ -52,6 +53,20 @@ interface MewsAgeCategory {
   Id: string;
   Name: string;
   Classification: string;
+}
+
+interface MewsVoucher {
+  Id: string;
+  Name: string;
+  IsActive: boolean;
+  AssignedRateIds: string[];
+}
+
+interface MewsVoucherCode {
+  Id: string;
+  VoucherId: string;
+  Value: string;
+  IsActive: boolean;
 }
 
 /**
@@ -85,6 +100,23 @@ export async function fetchMewsData(
     // Step 3: Map rates by hardcoded names
     const rateMap = mapRatesByName(rates);
 
+    // Step 3b: Fetch vouchers and voucher codes (sequential)
+    console.log('[MEWS-DATA] Fetching vouchers and voucher codes...');
+    const vouchers = await fetchVouchers(clientToken, accessToken, serviceId);
+    const activeVouchers = vouchers.filter((v: MewsVoucher) => v.IsActive);
+    console.log(`[MEWS-DATA] Found ${vouchers.length} vouchers (${activeVouchers.length} active)`);
+
+    let vouchersByRate = new Map<string, string>();
+    if (activeVouchers.length > 0) {
+      const voucherIds = activeVouchers.map((v: MewsVoucher) => v.Id);
+      const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds);
+      console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
+      vouchersByRate = mapVoucherCodesToRates(activeVouchers, voucherCodes);
+      console.log(`[MEWS-DATA] Mapped ${vouchersByRate.size} rate(s) to voucher codes`);
+    } else {
+      console.log('[MEWS-DATA] No active vouchers found, proceeding without voucher codes');
+    }
+
     // Step 4: Map resource categories
     const resourceCategoryList = resourceCategories.map((rc: MewsResourceCategory) => ({
       id: rc.Id,
@@ -105,6 +137,7 @@ export async function fetchMewsData(
     console.log(`[MEWS-DATA] - Rates: ${Object.keys(rateMap).length}`);
     console.log(`[MEWS-DATA] - Resource categories: ${resourceCategoryList.length}`);
     console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
+    console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
 
     return {
       serviceId,
@@ -113,7 +146,8 @@ export async function fetchMewsData(
       ageCategories: {
         adult: adultCategory.Id,
         child: childCategory?.Id
-      }
+      },
+      vouchersByRate
     };
 
   } catch (error) {
@@ -280,4 +314,100 @@ function mapRatesByName(rates: MewsRate[]): MewsData['rates'] {
   }
 
   return rateMap as MewsData['rates'];
+}
+
+/**
+ * Fetch vouchers from Mews API
+ */
+async function fetchVouchers(clientToken: string, accessToken: string, serviceId: string): Promise<MewsVoucher[]> {
+  console.log('[MEWS-DATA] Fetching vouchers...');
+
+  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/vouchers/getAll`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ClientToken: clientToken,
+      AccessToken: accessToken,
+      Client: 'Free Trial Generator',
+      ServiceIds: [serviceId]
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[MEWS-DATA] Vouchers fetch failed: ${response.status} - ${errorText}`);
+    // Don't throw - continue without vouchers
+    return [];
+  }
+
+  const data = await response.json();
+  return data.Vouchers || [];
+}
+
+/**
+ * Fetch voucher codes from Mews API
+ */
+async function fetchVoucherCodes(
+  clientToken: string,
+  accessToken: string,
+  voucherIds: string[]
+): Promise<MewsVoucherCode[]> {
+  console.log('[MEWS-DATA] Fetching voucher codes...');
+
+  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/voucherCodes/getAll`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ClientToken: clientToken,
+      AccessToken: accessToken,
+      Client: 'Free Trial Generator',
+      VoucherIds: voucherIds
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[MEWS-DATA] Voucher codes fetch failed: ${response.status} - ${errorText}`);
+    // Don't throw - continue without voucher codes
+    return [];
+  }
+
+  const data = await response.json();
+  return data.VoucherCodes || [];
+}
+
+/**
+ * Map voucher codes to rates
+ */
+function mapVoucherCodesToRates(vouchers: MewsVoucher[], voucherCodes: MewsVoucherCode[]): Map<string, string> {
+  const rateToCodeMap = new Map<string, string>();
+
+  // Filter active voucher codes only
+  const activeVoucherCodes = voucherCodes.filter((vc: MewsVoucherCode) => vc.IsActive);
+
+  // For each active voucher code, map its rates to the code value
+  for (const voucherCode of activeVoucherCodes) {
+    // Find the parent voucher
+    const parentVoucher = vouchers.find((v: MewsVoucher) => v.Id === voucherCode.VoucherId);
+
+    if (!parentVoucher) {
+      console.warn(`[MEWS-DATA] ⚠️  Voucher code ${voucherCode.Id} has no parent voucher`);
+      continue;
+    }
+
+    if (!parentVoucher.AssignedRateIds || parentVoucher.AssignedRateIds.length === 0) {
+      console.warn(`[MEWS-DATA] ⚠️  Voucher ${parentVoucher.Name} has no assigned rates`);
+      continue;
+    }
+
+    // Map each assigned rate to this voucher code (use first code found for each rate)
+    for (const rateId of parentVoucher.AssignedRateIds) {
+      if (!rateToCodeMap.has(rateId)) {
+        rateToCodeMap.set(rateId, voucherCode.Value);
+        console.log(`[MEWS-DATA] Mapped rate ${rateId} to voucher code: ${voucherCode.Value}`);
+      }
+    }
+  }
+
+  return rateToCodeMap;
 }
