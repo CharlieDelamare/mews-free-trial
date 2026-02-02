@@ -1,5 +1,8 @@
 import { prisma } from './prisma';
 
+// Hardcoded client token for Mews demo environment (fallback)
+const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+
 /**
  * Resolves access token from enterpriseId or returns provided token
  */
@@ -52,15 +55,7 @@ export async function fetchReservations(params: {
   states?: string[];
 }): Promise<{ reservations: any[]; error?: string }> {
   const apiUrl = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
-  const clientToken = process.env.MEWS_CLIENT_TOKEN;
-
-  if (!clientToken) {
-    console.error('[RESERVATIONS] ❌ Missing MEWS_CLIENT_TOKEN');
-    return {
-      reservations: [],
-      error: 'Server configuration error: Missing MEWS_CLIENT_TOKEN'
-    };
-  }
+  const clientToken = process.env.MEWS_CLIENT_TOKEN || MEWS_CLIENT_TOKEN;
 
   try {
     console.log('[RESERVATIONS] Fetching reservations from Mews API...');
@@ -109,15 +104,7 @@ export async function cancelReservation(params: {
   notes?: string;
 }): Promise<{ success: boolean; error?: string }> {
   const apiUrl = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
-  const clientToken = process.env.MEWS_CLIENT_TOKEN;
-
-  if (!clientToken) {
-    console.error('[RESERVATIONS] ❌ Missing MEWS_CLIENT_TOKEN');
-    return {
-      success: false,
-      error: 'Server configuration error: Missing MEWS_CLIENT_TOKEN'
-    };
-  }
+  const clientToken = process.env.MEWS_CLIENT_TOKEN || MEWS_CLIENT_TOKEN;
 
   try {
     console.log(`[RESERVATIONS] Canceling reservation: ${params.reservationId}`);
