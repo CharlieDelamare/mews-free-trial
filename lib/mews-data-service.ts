@@ -496,10 +496,6 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
       continue;
     }
 
-    // Map each assigned rate to this voucher code (use first code found for each rate)
-    for (const rateId of parentVoucher.AssignedRateIds) {
-      if (!rateToCodeMap.has(rateId)) {
-        rateToCodeMap.set(rateId, voucherCode.Value);
     // Map each assigned rate to this voucher code
     // Note: If multiple codes exist for the same rate, first one wins
     for (const assignment of voucherAssignments) {
