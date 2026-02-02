@@ -12,7 +12,7 @@ import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
 
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
+const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
 const CUSTOMER_CONCURRENCY = 5; // Process 5 customers at a time
 
 export interface ReservationCreationResult {
@@ -338,18 +338,15 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
       ClientToken: MEWS_CLIENT_TOKEN,
       AccessToken: accessToken,
       Client: 'Free Trial Generator',
-      Customers: [{
-        FirstName: customer.FirstName,
-        LastName: customer.LastName,
-        Email: customer.Email,
-        Phone: customer.Phone,
-        BirthDate: customer.BirthDate,
-        NationalityCode: customer.NationalityCode,
-        LanguageCode: customer.PreferredLanguageCode,
-        Sex: customer.Sex,
-        Title: customer.Title,
-        ...(customer.CompanyIdentifier && { Company: { Name: customer.CompanyIdentifier.Name } })
-      }]
+      FirstName: customer.FirstName,
+      LastName: customer.LastName,
+      Email: customer.Email,
+      Phone: customer.Phone,
+      BirthDate: customer.BirthDate,
+      NationalityCode: customer.NationalityCode,
+      Sex: customer.Sex,
+      Title: customer.Title,
+      ...(customer.CompanyIdentifier && { CompanyIdentifier: customer.CompanyIdentifier })
     })
   });
 
@@ -364,7 +361,13 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
   }
 
   const data = await response.json();
-  return data.Customers?.[0]?.Id;
+
+  if (!data.Id) {
+    console.error(`[RESERVATIONS] No customer ID in response for ${customer.Email}:`, data);
+    throw new Error('Customer API returned no ID');
+  }
+
+  return data.Id;
 }
 
 /**
