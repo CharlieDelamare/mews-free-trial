@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
+import { findEnvironmentLogByEnterpriseId, findEnvironmentLogByPropertyName, updateEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
 import { createSampleCustomers } from '@/lib/customer-service';
 import { sendZapierNotification } from '@/lib/zapier';
 
@@ -143,35 +143,154 @@ export async function POST(request: NextRequest) {
         console.error('[WEBHOOK] Failed to send Zapier notification:', error);
       }
     } else {
-      console.error('[WEBHOOK] ❌ No matching log found for enterprise ID:', newToken.enterpriseId);
-      console.error('[WEBHOOK] This means the enterprise was created but we cannot find the EnvironmentLog entry');
-      console.error('[WEBHOOK] Checking all logs in database...');
+      console.error('[WEBHOOK] ❌ No matching log found by enterprise ID:', newToken.enterpriseId);
+      console.log('[WEBHOOK] Attempting fallback matching by property name...');
 
-      // Try to find any logs to help debug
-      const allLogs = await prisma.environmentLog.findMany({
-        orderBy: { timestamp: 'desc' },
-        take: 5
-      });
-      console.error('[WEBHOOK] Recent logs in database:', allLogs.map(l => ({
-        id: l.id,
-        enterpriseId: l.enterpriseId,
-        propertyName: l.propertyName,
-        status: l.status,
-        timestamp: l.timestamp
-      })));
-
-      // Send Zapier notification for unmatched access token
+      // Fallback: Call Configuration API to get enterprise name, then match by property name
       try {
-        await sendZapierNotification('access_token_no_match', {
-          status: 'info',
-          action: newToken.action,
-          enterpriseName: newToken.enterpriseName,
-          enterpriseId: newToken.enterpriseId,
-          receivedAt: newToken.receivedAt.toISOString(),
-          tokenId: newToken.id
+        const mewsApiUrl = process.env.MEWS_API_URL || 'https://api.mews.com';
+        console.log('[WEBHOOK] Calling Configuration API to get enterprise details...');
+
+        const configResponse = await fetch(
+          `${mewsApiUrl}/api/connector/v1/configuration/get`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ClientToken: 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0',
+              AccessToken: newToken.accessToken,
+              Client: 'MewsFreeTrialApp'
+            }),
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          }
+        );
+
+        if (!configResponse.ok) {
+          throw new Error(`Configuration API returned ${configResponse.status}: ${configResponse.statusText}`);
+        }
+
+        const configData = await configResponse.json();
+        const enterpriseName = configData.Enterprise?.Name;
+
+        if (!enterpriseName) {
+          throw new Error('Enterprise.Name not found in Configuration API response');
+        }
+
+        console.log('[WEBHOOK] ✅ Got enterprise name from Configuration API:', enterpriseName);
+        console.log('[WEBHOOK] Attempting to match by property name...');
+
+        // Try matching by property name
+        const logByName = await findEnvironmentLogByPropertyName(enterpriseName);
+
+        if (logByName) {
+          console.log('[WEBHOOK] ✅ Matched by property name fallback!');
+          console.log('[WEBHOOK] Log ID:', logByName.id);
+          console.log('[WEBHOOK] Backfilling enterprise ID and updating status...');
+
+          // Backfill the enterprise ID and update status to completed
+          await updateEnvironmentLogById(logByName.id, {
+            enterpriseId: newToken.enterpriseId,
+            status: 'completed'
+          });
+
+          console.log('[WEBHOOK] ✅ Log updated with correct enterpriseId and completed status');
+
+          // Continue normal flow - create sample customers
+          console.log('[WEBHOOK] Starting sample customer creation for enterprise:', newToken.enterpriseId);
+          createSampleCustomers(newToken.accessToken, newToken.enterpriseId, newToken.id)
+            .then(result => {
+              console.log('[WEBHOOK] ✅ Customer creation completed:', {
+                enterpriseId: newToken.enterpriseId,
+                totalCustomers: result.totalCustomers,
+                successCount: result.successCount,
+                failureCount: result.failureCount
+              });
+            })
+            .catch(error => {
+              console.error('[WEBHOOK] ❌ Customer creation failed:', error);
+            });
+
+          // Send environment_ready notification with login details
+          try {
+            await sendZapierNotification('environment_ready', {
+              status: 'success',
+              propertyName: logByName.propertyName,
+              customerName: logByName.customerName,
+              customerEmail: logByName.customerEmail,
+              requestorEmail: logByName.requestorEmail || undefined,
+              loginUrl: logByName.loginUrl,
+              loginEmail: logByName.loginEmail,
+              loginPassword: logByName.loginPassword,
+              enterpriseId: newToken.enterpriseId,
+              enterpriseName: newToken.enterpriseName,
+              receivedAt: newToken.receivedAt.toISOString(),
+              tokenId: newToken.id,
+              matchedByFallback: true
+            });
+            console.log('[WEBHOOK] ✅ Zapier notification sent (environment_ready)');
+          } catch (error) {
+            console.error('[WEBHOOK] Failed to send Zapier notification:', error);
+          }
+
+        } else {
+          // No match by property name either
+          console.error('[WEBHOOK] ❌ No match found by property name:', enterpriseName);
+          console.error('[WEBHOOK] Checked for logs with status=building');
+
+          // Debug: Show recent logs
+          const allLogs = await prisma.environmentLog.findMany({
+            orderBy: { timestamp: 'desc' },
+            take: 5
+          });
+          console.error('[WEBHOOK] Recent logs in database:', allLogs.map(l => ({
+            id: l.id,
+            enterpriseId: l.enterpriseId,
+            propertyName: l.propertyName,
+            status: l.status,
+            timestamp: l.timestamp
+          })));
+
+          // Send notification for manual intervention
+          try {
+            await sendZapierNotification('access_token_no_match', {
+              status: 'info',
+              action: newToken.action,
+              enterpriseName: newToken.enterpriseName,
+              enterpriseId: newToken.enterpriseId,
+              receivedAt: newToken.receivedAt.toISOString(),
+              tokenId: newToken.id,
+              fallbackAttempted: true,
+              configApiName: enterpriseName
+            });
+            console.log('[WEBHOOK] ✅ Zapier notification sent (access_token_no_match)');
+          } catch (error) {
+            console.error('[WEBHOOK] Failed to send Zapier notification:', error);
+          }
+        }
+
+      } catch (configError) {
+        // Configuration API failed
+        console.error('[WEBHOOK] ❌ Configuration API fallback failed:', configError);
+        console.error('[WEBHOOK] Error details:', {
+          name: (configError as Error).name,
+          message: (configError as Error).message
         });
-      } catch (error) {
-        console.error('[WEBHOOK] Failed to send Zapier notification:', error);
+
+        // Send special notification for API failure
+        try {
+          await sendZapierNotification('webhook_matching_failed', {
+            status: 'failure',
+            enterpriseId: newToken.enterpriseId,
+            enterpriseName: newToken.enterpriseName,
+            error: 'Failed to call Configuration API for fallback matching',
+            errorDetails: (configError as Error).message,
+            tokenId: newToken.id,
+            receivedAt: newToken.receivedAt.toISOString()
+          });
+          console.log('[WEBHOOK] ✅ Zapier notification sent (webhook_matching_failed)');
+        } catch (zapierError) {
+          console.error('[WEBHOOK] Failed to send Zapier notification:', zapierError);
+        }
       }
     }
 
