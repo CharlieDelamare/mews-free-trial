@@ -11,7 +11,7 @@ export interface SampleCustomer {
   Phone?: string;
   BirthDate?: string;        // ISO 8601 format: "1990-05-15"
   Sex?: 'Male' | 'Female';
-  Title?: string;            // Mr, Mrs, Ms, Dr
+  Title?: 'Mister' | 'Miss' | 'Misses';  // Valid Mews API values only
   NationalityCode?: string;  // ISO 3166-1 alpha-2: "GB", "US", "DE"
   PreferredLanguageCode?: string; // From lib/codes.ts: "en-GB", "fr-FR"
   CompanyIdentifier?: {
@@ -35,7 +35,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 20 7123 4567',
     BirthDate: '1985-03-15',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB'
   },
@@ -46,7 +46,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 212 555 0123',
     BirthDate: '1978-07-22',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US'
   },
@@ -57,7 +57,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 1 42 68 53 00',
     BirthDate: '1992-11-08',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR'
   },
@@ -68,7 +68,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 30 12345678',
     BirthDate: '1988-04-30',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE'
   },
@@ -79,7 +79,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 06 1234 5678',
     BirthDate: '1995-09-12',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT'
   },
@@ -90,7 +90,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 91 123 45 67',
     BirthDate: '1982-06-18',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES'
   },
@@ -101,7 +101,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 22 123 45 67',
     BirthDate: '1990-02-28',
     Sex: 'Female',
-    Title: 'Mrs',
+    Title: 'Misses',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL'
   },
@@ -112,7 +112,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 8 123 456 78',
     BirthDate: '1975-12-05',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE'
   },
@@ -123,7 +123,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 21 123 4567',
     BirthDate: '1993-08-20',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT'
   },
@@ -134,7 +134,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 222 123 456',
     BirthDate: '1987-01-14',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ'
   },
@@ -145,7 +145,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 161 123 4567',
     BirthDate: '1991-05-09',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB'
   },
@@ -156,7 +156,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 415 555 0156',
     BirthDate: '1980-10-25',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US'
   },
@@ -167,7 +167,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 4 78 90 12 34',
     BirthDate: '1989-07-03',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR'
   },
@@ -178,7 +178,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 89 123 45678',
     BirthDate: '1972-11-19',
     Sex: 'Male',
-    Title: 'Dr',
+    Title: 'Mister',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE'
   },
@@ -189,7 +189,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 02 1234 5678',
     BirthDate: '1994-04-16',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT'
   },
@@ -200,7 +200,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 93 123 45 67',
     BirthDate: '1986-09-07',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES'
   },
@@ -211,7 +211,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 71 123 45 67',
     BirthDate: '1996-03-22',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL'
   },
@@ -222,7 +222,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 31 123 456 78',
     BirthDate: '1983-12-11',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE'
   },
@@ -233,7 +233,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 22 123 4567',
     BirthDate: '1992-06-28',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT'
   },
@@ -244,7 +244,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 224 123 456',
     BirthDate: '1979-02-15',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ'
   },
@@ -255,7 +255,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 29 2123 4567',
     BirthDate: '1990-08-05',
     Sex: 'Female',
-    Title: 'Mrs',
+    Title: 'Misses',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB'
   },
@@ -266,7 +266,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 305 555 0189',
     BirthDate: '1977-04-12',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US'
   },
@@ -277,7 +277,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 5 56 12 34 56',
     BirthDate: '1995-11-30',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR'
   },
@@ -288,7 +288,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 40 123 45678',
     BirthDate: '1984-07-24',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE'
   },
@@ -299,7 +299,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 011 1234 567',
     BirthDate: '1991-01-08',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT'
   },
@@ -310,7 +310,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 95 123 45 67',
     BirthDate: '1976-05-19',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES'
   },
@@ -321,7 +321,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 12 123 45 67',
     BirthDate: '1993-09-14',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL'
   },
@@ -332,7 +332,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 40 123 456 78',
     BirthDate: '1981-03-27',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE'
   },
@@ -343,7 +343,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 91 123 4567',
     BirthDate: '1988-12-02',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT'
   },
@@ -354,7 +354,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 603 123 456',
     BirthDate: '1985-06-16',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ'
   },
@@ -365,7 +365,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 113 123 4567',
     BirthDate: '1994-10-21',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB'
   },
@@ -376,7 +376,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 617 555 0142',
     BirthDate: '1973-08-29',
     Sex: 'Male',
-    Title: 'Dr',
+    Title: 'Mister',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US'
   },
@@ -387,7 +387,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 2 40 12 34 56',
     BirthDate: '1997-02-11',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR'
   },
@@ -398,7 +398,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 69 123 45678',
     BirthDate: '1982-11-06',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE'
   },
@@ -409,7 +409,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 051 1234 567',
     BirthDate: '1989-04-23',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT'
   },
@@ -420,7 +420,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 96 123 45 67',
     BirthDate: '1978-07-17',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES'
   },
@@ -431,7 +431,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 61 123 45 67',
     BirthDate: '1996-01-25',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL'
   },
@@ -442,7 +442,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 13 123 456 78',
     BirthDate: '1974-09-08',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE'
   },
@@ -453,7 +453,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 21 987 6543',
     BirthDate: '1991-05-13',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT'
   },
@@ -464,7 +464,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 777 123 456',
     BirthDate: '1986-12-19',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ'
   },
@@ -475,7 +475,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 141 123 4567',
     BirthDate: '1992-03-04',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB'
   },
@@ -486,7 +486,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 713 555 0167',
     BirthDate: '1979-06-20',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US'
   },
@@ -497,7 +497,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 3 20 12 34 56',
     BirthDate: '1993-10-15',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR'
   },
@@ -508,7 +508,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 221 123 45678',
     BirthDate: '1983-02-28',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE'
   },
@@ -519,7 +519,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 081 1234 567',
     BirthDate: '1995-08-09',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT'
   },
@@ -530,7 +530,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 91 987 65 43',
     BirthDate: '1981-11-26',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES'
   },
@@ -541,7 +541,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 42 123 45 67',
     BirthDate: '1990-04-07',
     Sex: 'Female',
-    Title: 'Mrs',
+    Title: 'Misses',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL'
   },
@@ -552,7 +552,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 19 123 456 78',
     BirthDate: '1977-07-31',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE'
   },
@@ -563,7 +563,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 93 456 7890',
     BirthDate: '1994-12-14',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT'
   },
@@ -574,7 +574,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 731 123 456',
     BirthDate: '1988-05-22',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ'
   },
@@ -585,7 +585,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 117 123 4567',
     BirthDate: '1987-09-18',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB'
   },
@@ -596,7 +596,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 602 555 0134',
     BirthDate: '1975-01-05',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US'
   },
@@ -607,7 +607,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 4 91 12 34 56',
     BirthDate: '1998-06-27',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR'
   },
@@ -618,7 +618,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 711 123 45678',
     BirthDate: '1984-10-12',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE'
   },
@@ -629,7 +629,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 055 1234 567',
     BirthDate: '1992-03-29',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT'
   },
@@ -640,7 +640,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 92 123 45 67',
     BirthDate: '1980-08-03',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES'
   },
@@ -651,7 +651,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 58 123 45 67',
     BirthDate: '1989-11-11',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL'
   },
@@ -662,7 +662,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 18 123 456 78',
     BirthDate: '1976-04-16',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE'
   },
@@ -673,7 +673,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 96 789 0123',
     BirthDate: '1993-07-08',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT'
   },
@@ -684,7 +684,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 604 123 456',
     BirthDate: '1985-12-23',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ'
   },
@@ -695,7 +695,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 131 123 4567',
     BirthDate: '1991-02-19',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB'
   },
@@ -706,7 +706,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 512 555 0198',
     BirthDate: '1979-05-14',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US'
   },
@@ -717,7 +717,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 6 12 34 56 78',
     BirthDate: '1996-09-01',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR'
   },
@@ -728,7 +728,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 351 123 45678',
     BirthDate: '1982-12-27',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE'
   },
@@ -739,7 +739,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 010 1234 567',
     BirthDate: '1990-06-10',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT'
   },
@@ -750,7 +750,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 98 123 45 67',
     BirthDate: '1977-03-18',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES'
   },
@@ -761,7 +761,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 91 123 45 67',
     BirthDate: '1994-10-06',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL'
   },
@@ -772,7 +772,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 21 123 456 78',
     BirthDate: '1973-08-24',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE'
   },
@@ -783,7 +783,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 91 234 5678',
     BirthDate: '1988-01-31',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT'
   },
@@ -796,7 +796,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 20 7946 0958',
     BirthDate: '1975-04-12',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB',
     CompanyIdentifier: {
@@ -810,7 +810,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 646 555 0177',
     BirthDate: '1982-09-08',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US',
     CompanyIdentifier: {
@@ -824,7 +824,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 1 53 45 67 89',
     BirthDate: '1978-11-22',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR',
     CompanyIdentifier: {
@@ -838,7 +838,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 69 910 12345',
     BirthDate: '1985-06-15',
     Sex: 'Female',
-    Title: 'Mrs',
+    Title: 'Misses',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE',
     CompanyIdentifier: {
@@ -852,7 +852,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 02 7234 5678',
     BirthDate: '1980-03-27',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT',
     CompanyIdentifier: {
@@ -866,7 +866,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 91 456 78 90',
     BirthDate: '1987-07-19',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES',
     CompanyIdentifier: {
@@ -880,7 +880,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 22 456 78 90',
     BirthDate: '1976-12-03',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL',
     CompanyIdentifier: {
@@ -894,7 +894,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 8 567 890 12',
     BirthDate: '1983-02-14',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE',
     CompanyIdentifier: {
@@ -908,7 +908,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 21 345 6789',
     BirthDate: '1981-05-28',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT',
     CompanyIdentifier: {
@@ -922,7 +922,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 234 567 890',
     BirthDate: '1989-08-11',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ',
     CompanyIdentifier: {
@@ -936,7 +936,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 20 7123 4567',
     BirthDate: '1974-11-09',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB',
     CompanyIdentifier: {
@@ -950,7 +950,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 408 555 0123',
     BirthDate: '1986-04-16',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US',
     CompanyIdentifier: {
@@ -964,7 +964,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 4 72 34 56 78',
     BirthDate: '1979-07-23',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR',
     CompanyIdentifier: {
@@ -978,7 +978,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 89 234 56789',
     BirthDate: '1984-01-19',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE',
     CompanyIdentifier: {
@@ -992,7 +992,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 02 3456 7890',
     BirthDate: '1977-10-05',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT',
     CompanyIdentifier: {
@@ -1006,7 +1006,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 93 234 56 78',
     BirthDate: '1990-06-12',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES',
     CompanyIdentifier: {
@@ -1020,7 +1020,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 12 345 67 89',
     BirthDate: '1982-03-30',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL',
     CompanyIdentifier: {
@@ -1034,7 +1034,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 8 678 901 23',
     BirthDate: '1988-09-07',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE',
     CompanyIdentifier: {
@@ -1048,7 +1048,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 22 456 7890',
     BirthDate: '1975-12-21',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT',
     CompanyIdentifier: {
@@ -1062,7 +1062,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 543 123 456',
     BirthDate: '1991-05-17',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ',
     CompanyIdentifier: {
@@ -1076,7 +1076,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+44 186 512 3456',
     BirthDate: '1973-08-02',
     Sex: 'Male',
-    Title: 'Dr',
+    Title: 'Mister',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB',
     CompanyIdentifier: {
@@ -1090,7 +1090,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+1 206 555 0145',
     BirthDate: '1985-02-26',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US',
     CompanyIdentifier: {
@@ -1104,7 +1104,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+33 4 91 23 45 67',
     BirthDate: '1980-11-14',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR',
     CompanyIdentifier: {
@@ -1118,7 +1118,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+49 40 345 67890',
     BirthDate: '1987-04-08',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE',
     CompanyIdentifier: {
@@ -1132,7 +1132,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+39 081 234 5678',
     BirthDate: '1978-07-25',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT',
     CompanyIdentifier: {
@@ -1146,7 +1146,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+34 95 456 78 90',
     BirthDate: '1983-12-11',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES',
     CompanyIdentifier: {
@@ -1160,7 +1160,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+48 58 234 56 78',
     BirthDate: '1976-09-29',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL',
     CompanyIdentifier: {
@@ -1174,7 +1174,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+46 31 789 012 34',
     BirthDate: '1992-01-06',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE',
     CompanyIdentifier: {
@@ -1188,7 +1188,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+351 239 123 456',
     BirthDate: '1979-06-18',
     Sex: 'Male',
-    Title: 'Mr',
+    Title: 'Mister',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT',
     CompanyIdentifier: {
@@ -1202,7 +1202,7 @@ export const sampleCustomers: SampleCustomer[] = [
     Phone: '+420 596 123 456',
     BirthDate: '1986-10-03',
     Sex: 'Female',
-    Title: 'Ms',
+    Title: 'Miss',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ',
     CompanyIdentifier: {
