@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: mews-free-trial-2
+    env: node
+    buildCommand: npm install && npm run migrate:deploy && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: DATABASE_URL
+        sync: false
+      - key: MEWS_SAMPLE_TOKEN
+        sync: false
+      - key: MEWS_CLIENT_TOKEN
+        sync: false
+      - key: MEWS_ACCESS_TOKEN
+        sync: false
+      - key: MEWS_BOOKABLE_SERVICE_ID
+        sync: false
+      - key: MEWS_RATE_ID
+        sync: false
+      - key: MEWS_RESOURCE_CATEGORY_ID
+        sync: false
+      - key: MEWS_API_URL
+        sync: false
+      - key: ZAPIER_WEBHOOK_URL
+        sync: false
