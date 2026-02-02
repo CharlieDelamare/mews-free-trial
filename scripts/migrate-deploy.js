@@ -109,6 +109,45 @@ async function main() {
     }
   }
 
+  // Check if error is P3009 (migration found in failed state)
+  if (errorOutput.includes('P3009')) {
+    console.log('⚠️  Found migration in failed state. Attempting to resolve...');
+
+    // Extract the migration name from the error output
+    // Example: "The `20260202145405_add_integration_id_index` migration started at..."
+    const migrationMatch = errorOutput.match(/The `([^`]+)` migration/);
+    if (migrationMatch && migrationMatch[1]) {
+      const failedMigration = migrationMatch[1];
+      console.log(`  → Found failed migration: ${failedMigration}`);
+      console.log(`  → Marking as rolled back to allow retry...`);
+
+      const resolveResult = runCommand(`npx prisma migrate resolve --rolled-back "${failedMigration}"`);
+
+      if (resolveResult.success) {
+        console.log('  ✅ Migration marked as rolled back. Retrying deployment...');
+
+        // Try to deploy migrations again
+        const retryResult = runCommand('npx prisma migrate deploy');
+        if (retryResult.success) {
+          console.log('✅ All migrations deployed successfully!');
+          process.exit(0);
+        } else {
+          console.error('❌ Failed to deploy migrations after resolving:');
+          console.error(retryResult.stderr || retryResult.stdout || retryResult.error);
+          process.exit(1);
+        }
+      } else {
+        console.error('  ❌ Failed to mark migration as rolled back');
+        console.error(resolveResult.stderr || resolveResult.error);
+        process.exit(1);
+      }
+    } else {
+      console.error('Could not extract migration name from error output.');
+      console.error(errorOutput);
+      process.exit(1);
+    }
+  }
+
   // Some other error occurred
   console.error('❌ Migration deployment failed with an unexpected error:');
   console.error(errorOutput);
