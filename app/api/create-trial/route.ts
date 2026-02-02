@@ -233,13 +233,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       apiBody.TaxPrecision = 2;
     }
 
-    console.log('[CREATE-TRIAL] Creating sample enterprise:', propertyName);
-    console.log('[CREATE-TRIAL] Request payload:', JSON.stringify(apiBody, null, 2));
+    console.log('[CREATE-TRIAL] Creating sample enterprise:', {
+      propertyName,
+      propertyType,
+      country: propertyCountry,
+      durationDays
+    });
 
     // Create log entry immediately with "building" status
     let log;
     try {
-      console.log('[CREATE-TRIAL] Saving environment log to database');
       log = await saveEnvironmentLog({
         propertyName,
         customerName: `${firstName} ${lastName}`,
@@ -261,12 +264,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
       console.log('[CREATE-TRIAL] Log created with building status:', log.id);
     } catch (dbError) {
-      console.error('[CREATE-TRIAL] Database error - failed to save environment log:', dbError);
-      console.error('[CREATE-TRIAL] Error details:', {
-        name: (dbError as Error).name,
-        message: (dbError as Error).message,
-        stack: (dbError as Error).stack
-      });
+      console.error('[CREATE-TRIAL] Failed to save environment log:', (dbError as Error).message);
 
       return NextResponse.json(
         {
@@ -286,9 +284,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
     const result = await response.json();
-
-    console.log('[CREATE-TRIAL] Mews API response status:', response.status);
-    console.log('[CREATE-TRIAL] Mews API response body:', JSON.stringify(result, null, 2));
 
     if (!response.ok) {
       console.error('[CREATE-TRIAL] Mews API error:', result);
@@ -327,18 +322,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Extract enterprise ID from the response (for debugging only)
     // Note: The Mews API may not reliably return an enterpriseId in the response.
     // The webhook will backfill the correct enterpriseId when it arrives.
-    const enterpriseId = result.EnterpriseId || result.Enterprise?.Id || result.Id;
-
-    if (enterpriseId) {
-      console.log('[CREATE-TRIAL] ℹ️  Enterprise ID found in response:', enterpriseId);
-    } else {
-      console.log('[CREATE-TRIAL] ℹ️  No enterprise ID in response - will be backfilled by webhook');
-    }
-
-    console.log('[CREATE-TRIAL] Response structure:', Object.keys(result));
+    console.log('[CREATE-TRIAL] ✅ Trial creation initiated successfully');
 
     // Return immediately - Slack notification will be sent when access token webhook is received
     return NextResponse.json({
@@ -349,12 +335,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
   } catch (error) {
-    console.error('[CREATE-TRIAL] Unexpected error in trial creation:', error);
-    console.error('[CREATE-TRIAL] Error details:', {
-      name: (error as Error).name,
-      message: (error as Error).message,
-      stack: (error as Error).stack
-    });
+    console.error('[CREATE-TRIAL] Unexpected error:', (error as Error).message);
 
     // Determine error type and provide specific message
     let errorMessage = 'Internal server error';

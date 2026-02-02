@@ -70,28 +70,29 @@ export async function createReservationsForEnvironment(
   });
 
   try {
-    // Step 1: Fetch environment data
+    // Fetch environment data
     const envData = await fetchEnvironmentData(enterpriseId);
-    console.log(`[RESERVATIONS] Environment: ${envData.propertyType}, Duration: ${envData.durationDays} days`);
 
-    // Step 2: Fetch Mews data
+    // Fetch Mews data
     const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
 
-    // Step 3: Filter resource categories by property type
+    // Filter resource categories by property type
     const filteredCategories = filterResourceCategories(mewsData.resourceCategories, envData.propertyType);
-    console.log(`[RESERVATIONS] Filtered resource categories: ${filteredCategories.length}`);
 
     if (filteredCategories.length === 0) {
       throw new Error(`No resource categories found for property type: ${envData.propertyType}`);
     }
 
-    // Step 4: Calculate bookable units
+    // Calculate bookable units and total reservations needed
     const bookableUnits = calculateBookableUnits(envData);
-    console.log(`[RESERVATIONS] Bookable units: ${bookableUnits}`);
-
-    // Step 5: Calculate total reservations needed
     const totalReservations = calculateTotalReservations(bookableUnits, envData.durationDays);
-    console.log(`[RESERVATIONS] Target reservations: ${totalReservations}`);
+
+    console.log(`[RESERVATIONS] Setup:`, {
+      propertyType: envData.propertyType,
+      duration: `${envData.durationDays} days`,
+      bookableUnits,
+      targetReservations: totalReservations
+    });
 
     // Update log with total
     await prisma.reservationCreationLog.update({
@@ -117,11 +118,10 @@ export async function createReservationsForEnvironment(
       mewsData.ageCategories.adult
     );
 
-    // Step 8: Group reservations for API calls
+    // Group reservations for API calls
     const groups = groupReservationsForAPI(reservations);
-    console.log(`[RESERVATIONS] Created ${groups.length} reservation groups`);
 
-    // Step 9: Create reservations via API
+    // Create reservations via API
     const { createdReservations, failures } = await createReservationGroups(
       groups,
       mewsData.serviceId,
@@ -130,15 +130,19 @@ export async function createReservationsForEnvironment(
       mewsData.vouchersByRate
     );
 
-    // Step 10: Apply state transitions
+    // Apply state transitions
     await applyStateTransitions(createdReservations, accessToken);
 
-    // Step 11: Log results
+    // Log results
     const duration = Date.now() - startTime;
     const durationSeconds = (duration / 1000).toFixed(2);
 
-    console.log(`[RESERVATIONS] ✅ Complete in ${durationSeconds}s`);
-    console.log(`[RESERVATIONS] Created: ${createdReservations.length}, Failed: ${failures.length}, Customers: ${customerIds.length}`);
+    console.log(`[RESERVATIONS] ✅ Complete:`, {
+      created: createdReservations.length,
+      failed: failures.length,
+      customers: customerIds.length,
+      duration: `${durationSeconds}s`
+    });
 
     await prisma.reservationCreationLog.update({
       where: { id: log.id },
@@ -262,8 +266,6 @@ async function createCustomersOnDemand(
   enterpriseId: string,
   accessTokenId: number
 ): Promise<string[]> {
-  console.log(`[RESERVATIONS] Creating ${count} customers on-demand...`);
-
   const customers = getSampleCustomers().slice(0, count);
   const customerIds: string[] = [];
 
@@ -290,15 +292,8 @@ async function createCustomersOnDemand(
       results.forEach((result, idx) => {
         if (result.status === 'fulfilled' && result.value) {
           customerIds.push(result.value);
-        } else {
-          console.error(`[RESERVATIONS] Customer ${i + idx} failed:`, result.status === 'rejected' ? result.reason : 'Unknown');
         }
       });
-
-      // Log progress
-      if ((i + batch.length) % 50 === 0 || i + batch.length >= customers.length) {
-        console.log(`[RESERVATIONS] Customer progress: ${Math.min(i + batch.length, customers.length)}/${customers.length}`);
-      }
     }
 
     // Update customer log
@@ -312,7 +307,6 @@ async function createCustomersOnDemand(
       }
     });
 
-    console.log(`[RESERVATIONS] ✅ Created ${customerIds.length}/${count} customers`);
     return customerIds;
 
   } catch (error) {
@@ -382,8 +376,6 @@ function generateReservationData(
   envData: EnvironmentData,
   adultAgeCategoryId: string
 ): ReservationData[] {
-  console.log(`[RESERVATIONS] Generating ${totalReservations} reservation templates...`);
-
   const reservations: ReservationData[] = [];
   const totalDays = envData.durationDays + 2; // -2 to +duration
   const today = startOfDay(new Date());
@@ -529,8 +521,6 @@ async function createReservationGroups(
   adultAgeCategoryId: string,
   vouchersByRate: Map<string, string>
 ): Promise<{ createdReservations: any[]; failures: any[] }> {
-  console.log(`[RESERVATIONS] Creating ${groups.length} reservation groups...`);
-
   const createdReservations: any[] = [];
   const failures: any[] = [];
 
@@ -564,7 +554,6 @@ async function createReservationGroups(
             const voucherCode = vouchersByRate.get(r.rateId);
             if (voucherCode) {
               reservation.VoucherCode = voucherCode;
-              console.log(`[RESERVATIONS] Using voucher code "${voucherCode}" for rate ${r.rateId}`);
             }
 
             return reservation;
@@ -607,7 +596,6 @@ async function createReservationGroups(
 
       // Start past-dated reservations immediately (fire-and-forget)
       if (needsImmediateStart.length > 0) {
-        console.log(`[RESERVATIONS] Starting ${needsImmediateStart.length} past-dated reservation(s) immediately...`);
         callStateTransitionAPI('start', needsImmediateStart, accessToken).catch(err => {
           console.error('[RESERVATIONS] ⚠️  Failed to start past reservations (fire-and-forget)');
           console.error('[RESERVATIONS] Error details:', err.message);
@@ -618,11 +606,6 @@ async function createReservationGroups(
     } catch (error) {
       console.error(`[RESERVATIONS] Group ${i} failed:`, error);
       failures.push(...group.map(r => ({ ...r, error: (error as Error).message })));
-    }
-
-    // Log progress
-    if ((i + 1) % 50 === 0 || i + 1 === groups.length) {
-      console.log(`[RESERVATIONS] Progress: ${i + 1}/${groups.length} groups`);
     }
   }
 
@@ -639,6 +622,10 @@ async function applyStateTransitions(
   const startedIds = reservations.filter(r => r.desiredState === 'Started').map(r => r.id);
   const processedIds = reservations.filter(r => r.desiredState === 'Processed').map(r => r.id);
 
+  // Start reservations
+  if (startedIds.length > 0) {
+    await callStateTransitionAPI('start', startedIds, accessToken);
+  }
   console.log(`[RESERVATIONS] Applying state transitions: ${startedIds.length} Started, ${processedIds.length} Processed`);
 
   try {
