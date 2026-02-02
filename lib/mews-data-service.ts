@@ -150,6 +150,14 @@ export async function fetchMewsData(
     }
 
     // Step 5: Map resource categories with resource counts
+    console.log('[MEWS-DATA] Mapping resource categories...');
+    console.log('[MEWS-DATA] Input categories:', resourceCategories.map((rc: any) => ({
+      Id: rc.Id,
+      Name: rc.Name,
+      Type: rc.Type,
+      allFields: Object.keys(rc)
+    })));
+
     const resourceCategoryList = resourceCategories.map((rc: MewsResourceCategory) => ({
       id: rc.Id,
       name: rc.Name,
@@ -257,6 +265,8 @@ async function fetchResourceCategories(
   accessToken: string,
   serviceId: string
 ): Promise<MewsResourceCategory[]> {
+  console.log('[MEWS-DATA] Fetching resource categories...');
+
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceCategories/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -274,7 +284,16 @@ async function fetchResourceCategories(
   }
 
   const data = await response.json();
-  return data.ResourceCategories || [];
+  const categories = data.ResourceCategories || [];
+
+  console.log('[MEWS-DATA] Raw resource categories response:');
+  console.log('[MEWS-DATA] Categories count:', categories.length);
+  if (categories.length > 0) {
+    console.log('[MEWS-DATA] First category sample:', JSON.stringify(categories[0], null, 2));
+    console.log('[MEWS-DATA] All category fields:', Object.keys(categories[0]));
+  }
+
+  return categories;
 }
 
 /**
