@@ -143,13 +143,26 @@ export async function fetchMewsData(
     }
 
     // Step 4: Count resources per category
+    console.log('[MEWS-DATA] Counting resources per category...');
+    console.log('[MEWS-DATA] Resource category IDs:', resourceCategories.map((rc: any) => rc.Id));
+
     const resourceCountsPerCategory = new Map<string, number>();
     for (const resource of resources) {
       const count = resourceCountsPerCategory.get(resource.CategoryId) || 0;
       resourceCountsPerCategory.set(resource.CategoryId, count + 1);
     }
 
+    console.log('[MEWS-DATA] Resource counts map:', Object.fromEntries(resourceCountsPerCategory));
+
     // Step 5: Map resource categories with resource counts
+    console.log('[MEWS-DATA] Mapping resource categories...');
+    console.log('[MEWS-DATA] Input categories:', resourceCategories.map((rc: any) => ({
+      Id: rc.Id,
+      Name: rc.Name,
+      Type: rc.Type,
+      allFields: Object.keys(rc)
+    })));
+
     const resourceCategoryList = resourceCategories.map((rc: MewsResourceCategory) => ({
       id: rc.Id,
       name: rc.Name,
@@ -257,6 +270,8 @@ async function fetchResourceCategories(
   accessToken: string,
   serviceId: string
 ): Promise<MewsResourceCategory[]> {
+  console.log('[MEWS-DATA] Fetching resource categories...');
+
   const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceCategories/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -274,7 +289,16 @@ async function fetchResourceCategories(
   }
 
   const data = await response.json();
-  return data.ResourceCategories || [];
+  const categories = data.ResourceCategories || [];
+
+  console.log('[MEWS-DATA] Raw resource categories response:');
+  console.log('[MEWS-DATA] Categories count:', categories.length);
+  if (categories.length > 0) {
+    console.log('[MEWS-DATA] First category sample:', JSON.stringify(categories[0], null, 2));
+    console.log('[MEWS-DATA] All category fields:', Object.keys(categories[0]));
+  }
+
+  return categories;
 }
 
 /**
@@ -332,9 +356,19 @@ async function fetchResources(
   }
 
   const data = await response.json();
-  console.log(`[MEWS-DATA] Found ${data.Resources?.length || 0} resources`);
+  const resources = data.Resources || [];
+  console.log(`[MEWS-DATA] Found ${resources.length} resources`);
 
-  return data.Resources || [];
+  if (resources.length > 0) {
+    console.log('[MEWS-DATA] First resource sample:', JSON.stringify(resources[0], null, 2));
+    console.log('[MEWS-DATA] All resource fields:', Object.keys(resources[0]));
+
+    // Log unique CategoryIds
+    const categoryIds = new Set(resources.map((r: any) => r.CategoryId));
+    console.log('[MEWS-DATA] Unique CategoryIds from resources:', Array.from(categoryIds));
+  }
+
+  return resources;
 }
 
 /**
