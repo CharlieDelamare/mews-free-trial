@@ -28,6 +28,16 @@ When you receive any request to work on this codebase, you MUST follow this work
 
 This ensures all work is methodical, trackable, and complete.
 
+**CRITICAL: Database Schema Changes**
+
+When modifying the Prisma schema (`prisma/schema.prisma`), you MUST:
+1. Create the migration in the same commit/PR using `npx prisma migrate dev --name descriptive_name`
+2. NEVER push schema changes without a corresponding migration
+3. Include the generated migration files in `prisma/migrations/` in your commit
+4. Ensure the migration is tested before pushing
+
+Pushing schema changes without migrations will cause production deployment failures.
+
 ## Project Overview
 
 **Mews Free Trial** is a Next.js web application that allows Mews sales representatives to create trial hotel environments (7, 30, or 60 days) in the Mews demo system. The app integrates with the Mews API to provision sample hotels with automatic customer and reservation creation, stores environment logs in PostgreSQL, and sends notifications via Zapier webhooks.
@@ -694,9 +704,15 @@ npm run test:coverage
 
 ### Database Changes
 
+**CRITICAL:** Schema changes and migrations MUST be in the same pull request.
+
 1. Modify `prisma/schema.prisma`
-2. Run `npx prisma migrate dev --name description`
-3. Update affected lib functions and API routes
+2. Run `npx prisma migrate dev --name descriptive_name` to generate the migration
+3. Commit BOTH the schema changes AND the generated migration files in `prisma/migrations/`
+4. Update affected lib functions and API routes
+5. Test the migration locally before pushing
+
+**Never push schema changes without their migrations** - this will cause production deployment failures.
 
 ### Manually Adding an Existing Environment
 
