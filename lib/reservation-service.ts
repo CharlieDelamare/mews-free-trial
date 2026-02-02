@@ -44,6 +44,14 @@ interface ReservationData {
   desiredState: 'Confirmed' | 'Started' | 'Processed';
 }
 
+interface CategoryTarget {
+  categoryId: string;
+  categoryName: string;
+  resourceCount: number;
+  targetReservations: number;
+  targetOccupancy: number;
+}
+
 /**
  * Main entry point: Create reservations for an environment
  */
@@ -85,13 +93,15 @@ export async function createReservationsForEnvironment(
       throw new Error(`No resource categories found for property type: ${envData.propertyType}`);
     }
 
-    // Step 4: Calculate bookable units
-    const bookableUnits = calculateBookableUnits(envData);
-    console.log(`[RESERVATIONS] Bookable units: ${bookableUnits}`);
+    // Step 4: Calculate per-category reservation targets for 80% occupancy
+    const categoryTargets = calculateCategoryTargets(filteredCategories, envData.durationDays);
+    const totalReservations = categoryTargets.reduce((sum, ct) => sum + ct.targetReservations, 0);
 
-    // Step 5: Calculate total reservations needed
-    const totalReservations = calculateTotalReservations(bookableUnits, envData.durationDays);
-    console.log(`[RESERVATIONS] Target reservations: ${totalReservations}`);
+    console.log(`[RESERVATIONS] Per-category targets for 80% occupancy:`);
+    categoryTargets.forEach(ct => {
+      console.log(`[RESERVATIONS]   - ${ct.categoryName}: ${ct.resourceCount} units → ${ct.targetReservations} reservations (${ct.targetOccupancy}% target)`);
+    });
+    console.log(`[RESERVATIONS] Total target reservations: ${totalReservations}`);
 
     // Update log with total
     await prisma.reservationCreationLog.update({
@@ -107,11 +117,10 @@ export async function createReservationsForEnvironment(
       accessTokenId
     );
 
-    // Step 7: Generate reservation data
+    // Step 7: Generate reservation data with per-category targets
     const reservations = generateReservationData(
-      totalReservations,
+      categoryTargets,
       customerIds,
-      filteredCategories,
       mewsData.rates,
       envData,
       mewsData.ageCategories.adult
@@ -226,31 +235,30 @@ function filterResourceCategories(
 }
 
 /**
- * Calculate bookable units based on property type
+ * Calculate per-category reservation targets for 80% occupancy
  */
-function calculateBookableUnits(envData: EnvironmentData): number {
-  switch (envData.propertyType) {
-    case 'hotel':
-      return envData.roomCount;
-    case 'hostel':
-      return envData.roomCount + (envData.dormCount * envData.bedCount);
-    case 'apartments':
-      return envData.apartmentCount;
-    default:
-      throw new Error(`Unknown property type: ${envData.propertyType}`);
-  }
-}
-
-/**
- * Calculate total reservations for 80% occupancy
- */
-function calculateTotalReservations(bookableUnits: number, durationDays: number): number {
+function calculateCategoryTargets(
+  categories: MewsData['resourceCategories'],
+  durationDays: number
+): CategoryTarget[] {
   const totalDays = durationDays + 2; // Include 2 past days
-  const totalRoomNights = bookableUnits * totalDays;
-  const targetOccupiedNights = totalRoomNights * 0.8;
   const averageStayLength = 2.1; // From stay distribution: 50%*1 + 30%*2 + 15%*3 + 5%*4 = 1.75
+  const targetOccupancy = 0.8; // 80% occupancy
 
-  return Math.floor(targetOccupiedNights / averageStayLength);
+  return categories.map(category => {
+    const resourceCount = category.resourceCount;
+    const totalRoomNights = resourceCount * totalDays;
+    const targetOccupiedNights = totalRoomNights * targetOccupancy;
+    const targetReservations = Math.ceil(targetOccupiedNights / averageStayLength);
+
+    return {
+      categoryId: category.id,
+      categoryName: category.name,
+      resourceCount,
+      targetReservations,
+      targetOccupancy: Math.round(targetOccupancy * 100)
+    };
+  });
 }
 
 /**
@@ -372,17 +380,17 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
 }
 
 /**
- * Generate reservation data in memory
+ * Generate reservation data in memory with per-category targets
  */
 function generateReservationData(
-  totalReservations: number,
+  categoryTargets: CategoryTarget[],
   customerIds: string[],
-  categories: MewsData['resourceCategories'],
   rates: MewsData['rates'],
   envData: EnvironmentData,
   adultAgeCategoryId: string
 ): ReservationData[] {
-  console.log(`[RESERVATIONS] Generating ${totalReservations} reservation templates...`);
+  const totalReservations = categoryTargets.reduce((sum, ct) => sum + ct.targetReservations, 0);
+  console.log(`[RESERVATIONS] Generating ${totalReservations} reservation templates across ${categoryTargets.length} categories...`);
 
   const reservations: ReservationData[] = [];
   const totalDays = envData.durationDays + 2; // -2 to +duration
@@ -395,48 +403,55 @@ function generateReservationData(
     { rate: 'otaDeals', weight: 0.05 }
   ];
 
-  for (let i = 0; i < totalReservations; i++) {
-    // Assign customer
-    const customerId = customerIds[i % customerIds.length];
+  let globalIndex = 0;
 
-    // Determine stay length based on distribution
-    const stayLength = getStayLength(i, totalReservations);
+  // Generate reservations per category to meet each category's target
+  for (const target of categoryTargets) {
+    console.log(`[RESERVATIONS] Generating ${target.targetReservations} reservations for category: ${target.categoryName}`);
 
-    // Spread check-in dates across time window
-    const dayOffset = -2 + (i % totalDays);
-    const checkInDate = addDays(envData.createdAt, dayOffset);
-    const checkOutDate = addDays(checkInDate, stayLength);
+    for (let i = 0; i < target.targetReservations; i++) {
+      // Assign customer (rotate through available customers)
+      const customerId = customerIds[globalIndex % customerIds.length];
 
-    // Convert to UTC with proper times
-    const checkInUtc = fromZonedTime(
-      set(checkInDate, { hours: 15, minutes: 0, seconds: 0, milliseconds: 0 }),
-      envData.timezone
-    );
-    const checkOutUtc = fromZonedTime(
-      set(checkOutDate, { hours: 11, minutes: 0, seconds: 0, milliseconds: 0 }),
-      envData.timezone
-    );
+      // Determine stay length based on distribution
+      const stayLength = getStayLength(globalIndex, totalReservations);
 
-    // Assign resource category (rotate evenly)
-    const resourceCategoryId = categories[i % categories.length].id;
+      // Spread check-in dates across time window
+      const dayOffset = -2 + (globalIndex % totalDays);
+      const checkInDate = addDays(envData.createdAt, dayOffset);
+      const checkOutDate = addDays(checkInDate, stayLength);
 
-    // Assign rate based on distribution
-    const rateId = getRateIdByDistribution(i, totalReservations, rates, rateDistribution);
+      // Convert to UTC with proper times
+      const checkInUtc = fromZonedTime(
+        set(checkInDate, { hours: 15, minutes: 0, seconds: 0, milliseconds: 0 }),
+        envData.timezone
+      );
+      const checkOutUtc = fromZonedTime(
+        set(checkOutDate, { hours: 11, minutes: 0, seconds: 0, milliseconds: 0 }),
+        envData.timezone
+      );
 
-    // Determine desired state
-    const desiredState = determineReservationState(checkInDate, checkOutDate, today);
+      // Assign rate based on distribution
+      const rateId = getRateIdByDistribution(globalIndex, totalReservations, rates, rateDistribution);
 
-    reservations.push({
-      customerId,
-      resourceCategoryId,
-      rateId,
-      checkInUtc,
-      checkOutUtc,
-      adultCount: 2, // Default to 2 adults
-      desiredState
-    });
+      // Determine desired state
+      const desiredState = determineReservationState(checkInDate, checkOutDate, today);
+
+      reservations.push({
+        customerId,
+        resourceCategoryId: target.categoryId,
+        rateId,
+        checkInUtc,
+        checkOutUtc,
+        adultCount: 2, // Default to 2 adults
+        desiredState
+      });
+
+      globalIndex++;
+    }
   }
 
+  console.log(`[RESERVATIONS] Generated ${reservations.length} total reservations`);
   return reservations;
 }
 
