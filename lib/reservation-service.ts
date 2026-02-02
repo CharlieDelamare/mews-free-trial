@@ -126,7 +126,8 @@ export async function createReservationsForEnvironment(
       groups,
       mewsData.serviceId,
       accessToken,
-      mewsData.ageCategories.adult
+      mewsData.ageCategories.adult,
+      mewsData.vouchersByRate
     );
 
     // Step 10: Apply state transitions
@@ -525,7 +526,8 @@ async function createReservationGroups(
   groups: ReservationData[][],
   serviceId: string,
   accessToken: string,
-  adultAgeCategoryId: string
+  adultAgeCategoryId: string,
+  vouchersByRate: Map<string, string>
 ): Promise<{ createdReservations: any[]; failures: any[] }> {
   console.log(`[RESERVATIONS] Creating ${groups.length} reservation groups...`);
 
@@ -544,18 +546,29 @@ async function createReservationGroups(
           AccessToken: accessToken,
           Client: 'Free Trial Generator',
           ServiceId: serviceId,
-          Reservations: group.map(r => ({
-            State: 'Confirmed',
-            StartUtc: r.checkInUtc.toISOString(),
-            EndUtc: r.checkOutUtc.toISOString(),
-            CustomerId: r.customerId,
-            RequestedCategoryId: r.resourceCategoryId,
-            RateId: r.rateId,
-            PersonCounts: [{
-              AgeCategoryId: adultAgeCategoryId,
-              Count: r.adultCount
-            }]
-          }))
+          Reservations: group.map(r => {
+            const reservation: any = {
+              State: 'Confirmed',
+              StartUtc: r.checkInUtc.toISOString(),
+              EndUtc: r.checkOutUtc.toISOString(),
+              CustomerId: r.customerId,
+              RequestedCategoryId: r.resourceCategoryId,
+              RateId: r.rateId,
+              PersonCounts: [{
+                AgeCategoryId: adultAgeCategoryId,
+                Count: r.adultCount
+              }]
+            };
+
+            // Add voucher code if available for this rate
+            const voucherCode = vouchersByRate.get(r.rateId);
+            if (voucherCode) {
+              reservation.VoucherCode = voucherCode;
+              console.log(`[RESERVATIONS] Using voucher code "${voucherCode}" for rate ${r.rateId}`);
+            }
+
+            return reservation;
+          })
         })
       });
 
@@ -573,11 +586,30 @@ async function createReservationGroups(
       const data = await response.json();
       const reservationIds = data.Reservations?.map((r: any) => r.Id) || [];
 
+      // Identify reservations that need immediate start (check-in in the past)
+      const needsImmediateStart: string[] = [];
+      const now = new Date();
+
       // Store with desired states
       for (let j = 0; j < reservationIds.length; j++) {
+        const reservation = group[j];
+
+        // If check-in is in the past, start immediately
+        if (reservation.checkInUtc < now) {
+          needsImmediateStart.push(reservationIds[j]);
+        }
+
         createdReservations.push({
           id: reservationIds[j],
           desiredState: group[j].desiredState
+        });
+      }
+
+      // Start past-dated reservations immediately (fire-and-forget)
+      if (needsImmediateStart.length > 0) {
+        console.log(`[RESERVATIONS] Starting ${needsImmediateStart.length} past-dated reservation(s) immediately...`);
+        callStateTransitionAPI('start', needsImmediateStart, accessToken).catch(err => {
+          console.error('[RESERVATIONS] Failed to start past reservations:', err);
         });
       }
 
