@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
+import { createSampleCustomers } from '@/lib/customer-service';
 
 interface ConfigurationRequest {
   ClientToken: string;
@@ -21,24 +22,6 @@ interface ConfigurationResponse {
     [key: string]: any;
   };
   [key: string]: any;
-}
-
-/**
- * Parses a full name into firstName and lastName
- * Handles edge cases like empty names or single names
- */
-function parseCustomerName(fullName: string): { firstName: string; lastName: string } {
-  const cleaned = fullName.trim().replace(/\s+/g, ' ');
-  const parts = cleaned.split(' ');
-
-  if (parts.length === 0 || cleaned === '') {
-    return { firstName: 'Customer', lastName: 'Trial' };
-  } else if (parts.length === 1) {
-    return { firstName: parts[0], lastName: 'Trial' };
-  } else {
-    const [firstName, ...lastNameParts] = parts;
-    return { firstName, lastName: lastNameParts.join(' ') };
-  }
 }
 
 /**
@@ -131,45 +114,12 @@ export async function POST(request: NextRequest) {
       enterpriseName: newToken.enterpriseName
     });
 
-    // Find matching EnvironmentLog and create customer
+    // Find matching EnvironmentLog and update status
     console.log('[ADD-ENVIRONMENT] Looking for matching EnvironmentLog...');
     const log = await findEnvironmentLogByEnterpriseId(configData.Enterprise.Id);
 
-    let customerCreated = false;
     if (log) {
       console.log('[ADD-ENVIRONMENT] ✅ Found log:', log.id);
-
-      // Create customer from log data
-      try {
-        const { firstName, lastName } = parseCustomerName(log.customerName);
-        console.log('[ADD-ENVIRONMENT] Creating customer:', firstName, lastName);
-
-        const customerResponse = await fetch(`${mewsApiUrl}/api/connector/v1/customers/add`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ClientToken: process.env.MEWS_CLIENT_TOKEN,
-            AccessToken: accessToken,
-            Client: 'Mews Free Trial App v1.0',
-            FirstName: firstName,
-            LastName: lastName,
-            Email: log.customerEmail
-          })
-        });
-
-        const customerData = await customerResponse.json();
-
-        if (customerResponse.ok && customerData.Id) {
-          console.log('[ADD-ENVIRONMENT] ✅ Customer created:', customerData.Id);
-          customerCreated = true;
-        } else {
-          console.warn('[ADD-ENVIRONMENT] ⚠️  Customer creation failed:', customerData.Message);
-          // Customer might already exist - continue
-        }
-      } catch (error) {
-        console.error('[ADD-ENVIRONMENT] ⚠️  Error creating customer:', error);
-        // Continue - non-blocking
-      }
 
       // Update log status to completed
       try {
@@ -181,6 +131,21 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('[ADD-ENVIRONMENT] ⚠️  No matching log found');
     }
+
+    // Create 100 sample customers in the background
+    console.log('[ADD-ENVIRONMENT] Starting sample customer creation for enterprise:', configData.Enterprise.Id);
+    createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id)
+      .then(result => {
+        console.log('[ADD-ENVIRONMENT] ✅ Customer creation completed:', {
+          enterpriseId: configData.Enterprise.Id,
+          totalCustomers: result.totalCustomers,
+          successCount: result.successCount,
+          failureCount: result.failureCount
+        });
+      })
+      .catch(error => {
+        console.error('[ADD-ENVIRONMENT] ❌ Customer creation failed:', error);
+      });
 
     // Step 3: Send Slack notification
     if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_CHANNEL_ID) {
@@ -216,7 +181,7 @@ export async function POST(request: NextRequest) {
                 type: 'section',
                 text: {
                   type: 'mrkdwn',
-                  text: `*Operations:*\n• ${customerCreated ? '✅' : '⚠️'} Customer ${customerCreated ? 'created' : 'creation attempted'}\n• ✅ Log status updated to completed`
+                  text: `*Operations:*\n• ✅ 100 sample customers being created\n• ✅ Log status updated to completed`
                 }
               },
               {
@@ -250,7 +215,7 @@ export async function POST(request: NextRequest) {
                 type: 'section',
                 text: {
                   type: 'mrkdwn',
-                  text: `*Operations:*\n• ⚠️ No matching EnvironmentLog found`
+                  text: `*Operations:*\n• ✅ 100 sample customers being created\n• ⚠️ No matching EnvironmentLog found`
                 }
               }
             ];
@@ -286,7 +251,7 @@ export async function POST(request: NextRequest) {
         receivedAt: newToken.receivedAt
       },
       operations: {
-        customerCreated: customerCreated,
+        sampleCustomersCreating: true,
         logFound: !!log,
         logUpdated: !!log
       }
