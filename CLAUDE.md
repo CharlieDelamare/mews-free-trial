@@ -2,6 +2,32 @@
 
 This document provides an overview of the Mews Free Trial application for AI assistants working on this codebase.
 
+## AI Assistant Instructions
+
+**CRITICAL: ALWAYS START IN PLAN MODE**
+
+When you receive any request to work on this codebase, you MUST follow this workflow:
+
+1. **Plan First**: Before writing any code or making any changes, ALWAYS use the TodoWrite tool to create a detailed plan
+2. **Break Down Tasks**: Decompose complex requests into specific, actionable steps
+3. **Track Progress**: Use TodoWrite to mark tasks as `in_progress`, `completed`, or `pending` throughout your work
+4. **One Task at a Time**: Keep exactly ONE task marked as `in_progress` at any given time
+5. **Update Immediately**: Mark tasks as completed right after finishing them - do not batch completions
+
+**When to Create a Plan:**
+- Any task with 3+ distinct steps
+- Any non-trivial implementation or bug fix
+- Multiple feature requests or changes
+- User provides a list of tasks to complete
+- Complex debugging or investigation work
+
+**When NOT to Create a Plan:**
+- Simple single-step tasks (e.g., "show me the logs table")
+- Purely informational questions
+- Trivial changes to a single line of code
+
+This ensures all work is methodical, trackable, and complete.
+
 ## Project Overview
 
 **Mews Free Trial** is a Next.js web application that allows Mews sales representatives to create 45-day trial hotel environments in the Mews demo system. The app integrates with the Mews API to provision sample hotels, stores environment logs in PostgreSQL, and sends notifications via Zapier webhooks.
