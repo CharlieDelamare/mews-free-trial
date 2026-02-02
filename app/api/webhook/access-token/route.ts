@@ -246,13 +246,13 @@ export async function POST(request: NextRequest) {
       });
       console.log('[WEBHOOK] Updating log with enterpriseId and status...');
 
-      // Backfill enterpriseId and update status to completed
+      // Backfill enterpriseId and update status to Updating
       await updateEnvironmentLogById(log.id, {
         enterpriseId: newToken.enterpriseId,
-        status: 'completed'
+        status: 'Updating'
       });
 
-      console.log('[WEBHOOK] ✅ Log updated with enterpriseId and completed status');
+      console.log('[WEBHOOK] ✅ Log updated with enterpriseId and Updating status');
 
       // Start full environment setup in the background (fire-and-forget)
       console.log('[WEBHOOK] Starting environment setup for enterprise:', newToken.enterpriseId);
@@ -298,6 +298,10 @@ export async function POST(request: NextRequest) {
             reservationsCreated: result.totalReservations
           });
           console.log('[WEBHOOK-SETUP] ✅ Zapier notification sent');
+
+          // Update status to completed after all processing is done
+          await updateEnvironmentLog(newToken.enterpriseId, { status: 'completed' });
+          console.log('[WEBHOOK-SETUP] ✅ Status updated to completed');
 
         } catch (error) {
           console.error('[WEBHOOK-SETUP] ❌ Environment setup failed:', error);
