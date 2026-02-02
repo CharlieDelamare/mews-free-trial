@@ -4,6 +4,8 @@ services:
     env: node
     buildCommand: npm install && npm run migrate:deploy && npm run build
     startCommand: npm start
+    # Note: Previously used "npx prisma db push" which is for development only.
+    # Changed to "npm run migrate:deploy" which handles production migrations properly.
     envVars:
       - key: NODE_VERSION
         value: 22.22.0
