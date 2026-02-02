@@ -16,6 +16,11 @@ export interface EnvironmentLog {
   enterpriseId?: string | null;
   requestorEmail?: string | null;
   durationDays?: number | null;
+  roomCount?: number | null;
+  dormCount?: number | null;
+  apartmentCount?: number | null;
+  bedCount?: number | null;
+  timezone?: string | null;
 }
 
 export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'timestamp'>) {
@@ -35,6 +40,11 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
         enterpriseId: log.enterpriseId,
         requestorEmail: log.requestorEmail,
         durationDays: log.durationDays,
+        roomCount: log.roomCount,
+        dormCount: log.dormCount,
+        apartmentCount: log.apartmentCount,
+        bedCount: log.bedCount,
+        timezone: log.timezone,
       },
     });
     return created;
@@ -53,6 +63,7 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
 export async function updateEnvironmentLog(enterpriseId: string, updates: {
   status?: 'building' | 'completed' | 'failure';
   errorMessage?: string;
+  timezone?: string;
 }) {
   try {
     console.log('[LOGGER] Attempting to update environment log for enterpriseId:', enterpriseId);

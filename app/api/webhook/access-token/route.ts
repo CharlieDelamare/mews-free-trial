@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { findEnvironmentLogByPropertyName, updateEnvironmentLogById } from '@/lib/logger';
-import { createSampleCustomers } from '@/lib/customer-service';
+import { findEnvironmentLogByPropertyName, updateEnvironmentLogById, updateEnvironmentLog } from '@/lib/logger';
+import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
+
+const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
 interface MewsWebhookPayload {
   Action: string;
@@ -251,41 +254,60 @@ export async function POST(request: NextRequest) {
 
       console.log('[WEBHOOK] ✅ Log updated with enterpriseId and completed status');
 
-      // Create sample customers in the background
-      console.log('[WEBHOOK] Starting sample customer creation for enterprise:', newToken.enterpriseId);
-      createSampleCustomers(newToken.accessToken, newToken.enterpriseId, newToken.id)
-        .then(result => {
-          console.log('[WEBHOOK] ✅ Customer creation completed:', {
-            enterpriseId: newToken.enterpriseId,
-            totalCustomers: result.totalCustomers,
-            successCount: result.successCount,
-            failureCount: result.failureCount
-          });
-        })
-        .catch(error => {
-          console.error('[WEBHOOK] ❌ Customer creation failed:', error);
-        });
+      // Start full environment setup in the background (fire-and-forget)
+      console.log('[WEBHOOK] Starting environment setup for enterprise:', newToken.enterpriseId);
+      (async () => {
+        try {
+          // Step 1: Fetch timezone from configuration/get API
+          console.log('[WEBHOOK-SETUP] Fetching timezone from configuration API...');
+          const timezone = await fetchTimezoneFromConfiguration(newToken.accessToken);
 
-      // Send Zapier notification with login details
-      try {
-        await sendZapierNotification('environment_ready', {
-          status: 'success',
-          propertyName: log.propertyName,
-          customerName: log.customerName,
-          customerEmail: log.customerEmail,
-          requestorEmail: log.requestorEmail || undefined,
-          loginUrl: log.loginUrl,
-          loginEmail: log.loginEmail,
-          loginPassword: log.loginPassword,
-          enterpriseId: newToken.enterpriseId,
-          enterpriseName: newToken.enterpriseName,
-          receivedAt: newToken.receivedAt.toISOString(),
-          tokenId: newToken.id
-        });
-        console.log('[WEBHOOK] ✅ Zapier notification sent');
-      } catch (error) {
-        console.error('[WEBHOOK] Failed to send Zapier notification:', error);
-      }
+          // Step 2: Update EnvironmentLog with timezone
+          await updateEnvironmentLog(newToken.enterpriseId, { timezone });
+          console.log('[WEBHOOK-SETUP] ✅ Timezone updated:', timezone);
+
+          // Step 3: Create customers and reservations
+          const result = await createReservationsForEnvironment(
+            newToken.accessToken,
+            newToken.enterpriseId,
+            newToken.id
+          );
+
+          console.log('[WEBHOOK-SETUP] ✅ Environment setup complete:', {
+            enterpriseId: newToken.enterpriseId,
+            customersCreated: result.totalCustomers,
+            reservationsCreated: result.totalReservations,
+            durationSeconds: result.durationSeconds
+          });
+
+          // Step 4: Send Zapier notification after everything completes
+          await sendZapierNotification('environment_ready', {
+            status: 'success',
+            propertyName: log.propertyName,
+            customerName: log.customerName,
+            customerEmail: log.customerEmail,
+            requestorEmail: log.requestorEmail || undefined,
+            loginUrl: log.loginUrl,
+            loginEmail: log.loginEmail,
+            loginPassword: log.loginPassword,
+            enterpriseId: newToken.enterpriseId,
+            enterpriseName: newToken.enterpriseName,
+            receivedAt: newToken.receivedAt.toISOString(),
+            tokenId: newToken.id,
+            customersCreated: result.totalCustomers,
+            reservationsCreated: result.totalReservations
+          });
+          console.log('[WEBHOOK-SETUP] ✅ Zapier notification sent');
+
+        } catch (error) {
+          console.error('[WEBHOOK-SETUP] ❌ Environment setup failed:', error);
+          console.error('[WEBHOOK-SETUP] Error details:', {
+            name: (error as Error).name,
+            message: (error as Error).message,
+            stack: (error as Error).stack
+          });
+        }
+      })();
     } else {
       // No matching log found - this token doesn't match any pending environment
       console.error('[WEBHOOK] ❌ No matching log found for property name:', enterpriseName);
@@ -332,6 +354,42 @@ export async function POST(request: NextRequest) {
       { error: 'Internal server error processing webhook' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Fetch timezone from Mews configuration API
+ */
+async function fetchTimezoneFromConfiguration(accessToken: string): Promise<string> {
+  try {
+    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/configuration/get`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: MEWS_CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Free Trial Generator'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Configuration API failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const timezone = data.TimeZoneIdentifier;
+
+    if (!timezone) {
+      console.warn('[WEBHOOK] TimeZoneIdentifier not found in configuration response, using UTC');
+      return 'UTC';
+    }
+
+    return timezone;
+
+  } catch (error) {
+    console.error('[WEBHOOK] Failed to fetch timezone:', error);
+    console.warn('[WEBHOOK] Falling back to UTC timezone');
+    return 'UTC';
   }
 }
 
