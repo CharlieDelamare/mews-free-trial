@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/logger';
 import { createSampleCustomers } from '@/lib/customer-service';
 
+// Hardcoded configuration for Mews demo environment
+const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+
 interface ConfigurationRequest {
   ClientToken: string;
   AccessToken: string;
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
     const configUrl = `${mewsApiUrl}/api/connector/v1/configuration/get`;
 
     const configRequest: ConfigurationRequest = {
-      ClientToken: process.env.MEWS_CLIENT_TOKEN || '',
+      ClientToken: MEWS_CLIENT_TOKEN,
       AccessToken: accessToken,
       Client: 'Mews Free Trial App v1.0'
     };
@@ -120,6 +123,38 @@ export async function POST(request: NextRequest) {
 
     if (log) {
       console.log('[ADD-ENVIRONMENT] ✅ Found log:', log.id);
+
+      // Create customer from log data
+      try {
+        const { firstName, lastName } = parseCustomerName(log.customerName);
+        console.log('[ADD-ENVIRONMENT] Creating customer:', firstName, lastName);
+
+        const customerResponse = await fetch(`${mewsApiUrl}/api/connector/v1/customers/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ClientToken: MEWS_CLIENT_TOKEN,
+            AccessToken: accessToken,
+            Client: 'Mews Free Trial App v1.0',
+            FirstName: firstName,
+            LastName: lastName,
+            Email: log.customerEmail
+          })
+        });
+
+        const customerData = await customerResponse.json();
+
+        if (customerResponse.ok && customerData.Id) {
+          console.log('[ADD-ENVIRONMENT] ✅ Customer created:', customerData.Id);
+          customerCreated = true;
+        } else {
+          console.warn('[ADD-ENVIRONMENT] ⚠️  Customer creation failed:', customerData.Message);
+          // Customer might already exist - continue
+        }
+      } catch (error) {
+        console.error('[ADD-ENVIRONMENT] ⚠️  Error creating customer:', error);
+        // Continue - non-blocking
+      }
 
       // Update log status to completed
       try {
