@@ -102,11 +102,28 @@ export async function POST(request: NextRequest) {
       console.log('[WEBHOOK] Updating log status to completed...');
 
       // Update log status to completed
-      await updateEnvironmentLog(newToken.enterpriseId, {
+      const updateResult = await updateEnvironmentLog(newToken.enterpriseId, {
         status: 'completed'
       });
 
-      console.log('[WEBHOOK] ✅ Log status updated to completed');
+      if (updateResult.count > 0) {
+        console.log('[WEBHOOK] ✅ Log status updated to completed');
+      } else {
+        console.error('[WEBHOOK] ❌ WARNING: Update returned count 0 - no records updated!');
+        console.error('[WEBHOOK] This may indicate enterpriseId mismatch or timing issue');
+        console.error('[WEBHOOK] Enterprise ID attempted:', newToken.enterpriseId);
+        console.error('[WEBHOOK] Log found but update failed - investigating...');
+
+        // Try updating by log ID as fallback since we found the log
+        if (log && log.id) {
+          console.log('[WEBHOOK] Attempting fallback update by log ID:', log.id);
+          await updateEnvironmentLogById(log.id, {
+            enterpriseId: newToken.enterpriseId, // Ensure enterpriseId is set
+            status: 'completed'
+          });
+          console.log('[WEBHOOK] ✅ Fallback update by ID completed');
+        }
+      }
 
       // Create sample customers in the background
       console.log('[WEBHOOK] Starting sample customer creation for enterprise:', newToken.enterpriseId);

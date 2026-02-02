@@ -55,10 +55,21 @@ export async function updateEnvironmentLog(enterpriseId: string, updates: {
   errorMessage?: string;
 }) {
   try {
-    return await prisma.environmentLog.updateMany({
+    console.log('[LOGGER] Attempting to update environment log for enterpriseId:', enterpriseId);
+    console.log('[LOGGER] Updates to apply:', updates);
+
+    const result = await prisma.environmentLog.updateMany({
       where: { enterpriseId },
       data: updates,
     });
+
+    console.log('[LOGGER] Update result - records affected:', result.count);
+
+    if (result.count === 0) {
+      console.warn('[LOGGER] ⚠️  WARNING: updateMany returned count 0 - no records matched enterpriseId:', enterpriseId);
+    }
+
+    return result;
   } catch (error) {
     console.error('[LOGGER] Failed to update environment log for enterpriseId:', enterpriseId, error);
     console.error('[LOGGER] Error details:', {
