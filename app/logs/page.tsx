@@ -19,6 +19,7 @@ interface EnvironmentLog {
   enterpriseId?: string;
   requestorEmail?: string;
   durationDays?: number;
+  salesforceAccountId?: string;
 }
 
 export default function LogsPage() {

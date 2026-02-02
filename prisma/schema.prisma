@@ -49,10 +49,12 @@ model EnvironmentLog {
   apartmentCount  Int?     // For apartments
   bedCount        Int?     // For hostels (beds per dorm)
   timezone        String?  // IANA timezone from Mews configuration/get API
+  salesforceAccountId String?  // Salesforce Account ID for duplicate prevention
 
   @@index([timestamp])
   @@index([status])
   @@index([enterpriseId])
+  @@index([salesforceAccountId])
 }
 
 model CustomerCreationLog {

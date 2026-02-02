@@ -21,6 +21,7 @@ export interface EnvironmentLog {
   apartmentCount?: number | null;
   bedCount?: number | null;
   timezone?: string | null;
+  salesforceAccountId?: string | null;
 }
 
 export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'timestamp'>) {
@@ -45,6 +46,7 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
         apartmentCount: log.apartmentCount,
         bedCount: log.bedCount,
         timezone: log.timezone,
+        salesforceAccountId: log.salesforceAccountId,
       },
     });
     return created;

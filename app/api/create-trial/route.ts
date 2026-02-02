@@ -40,7 +40,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       propertyName,
       propertyCountry,
       propertyType,
-      durationDays
+      durationDays,
+      salesforceAccountId
     } = body;
 
     // Validate required fields
@@ -102,6 +103,61 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 503 }
       );
+    }
+
+    // Check for Charlie user exception
+    const isCharlie = requestorEmail === 'charlie.delamare@gmail.com' ||
+                      requestorEmail === 'charlie.delamare@mews.com';
+
+    // Duplicate prevention: Check if Salesforce Account ID already has an environment
+    // Skip check for Charlie users (internal testing) and if no Salesforce ID provided
+    if (!isCharlie && salesforceAccountId) {
+      console.log('[CREATE-TRIAL] Checking for existing environment with Salesforce Account ID:', salesforceAccountId);
+
+      try {
+        const existingEnv = await prisma.environmentLog.findFirst({
+          where: {
+            salesforceAccountId,
+            status: {
+              in: ['building', 'Updating', 'completed']
+            }
+          },
+          orderBy: { timestamp: 'desc' },
+          select: {
+            id: true,
+            propertyName: true,
+            customerEmail: true,
+            status: true,
+            timestamp: true,
+            enterpriseId: true
+          }
+        });
+
+        if (existingEnv) {
+          console.log('[CREATE-TRIAL] Found existing environment:', existingEnv.id);
+
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'An environment already exists for this Salesforce Account ID',
+              existingEnvironment: {
+                propertyName: existingEnv.propertyName,
+                customerEmail: existingEnv.customerEmail,
+                status: existingEnv.status,
+                createdAt: existingEnv.timestamp,
+                enterpriseId: existingEnv.enterpriseId
+              },
+              suggestion: 'Please view the existing environment in the Environment Logs or contact support if this is incorrect.'
+            },
+            { status: 409 }
+          );
+        }
+
+        console.log('[CREATE-TRIAL] No existing environment found, proceeding with creation');
+      } catch (duplicateCheckError) {
+        console.error('[CREATE-TRIAL] Error checking for duplicates:', duplicateCheckError);
+        // Fail open: don't block creation if duplicate check fails
+      }
     }
 
     // Transform form data using codes
@@ -200,6 +256,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         dormCount,
         apartmentCount,
         bedCount,
+        salesforceAccountId,
         // timezone will be updated later from webhook via configuration/get API
       });
       console.log('[CREATE-TRIAL] Log created with building status:', log.id);
