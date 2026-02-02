@@ -143,11 +143,16 @@ export async function fetchMewsData(
     }
 
     // Step 4: Count resources per category
+    console.log('[MEWS-DATA] Counting resources per category...');
+    console.log('[MEWS-DATA] Resource category IDs:', resourceCategories.map((rc: any) => rc.Id));
+
     const resourceCountsPerCategory = new Map<string, number>();
     for (const resource of resources) {
       const count = resourceCountsPerCategory.get(resource.CategoryId) || 0;
       resourceCountsPerCategory.set(resource.CategoryId, count + 1);
     }
+
+    console.log('[MEWS-DATA] Resource counts map:', Object.fromEntries(resourceCountsPerCategory));
 
     // Step 5: Map resource categories with resource counts
     console.log('[MEWS-DATA] Mapping resource categories...');
@@ -351,9 +356,19 @@ async function fetchResources(
   }
 
   const data = await response.json();
-  console.log(`[MEWS-DATA] Found ${data.Resources?.length || 0} resources`);
+  const resources = data.Resources || [];
+  console.log(`[MEWS-DATA] Found ${resources.length} resources`);
 
-  return data.Resources || [];
+  if (resources.length > 0) {
+    console.log('[MEWS-DATA] First resource sample:', JSON.stringify(resources[0], null, 2));
+    console.log('[MEWS-DATA] All resource fields:', Object.keys(resources[0]));
+
+    // Log unique CategoryIds
+    const categoryIds = new Set(resources.map((r: any) => r.CategoryId));
+    console.log('[MEWS-DATA] Unique CategoryIds from resources:', Array.from(categoryIds));
+  }
+
+  return resources;
 }
 
 /**
