@@ -20,6 +20,7 @@ export interface MewsData {
     id: string;
     name: string;
     type: string; // "Room", "Apartment", "Bed", "Dorm"
+    resourceCount: number; // Number of resources in this category
   }>;
   ageCategories: {
     adult: string;  // Adult age category ID
@@ -75,6 +76,13 @@ interface MewsVoucherAssignment {
   UpdatedUtc: string;
 }
 
+interface MewsResource {
+  Id: string;
+  Name: string;
+  CategoryId: string;
+  State: string;
+}
+
 interface VouchersGetAllResponse {
   Vouchers: MewsVoucher[] | null;
   VoucherAssignments: MewsVoucherAssignment[] | null;
@@ -99,11 +107,12 @@ export async function fetchMewsData(
 
     const serviceId = bookableService.Id;
 
-    // Step 2: Fetch rates, resource categories, and age categories in parallel
-    const [rates, resourceCategories, ageCategories] = await Promise.all([
+    // Step 2: Fetch rates, resource categories, age categories, and resources in parallel
+    const [rates, resourceCategories, ageCategories, resources] = await Promise.all([
       fetchRates(clientToken, accessToken, serviceId),
       fetchResourceCategories(clientToken, accessToken, serviceId),
-      fetchAgeCategories(clientToken, accessToken, serviceId)
+      fetchAgeCategories(clientToken, accessToken, serviceId),
+      fetchResources(clientToken, accessToken, serviceId)
     ]);
 
     // Map rates by hardcoded names
@@ -137,14 +146,27 @@ export async function fetchMewsData(
       console.log('[MEWS-DATA] No voucher assignments found, proceeding without voucher codes');
     }
 
-    // Step 4: Map resource categories
+    // Step 4: Count resources per category
+    const resourceCountsPerCategory = new Map<string, number>();
+    for (const resource of resources) {
+      const count = resourceCountsPerCategory.get(resource.CategoryId) || 0;
+      resourceCountsPerCategory.set(resource.CategoryId, count + 1);
+    }
+
+    // Step 5: Map resource categories with resource counts
     const resourceCategoryList = resourceCategories.map((rc: MewsResourceCategory) => ({
       id: rc.Id,
       name: rc.Name,
-      type: rc.Type
+      type: rc.Type,
+      resourceCount: resourceCountsPerCategory.get(rc.Id) || 0
     }));
 
-    // Step 5: Find adult and child age categories
+    console.log('[MEWS-DATA] Resource counts per category:');
+    resourceCategoryList.forEach(rc => {
+      console.log(`[MEWS-DATA]   - ${rc.name} (${rc.type}): ${rc.resourceCount} resources`);
+    });
+
+    // Step 6: Find adult and child age categories
     const adultCategory = ageCategories.find((ac: MewsAgeCategory) => ac.Classification === 'Adult');
     const childCategory = ageCategories.find((ac: MewsAgeCategory) => ac.Classification === 'Child');
 
@@ -152,6 +174,13 @@ export async function fetchMewsData(
       throw new Error('No adult age category found');
     }
 
+    console.log('[MEWS-DATA] ✅ Mews data fetch complete');
+    console.log(`[MEWS-DATA] - Service: ${serviceId}`);
+    console.log(`[MEWS-DATA] - Rates: ${Object.keys(rateMap).length}`);
+    console.log(`[MEWS-DATA] - Resource categories: ${resourceCategoryList.length}`);
+    console.log(`[MEWS-DATA] - Total resources: ${resources.length}`);
+    console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
+    console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
     console.log('[MEWS-DATA] ✅ Fetch complete:', {
       serviceId,
       rates: Object.keys(rateMap).length,
@@ -278,6 +307,38 @@ async function fetchAgeCategories(
 
   const data = await response.json();
   return data.AgeCategories || [];
+}
+
+/**
+ * Fetch resources from Mews API
+ */
+async function fetchResources(
+  clientToken: string,
+  accessToken: string,
+  serviceId: string
+): Promise<MewsResource[]> {
+  console.log('[MEWS-DATA] Fetching resources...');
+
+  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resources/getAll`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ClientToken: clientToken,
+      AccessToken: accessToken,
+      Client: 'Free Trial Generator',
+      ServiceIds: [serviceId]
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Resources fetch failed: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  console.log(`[MEWS-DATA] Found ${data.Resources?.length || 0} resources`);
+
+  return data.Resources || [];
 }
 
 /**
