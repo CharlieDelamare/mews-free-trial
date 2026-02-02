@@ -39,8 +39,14 @@ export async function saveEnvironmentLog(log: Omit<EnvironmentLog, 'id' | 'times
     });
     return created;
   } catch (error) {
-    console.error('Failed to save environment log:', error);
-    throw error;
+    console.error('[LOGGER] Failed to save environment log:', error);
+    console.error('[LOGGER] Error details:', {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      code: (error as any).code
+    });
+    console.error('[LOGGER] Attempted to save log for:', log.propertyName);
+    throw new Error(`Database error: Failed to save environment log - ${(error as Error).message}`);
   }
 }
 
@@ -54,8 +60,13 @@ export async function updateEnvironmentLog(enterpriseId: string, updates: {
       data: updates,
     });
   } catch (error) {
-    console.error('Failed to update environment log:', error);
-    throw error;
+    console.error('[LOGGER] Failed to update environment log for enterpriseId:', enterpriseId, error);
+    console.error('[LOGGER] Error details:', {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      code: (error as any).code
+    });
+    throw new Error(`Database error: Failed to update environment log - ${(error as Error).message}`);
   }
 }
 
@@ -74,7 +85,12 @@ export async function updateEnvironmentLogById(id: string, updates: {
     return result;
   } catch (error) {
     console.error('[LOGGER] ❌ Failed to update environment log by ID:', id, error);
-    throw error;
+    console.error('[LOGGER] Error details:', {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      code: (error as any).code
+    });
+    throw new Error(`Database error: Failed to update environment log by ID - ${(error as Error).message}`);
   }
 }
 
