@@ -560,7 +560,14 @@ async function createReservationGroups(
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error(`[RESERVATIONS] Reservation API error for group ${i}:`, {
+          status: response.status,
+          statusText: response.statusText,
+          groupSize: group.length,
+          errorData: errorData
+        });
+        throw new Error(`Reservation API failed: ${response.status} - ${errorData.Message || errorData.error || JSON.stringify(errorData)}`);
       }
 
       const data = await response.json();
