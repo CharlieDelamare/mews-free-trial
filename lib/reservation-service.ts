@@ -8,7 +8,7 @@
 import { prisma } from './prisma';
 import { fetchMewsData, MewsData } from './mews-data-service';
 import { getSampleCustomers, SampleCustomer } from './sample-customers';
-import { zonedTimeToUtc } from 'date-fns-tz';
+import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
 
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -387,11 +387,11 @@ function generateReservationData(
     const checkOutDate = addDays(checkInDate, stayLength);
 
     // Convert to UTC with proper times
-    const checkInUtc = zonedTimeToUtc(
+    const checkInUtc = fromZonedTime(
       set(checkInDate, { hours: 15, minutes: 0, seconds: 0, milliseconds: 0 }),
       envData.timezone
     );
-    const checkOutUtc = zonedTimeToUtc(
+    const checkOutUtc = fromZonedTime(
       set(checkOutDate, { hours: 11, minutes: 0, seconds: 0, milliseconds: 0 }),
       envData.timezone
     );
