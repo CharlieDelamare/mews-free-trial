@@ -4,6 +4,9 @@ import { findEnvironmentLogByPropertyName, updateEnvironmentLogById, updateEnvir
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
 
+// Disable caching for GET endpoint - webhook debug data needs to be fresh
+export const dynamic = 'force-dynamic';
+
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
