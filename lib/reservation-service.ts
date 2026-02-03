@@ -404,6 +404,7 @@ function generateReservationData(
   const reservations: ReservationData[] = [];
   const totalDays = envData.durationDays + 2; // -2 to +duration
   const today = startOfDay(new Date());
+  const stateTracker = new ReservationStateTracker();
   const rateDistribution = [
     { rate: 'bestPrice', weight: 0.40 },
     { rate: 'fullyFlexible', weight: 0.25 },
@@ -443,8 +444,8 @@ function generateReservationData(
       // Assign rate based on distribution
       const rateId = getRateIdByDistribution(globalIndex, totalReservations, rates, rateDistribution);
 
-      // Determine desired state
-      const desiredState = determineReservationState(checkInDate, checkOutDate, today);
+      // Determine desired state using tracker to enforce limits
+      const desiredState = stateTracker.determineState(checkInDate, checkOutDate, today);
 
       reservations.push({
         customerId,
@@ -459,6 +460,10 @@ function generateReservationData(
       globalIndex++;
     }
   }
+
+  // Log state distribution stats
+  const stateStats = stateTracker.getStats();
+  console.log(`[RESERVATIONS] State limits applied: ${stateStats.uncheckedYesterdayArrivals} unchecked yesterday arrivals, ${stateStats.uncheckedTodayDepartures} unchecked today departures`);
 
   // Shuffle reservations to avoid clustering by stay length
   const shuffled = shuffleArray(reservations);
@@ -526,21 +531,101 @@ function getRateIdByDistribution(
 }
 
 /**
- * Determine reservation state based on dates
+ * Configuration for reservation state limits
  */
-function determineReservationState(
-  checkInDate: Date,
-  checkOutDate: Date,
-  today: Date
-): 'Confirmed' | 'Started' | 'Processed' {
-  if (checkOutDate < today) {
-    return 'Processed'; // 100%
-  } else if (isSameDay(checkOutDate, today)) {
-    return Math.random() < 0.8 ? 'Processed' : 'Started'; // 80% / 20%
-  } else if (isSameDay(checkInDate, today)) {
-    return Math.random() < 0.2 ? 'Started' : 'Confirmed'; // 20% / 80%
-  } else {
-    return 'Confirmed'; // 100%
+interface StateTrackingConfig {
+  maxUncheckedYesterdayArrivals: number;
+  maxUncheckedTodayDepartures: number;
+}
+
+/**
+ * Tracks reservation state assignments and enforces limits
+ * to create realistic distributions:
+ * - Only 1-2 unchecked arrivals from yesterday (must be 2+ night stays)
+ * - Only 1-2 unchecked departures for today
+ * - All arrivals from 2+ days ago must be checked in
+ */
+class ReservationStateTracker {
+  private uncheckedYesterdayArrivals = 0;
+  private uncheckedTodayDepartures = 0;
+
+  constructor(
+    private config: StateTrackingConfig = {
+      maxUncheckedYesterdayArrivals: 2,
+      maxUncheckedTodayDepartures: 2
+    }
+  ) {}
+
+  /**
+   * Determine reservation state with enforced limits
+   */
+  determineState(
+    checkInDate: Date,
+    checkOutDate: Date,
+    today: Date
+  ): 'Confirmed' | 'Started' | 'Processed' {
+    const yesterday = addDays(startOfDay(today), -1);
+    const checkInDay = startOfDay(checkInDate);
+
+    // Case 1: Checkout before today -> always Processed (past stay)
+    if (checkOutDate < today) {
+      return 'Processed';
+    }
+
+    // Case 2: Checkout is today -> limit unchecked departures to max 2
+    if (isSameDay(checkOutDate, today)) {
+      if (
+        this.uncheckedTodayDepartures < this.config.maxUncheckedTodayDepartures &&
+        Math.random() < 0.15
+      ) {
+        this.uncheckedTodayDepartures++;
+        return 'Started'; // Still checked in, not yet departed
+      }
+      return 'Processed'; // Checked out
+    }
+
+    // Case 3: Check-in before yesterday (2+ days ago) -> MUST be checked in
+    if (checkInDay < yesterday) {
+      return 'Started'; // Past arrivals must be checked in
+    }
+
+    // Case 4: Check-in was yesterday -> limit unchecked arrivals to max 2
+    // Only allow unchecked for stays of 2+ nights (1-night stay leaving today would definitely have checked in)
+    if (isSameDay(checkInDate, yesterday)) {
+      const stayLength = Math.ceil(
+        (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (
+        stayLength >= 2 &&
+        this.uncheckedYesterdayArrivals < this.config.maxUncheckedYesterdayArrivals &&
+        Math.random() < 0.25
+      ) {
+        this.uncheckedYesterdayArrivals++;
+        return 'Confirmed'; // Late arrival, not yet checked in
+      }
+      return 'Started'; // Checked in yesterday
+    }
+
+    // Case 5: Check-in is today -> some early check-ins
+    if (isSameDay(checkInDate, today)) {
+      return Math.random() < 0.2 ? 'Started' : 'Confirmed';
+    }
+
+    // Case 6: Future check-in -> always Confirmed
+    return 'Confirmed';
+  }
+
+  /**
+   * Get statistics for logging
+   */
+  getStats(): {
+    uncheckedYesterdayArrivals: number;
+    uncheckedTodayDepartures: number;
+  } {
+    return {
+      uncheckedYesterdayArrivals: this.uncheckedYesterdayArrivals,
+      uncheckedTodayDepartures: this.uncheckedTodayDepartures
+    };
   }
 }
 
