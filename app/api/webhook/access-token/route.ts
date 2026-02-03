@@ -244,7 +244,8 @@ export async function POST(request: NextRequest) {
             await updateBestPriceRate(
               MEWS_CLIENT_TOKEN,
               newToken.accessToken,
-              mewsData.rates.bestPrice
+              mewsData.rates.bestPrice,
+              timezone
             );
           } else {
             console.warn('[WEBHOOK-SETUP] Best Price rate not found, skipping rate update');

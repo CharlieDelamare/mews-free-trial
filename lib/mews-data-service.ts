@@ -7,6 +7,9 @@
 
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
+import { fromZonedTime } from 'date-fns-tz';
+import { addDays, startOfDay } from 'date-fns';
+
 export interface MewsData {
   serviceId: string;
   rates: {
@@ -583,17 +586,18 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
 export async function updateBestPriceRate(
   clientToken: string,
   accessToken: string,
-  bestPriceRateId: string
+  bestPriceRateId: string,
+  timezone: string
 ): Promise<boolean> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
 
-  // Calculate date range: today to 100 days from now
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Start of today
+  // Calculate date range: today to 100 days from now in property timezone
+  const todayLocal = startOfDay(new Date()); // Midnight today in property timezone
+  const endDateLocal = startOfDay(addDays(new Date(), 100)); // Midnight 100 days from now
 
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() + 100); // 100 days from now
-  endDate.setHours(23, 59, 59, 999); // End of that day
+  // Convert to UTC using property timezone
+  const firstTimeUnitUtc = fromZonedTime(todayLocal, timezone);
+  const lastTimeUnitUtc = fromZonedTime(endDateLocal, timezone);
 
   const payload = {
     ClientToken: clientToken,
@@ -601,8 +605,8 @@ export async function updateBestPriceRate(
     RateId: bestPriceRateId,
     PriceUpdates: [
       {
-        FirstTimeUnitStartUtc: today.toISOString(),
-        LastTimeUnitStartUtc: endDate.toISOString(),
+        FirstTimeUnitStartUtc: firstTimeUnitUtc.toISOString(),
+        LastTimeUnitStartUtc: lastTimeUnitUtc.toISOString(),
         Value: 90
       }
     ]
@@ -611,7 +615,9 @@ export async function updateBestPriceRate(
   console.log('[RATE-UPDATE] Starting Best Price rate update...');
   console.log('[RATE-UPDATE] Endpoint:', endpoint);
   console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
-  console.log('[RATE-UPDATE] Date range:', today.toISOString(), 'to', endDate.toISOString());
+  console.log('[RATE-UPDATE] Timezone:', timezone);
+  console.log('[RATE-UPDATE] Date range (property TZ):', todayLocal.toISOString(), 'to', endDateLocal.toISOString());
+  console.log('[RATE-UPDATE] Date range (UTC):', firstTimeUnitUtc.toISOString(), 'to', lastTimeUnitUtc.toISOString());
   console.log('[RATE-UPDATE] Payload:', JSON.stringify({
     ...payload,
     ClientToken: '***REDACTED***',
