@@ -8,7 +8,7 @@
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
 import { fromZonedTime, utcToZonedTime } from 'date-fns-tz';
-import { addDays, startOfDay } from 'date-fns';
+import { addDays, addHours, addMinutes, startOfDay } from 'date-fns';
 
 export interface MewsData {
   serviceId: string;
@@ -37,7 +37,11 @@ interface MewsService {
   Name: string;
   Data: {
     Discriminator: 'Bookable' | 'Additional';
-    Value?: any;
+    Value?: {
+      StartOffset?: string; // ISO 8601 duration (e.g., "PT14H")
+      EndOffset?: string;   // ISO 8601 duration
+      TimeUnitPeriod?: string; // e.g., "Day", "Month"
+    };
   };
 }
 
@@ -581,6 +585,20 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
 }
 
 /**
+ * Parse ISO 8601 duration to hours and minutes
+ * Format: P0M0DT15H0M0S -> { hours: 15, minutes: 0 }
+ */
+function parseISO8601Duration(duration: string): { hours: number; minutes: number } {
+  const hoursMatch = duration.match(/(\d+)H/);
+  const minutesMatch = duration.match(/(\d+)M(?!.*M)/); // Match last M (minutes, not months)
+
+  return {
+    hours: hoursMatch ? parseInt(hoursMatch[1], 10) : 0,
+    minutes: minutesMatch ? parseInt(minutesMatch[1], 10) : 0
+  };
+}
+
+/**
  * Update the "Best Price" rate price to 90 for all resource categories
  */
 export async function updateBestPriceRate(
@@ -591,13 +609,33 @@ export async function updateBestPriceRate(
 ): Promise<boolean> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
 
+  // Fetch service to get StartOffset
+  const services = await fetchServices(clientToken, accessToken);
+  const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
+
+  if (!bookableService || !bookableService.Data.Value?.StartOffset) {
+    console.error('[RATE-UPDATE] ❌ No bookable service with StartOffset found');
+    return false;
+  }
+
+  const startOffset = bookableService.Data.Value.StartOffset;
+  console.log('[RATE-UPDATE] Service StartOffset:', startOffset);
+
+  // Parse the StartOffset (e.g., "P0M0DT15H0M0S" -> { hours: 15, minutes: 0 })
+  const { hours, minutes } = parseISO8601Duration(startOffset);
+  console.log('[RATE-UPDATE] Parsed offset:', { hours, minutes });
+
   // Calculate date range: today to 100 days from now in property timezone
   // First, get current time in the property timezone
   const nowInPropertyTz = utcToZonedTime(new Date(), timezone);
 
   // Get start of day (midnight) in property timezone
-  const todayLocal = startOfDay(nowInPropertyTz); // Midnight today in property timezone
-  const endDateLocal = startOfDay(addDays(nowInPropertyTz, 100)); // Midnight 100 days from now
+  let todayLocal = startOfDay(nowInPropertyTz);
+  let endDateLocal = startOfDay(addDays(nowInPropertyTz, 100));
+
+  // Apply StartOffset to get actual time unit start
+  todayLocal = addHours(addMinutes(todayLocal, minutes), hours);
+  endDateLocal = addHours(addMinutes(endDateLocal, minutes), hours);
 
   // Convert to UTC - these will be valid time unit starts
   const firstTimeUnitUtc = fromZonedTime(todayLocal, timezone);
