@@ -2135,11 +2135,18 @@ function generateCustomerVariation(baseCustomer: SampleCustomer, index: number):
 }
 
 /**
- * Generate customers 151-300 based on variations of customers 1-150
+ * Generate additional customers based on variations of the base customers
+ * Generates variations to reach a total of 300 customers
  */
 const generatedCustomers: SampleCustomer[] = [];
-for (let i = 0; i < 150; i++) {
-  const baseCustomer = sampleCustomers[i];
+const baseCount = sampleCustomers.length;
+const targetTotal = 300;
+const variationsNeeded = targetTotal - baseCount;
+
+for (let i = 0; i < variationsNeeded; i++) {
+  // Cycle through base customers to create variations
+  const baseIndex = i % baseCount;
+  const baseCustomer = sampleCustomers[baseIndex];
   const variation = generateCustomerVariation(baseCustomer, i);
   generatedCustomers.push(variation);
 }
