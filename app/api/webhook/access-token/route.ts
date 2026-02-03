@@ -240,14 +240,15 @@ export async function POST(request: NextRequest) {
           // Fetch Mews data and update Best Price rate
           const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, newToken.accessToken);
 
-          if (mewsData.rates.bestPrice) {
+          if (mewsData.rates.bestPrice && timezone) {
             await updateBestPriceRate(
               MEWS_CLIENT_TOKEN,
               newToken.accessToken,
-              mewsData.rates.bestPrice
+              mewsData.rates.bestPrice,
+              timezone
             );
           } else {
-            console.warn('[WEBHOOK-SETUP] Best Price rate not found, skipping rate update');
+            console.warn('[WEBHOOK-SETUP] Best Price rate or timezone not found, skipping rate update');
           }
 
           // Create customers and reservations
