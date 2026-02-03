@@ -7,9 +7,6 @@
 
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
-import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { addDays, addHours, addMinutes, startOfDay } from 'date-fns';
-
 export interface MewsData {
   serviceId: string;
   rates: {
@@ -589,12 +586,13 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
  * Format: P0M0DT15H0M0S -> { hours: 15, minutes: 0 }
  */
 function parseISO8601Duration(duration: string): { hours: number; minutes: number } {
-  const hoursMatch = duration.match(/(\d+)H/);
-  const minutesMatch = duration.match(/(\d+)M(?!.*M)/); // Match last M (minutes, not months)
+  // Parse "P0M0DT15H0M0S" → { hours: 15, minutes: 0 }
+  const match = duration.match(/T(\d+)H(\d+)M/);
+  if (!match) return { hours: 0, minutes: 0 };
 
   return {
-    hours: hoursMatch ? parseInt(hoursMatch[1], 10) : 0,
-    minutes: minutesMatch ? parseInt(minutesMatch[1], 10) : 0
+    hours: parseInt(match[1], 10),
+    minutes: parseInt(match[2], 10)
   };
 }
 
@@ -604,8 +602,7 @@ function parseISO8601Duration(duration: string): { hours: number; minutes: numbe
 export async function updateBestPriceRate(
   clientToken: string,
   accessToken: string,
-  bestPriceRateId: string,
-  timezone: string
+  bestPriceRateId: string
 ): Promise<boolean> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
 
@@ -625,30 +622,25 @@ export async function updateBestPriceRate(
   const { hours, minutes } = parseISO8601Duration(startOffset);
   console.log('[RATE-UPDATE] Parsed offset:', { hours, minutes });
 
-  // Calculate date range: today to 100 days from now in property timezone
-  // First, get current time in the property timezone
-  const nowInPropertyTz = toZonedTime(new Date(), timezone);
+  // Calculate date range: today to 100 days from now
+  const today = new Date().toISOString().split('T')[0];  // "YYYY-MM-DD"
+  const endDate = new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  // Get start of day (midnight) in property timezone
-  let todayLocal = startOfDay(nowInPropertyTz);
-  let endDateLocal = startOfDay(addDays(nowInPropertyTz, 100));
-
-  // Apply StartOffset to get actual time unit start
-  todayLocal = addHours(addMinutes(todayLocal, minutes), hours);
-  endDateLocal = addHours(addMinutes(endDateLocal, minutes), hours);
-
-  // Convert to UTC - these will be valid time unit starts
-  const firstTimeUnitUtc = fromZonedTime(todayLocal, timezone);
-  const lastTimeUnitUtc = fromZonedTime(endDateLocal, timezone);
+  // Build UTC timestamps using StartOffset time
+  const h = String(hours).padStart(2, '0');
+  const m = String(minutes).padStart(2, '0');
+  const firstTimeUnitUtc = `${today}T${h}:${m}:00Z`;
+  const lastTimeUnitUtc = `${endDate}T${h}:${m}:00Z`;
 
   const payload = {
     ClientToken: clientToken,
     AccessToken: accessToken,
+    Client: 'Free Trial Generator',
     RateId: bestPriceRateId,
     PriceUpdates: [
       {
-        FirstTimeUnitStartUtc: firstTimeUnitUtc.toISOString(),
-        LastTimeUnitStartUtc: lastTimeUnitUtc.toISOString(),
+        FirstTimeUnitStartUtc: firstTimeUnitUtc,
+        LastTimeUnitStartUtc: lastTimeUnitUtc,
         Value: 90
       }
     ]
@@ -657,9 +649,7 @@ export async function updateBestPriceRate(
   console.log('[RATE-UPDATE] Starting Best Price rate update...');
   console.log('[RATE-UPDATE] Endpoint:', endpoint);
   console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
-  console.log('[RATE-UPDATE] Timezone:', timezone);
-  console.log('[RATE-UPDATE] Date range (property TZ):', todayLocal.toISOString(), 'to', endDateLocal.toISOString());
-  console.log('[RATE-UPDATE] Date range (UTC):', firstTimeUnitUtc.toISOString(), 'to', lastTimeUnitUtc.toISOString());
+  console.log('[RATE-UPDATE] Date range (UTC):', firstTimeUnitUtc, 'to', lastTimeUnitUtc);
   console.log('[RATE-UPDATE] Payload:', JSON.stringify({
     ...payload,
     ClientToken: '***REDACTED***',
