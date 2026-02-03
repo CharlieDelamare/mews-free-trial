@@ -58,7 +58,13 @@ interface CategoryTarget {
 export async function createReservationsForEnvironment(
   accessToken: string,
   enterpriseId: string,
-  accessTokenId: number
+  accessTokenId: number,
+  options?: {
+    dateRange?: {
+      start: Date;
+      end: Date;
+    };
+  }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
 
@@ -93,7 +99,12 @@ export async function createReservationsForEnvironment(
     }
 
     // Step 4: Calculate per-category reservation targets for 80% occupancy
-    const categoryTargets = calculateCategoryTargets(filteredCategories, envData.durationDays);
+    // If custom dateRange provided, calculate duration from it; otherwise use envData
+    const effectiveDuration = options?.dateRange
+      ? Math.ceil((options.dateRange.end.getTime() - options.dateRange.start.getTime()) / (1000 * 60 * 60 * 24))
+      : envData.durationDays;
+
+    const categoryTargets = calculateCategoryTargets(filteredCategories, effectiveDuration);
     const totalReservations = categoryTargets.reduce((sum, ct) => sum + ct.targetReservations, 0);
 
     console.log(`[RESERVATIONS] Per-category targets for 80% occupancy:`);
@@ -104,8 +115,9 @@ export async function createReservationsForEnvironment(
 
     console.log(`[RESERVATIONS] Setup:`, {
       propertyType: envData.propertyType,
-      duration: `${envData.durationDays} days`,
-      targetReservations: totalReservations
+      duration: `${effectiveDuration} days`,
+      targetReservations: totalReservations,
+      ...(options?.dateRange && { customDateRange: true })
     });
 
     // Update log with total
@@ -128,7 +140,8 @@ export async function createReservationsForEnvironment(
       customerIds,
       mewsData.rates,
       envData,
-      mewsData.ageCategories.adult
+      mewsData.ageCategories.adult,
+      options?.dateRange
     );
 
     // Group reservations for API calls
@@ -398,13 +411,19 @@ function generateReservationData(
   customerIds: string[],
   rates: MewsData['rates'],
   envData: EnvironmentData,
-  adultAgeCategoryId: string
+  adultAgeCategoryId: string,
+  dateRange?: { start: Date; end: Date }
 ): ReservationData[] {
   const totalReservations = categoryTargets.reduce((sum, ct) => sum + ct.targetReservations, 0);
   console.log(`[RESERVATIONS] Generating ${totalReservations} reservation templates across ${categoryTargets.length} categories...`);
 
   const reservations: ReservationData[] = [];
-  const totalDays = envData.durationDays + 2; // -2 to +duration
+
+  // Use custom date range if provided, otherwise use default logic
+  const startDate = dateRange?.start || addDays(envData.createdAt, -2);
+  const endDate = dateRange?.end || addDays(envData.createdAt, envData.durationDays);
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
   const today = startOfDay(new Date());
   const stateTracker = new ReservationStateTracker();
   const rateDistribution = [
@@ -429,8 +448,8 @@ function generateReservationData(
       const stayLength = getStayLength(i, target.targetReservations);
 
       // Spread check-in dates across time window
-      const dayOffset = -2 + (globalIndex % totalDays);
-      const checkInDate = addDays(envData.createdAt, dayOffset);
+      const dayOffset = globalIndex % totalDays;
+      const checkInDate = addDays(startDate, dayOffset);
       const checkOutDate = addDays(checkInDate, stayLength);
 
       // Convert to UTC with proper times
