@@ -52,10 +52,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Validate duration
-    if (!isValidDuration(durationDays)) {
+    // Check for Charlie user exception (needs to be before duration validation)
+    const isCharlie = requestorEmail === 'charlie.delamare@gmail.com' ||
+                      requestorEmail === 'charlie.delamare@mews.com';
+
+    // Validate duration (context-aware for Charlie)
+    const validDurations = isCharlie ? [1, 7, 30, 60] : [7, 30, 60];
+    if (!validDurations.includes(durationDays)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid duration. Must be 7, 30, or 60 days' },
+        {
+          success: false,
+          error: isCharlie
+            ? 'Invalid duration. Must be 1, 7, 30, or 60 days'
+            : 'Invalid duration. Must be 7, 30, or 60 days'
+        },
         { status: 400 }
       );
     }
@@ -104,10 +114,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 503 }
       );
     }
-
-    // Check for Charlie user exception
-    const isCharlie = requestorEmail === 'charlie.delamare@gmail.com' ||
-                      requestorEmail === 'charlie.delamare@mews.com';
 
     // Duplicate prevention: Check if Salesforce Account ID already has an environment
     // Skip check for Charlie users (internal testing) and if no Salesforce ID provided

@@ -99,10 +99,10 @@ export default function FreeTrialPage() {
         [name]: processedValue
       };
 
-      // Auto-set duration to 7 days and populate test data for Charlie's emails
+      // Auto-set duration to 1 day and populate test data for Charlie's emails
       if (name === 'requestorEmail' &&
           (value === 'charlie.delamare@gmail.com' || value === 'charlie.delamare@mews.com')) {
-        updated.durationDays = 7;
+        updated.durationDays = 1;
         updated.firstName = 'Charlie';
         updated.lastName = 'Delamare';
         updated.customerEmail = 'charlie@charlie.com';
@@ -384,7 +384,7 @@ export default function FreeTrialPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Trial Duration *
-                {isCharlie && <span className="text-xs text-gray-500 ml-2">(Fixed at 7 days for internal use)</span>}
+                {isCharlie && <span className="text-xs text-gray-500 ml-2">(Fixed at 1 day for internal use)</span>}
               </label>
               <select
                 name="durationDays"
