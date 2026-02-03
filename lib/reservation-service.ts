@@ -1108,15 +1108,18 @@ async function callStateTransitionAPI(
       // Keep as plain text if not JSON
     }
 
-    // Retry logic for uninspected room errors
+    // Retry logic for room state errors (uninspected, blocked, dirty)
     if (action === 'start' &&
         response.status === 403 &&
-        errorText.toLowerCase().includes('not available for check-in') &&
+        (errorText.toLowerCase().includes('not available for check-in') ||
+         errorText.toLowerCase().includes('blocked')) &&
         assignedResourceId &&
         assignedResourceId !== 'unassigned' &&
         inspectedRooms) {
 
-      console.log(`[RESERVATIONS] ⚠️ Check-in failed - room may be uninspected or Dirty. Attempting inspection...`);
+      const errorType = errorText.toLowerCase().includes('blocked') ? 'blocked/occupied' : 'uninspected/Dirty';
+      console.log(`[RESERVATIONS] ⚠️ Check-in failed for reservation ${reservationId} in room ${assignedResourceId}`);
+      console.log(`[RESERVATIONS] ⚠️ Room may be ${errorType}. Attempting inspection to resolve...`);
 
       // Attempt to inspect the room
       const inspectResult = await updateResourceStates([assignedResourceId], accessToken);
@@ -1142,6 +1145,14 @@ async function callStateTransitionAPI(
           const retryError = await retryResponse.text();
           console.error(`[RESERVATIONS] ❌ Retry failed after inspection`);
           console.error(`[RESERVATIONS] Retry Error:`, retryError);
+
+          // If still blocked after inspection, it's likely due to overlapping reservations
+          if (retryError.toLowerCase().includes('blocked')) {
+            console.warn(`[RESERVATIONS] ⚠️ Room ${assignedResourceId} remains blocked - likely has an overlapping reservation`);
+            console.warn(`[RESERVATIONS] ⚠️ Skipping check-in for reservation ${reservationId} to avoid conflict`);
+            throw new Error(`Room blocked by overlapping reservation: ${retryResponse.status} - ${retryError}`);
+          }
+
           throw new Error(`Failed to ${action} reservation after inspection: ${retryResponse.status} - ${retryError}`);
         }
       } else {
