@@ -4,10 +4,26 @@ import { NextRequest } from 'next/server';
 
 // Mock dependencies
 const mockSaveEnvironmentLog = vi.fn();
+const mockUpdateEnvironmentLogById = vi.fn();
+const mockSendZapierNotification = vi.fn();
 global.fetch = vi.fn();
 
 vi.mock('@/lib/logger', () => ({
   saveEnvironmentLog: (...args: any[]) => mockSaveEnvironmentLog(...args),
+  updateEnvironmentLogById: (...args: any[]) => mockUpdateEnvironmentLogById(...args),
+}));
+
+vi.mock('@/lib/zapier', () => ({
+  sendZapierNotification: (...args: any[]) => mockSendZapierNotification(...args),
+}));
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    $queryRaw: vi.fn().mockResolvedValue([{ 1: 1 }]),
+    environmentLog: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+  },
 }));
 
 vi.mock('@/lib/codes', async () => {
@@ -20,6 +36,10 @@ describe('POST /api/create-trial', () => {
     vi.clearAllMocks();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Setup default mock return value - route uses log.id
+    mockSaveEnvironmentLog.mockResolvedValue({ id: 'test-log-id' });
+    mockUpdateEnvironmentLogById.mockResolvedValue({ id: 'test-log-id' });
+    mockSendZapierNotification.mockResolvedValue(undefined);
   });
 
   const createMockRequest = (body: any) => {
@@ -126,6 +146,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United Kingdom',
         preferredLanguage: 'English (UK)',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -158,6 +179,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'Germany',
         preferredLanguage: 'German',
         propertyType: 'hostel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -189,6 +211,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'France',
         preferredLanguage: 'French',
         propertyType: 'apartments',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -223,6 +246,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'Germany', // Gross pricing
         preferredLanguage: 'German',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -251,6 +275,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United States', // Net pricing
         preferredLanguage: 'English (USA)',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -281,6 +306,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United Kingdom',
         preferredLanguage: 'English (UK)',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -302,7 +328,7 @@ describe('POST /api/create-trial', () => {
       expect(payload.Client).toBe('Free Trial Generator');
       expect(payload.AccessToken).toBe('test-sample-token');
       expect(payload.Name).toBe('Test Hotel');
-      expect(payload.Lifetime).toBe('P0Y0M45DT0H0M0S');
+      expect(payload.Lifetime).toBe('P0Y0M30DT0H0M0S');
       expect(payload.User.Email).toBe('john@example.com');
     });
 
@@ -315,6 +341,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United Kingdom',
         preferredLanguage: 'English (UK)',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -327,11 +354,9 @@ describe('POST /api/create-trial', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.message).toBe('Trial created successfully! Check your email for login details.');
+      expect(data.message).toBe('Trial environment is being created. You will receive the login details shortly.');
       expect(data.propertyName).toBe('Test Hotel');
-      expect(data.loginUrl).toBe('https://app.mews-demo.com');
-      expect(data.loginEmail).toBe('john@example.com');
-      expect(data.defaultPassword).toBe('Sample123');
+      expect(data.status).toBe('building');
     });
 
     test('handles Mews API error response', async () => {
@@ -343,6 +368,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United Kingdom',
         preferredLanguage: 'English (UK)',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
       const apiError = { Message: 'Invalid access token' };
@@ -363,7 +389,7 @@ describe('POST /api/create-trial', () => {
   });
 
   describe('Database Logging', () => {
-    test('saves success log to database', async () => {
+    test('saves building log to database before API call', async () => {
       const request = createMockRequest({
         firstName: 'John',
         lastName: 'Doe',
@@ -372,6 +398,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United Kingdom',
         preferredLanguage: 'English (UK)',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -381,6 +408,7 @@ describe('POST /api/create-trial', () => {
 
       await POST(request);
 
+      // Log is saved with 'building' status before the API call
       expect(mockSaveEnvironmentLog).toHaveBeenCalledWith({
         propertyName: 'Test Hotel',
         customerName: 'John Doe',
@@ -390,11 +418,18 @@ describe('POST /api/create-trial', () => {
         loginUrl: 'https://app.mews-demo.com',
         loginEmail: 'john@example.com',
         loginPassword: 'Sample123',
-        status: 'success',
+        status: 'building',
+        requestorEmail: undefined,
+        durationDays: 30,
+        roomCount: 20,
+        dormCount: undefined,
+        apartmentCount: undefined,
+        bedCount: undefined,
+        salesforceAccountId: undefined,
       });
     });
 
-    test('saves failure log with error message to database', async () => {
+    test('updates log to failure status when API fails', async () => {
       const request = createMockRequest({
         firstName: 'Jane',
         lastName: 'Smith',
@@ -403,6 +438,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'Germany',
         preferredLanguage: 'German',
         propertyType: 'hostel',
+        durationDays: 30,
       });
 
       const apiError = { Message: 'API failure' };
@@ -414,23 +450,27 @@ describe('POST /api/create-trial', () => {
 
       await POST(request);
 
-      expect(mockSaveEnvironmentLog).toHaveBeenCalledWith({
-        propertyName: 'Failed Hotel',
-        customerName: 'Jane Smith',
-        customerEmail: 'jane@example.com',
-        propertyCountry: 'Germany',
-        propertyType: 'hostel',
-        loginUrl: 'https://app.mews-demo.com',
-        loginEmail: 'jane@example.com',
-        loginPassword: 'Sample123',
-        status: 'failure',
-        errorMessage: JSON.stringify(apiError),
-      });
+      // First saves with building status
+      expect(mockSaveEnvironmentLog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          propertyName: 'Failed Hotel',
+          status: 'building',
+        })
+      );
+
+      // Then updates to failure status
+      expect(mockUpdateEnvironmentLogById).toHaveBeenCalledWith(
+        'test-log-id',
+        {
+          status: 'failure',
+          errorMessage: JSON.stringify(apiError),
+        }
+      );
     });
   });
 
-  describe('Slack Notifications', () => {
-    test('sends success notification to Slack', async () => {
+  describe('Zapier Notifications', () => {
+    test('does not send notification on success (handled by webhook)', async () => {
       const request = createMockRequest({
         firstName: 'John',
         lastName: 'Doe',
@@ -440,83 +480,7 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United Kingdom',
         preferredLanguage: 'English (UK)',
         propertyType: 'hotel',
-      });
-
-      (global.fetch as any)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ success: true }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ ok: true }),
-        });
-
-      await POST(request);
-
-      const slackCall = (global.fetch as any).mock.calls.find(
-        (call: any) => call[0] === 'https://slack.com/api/chat.postMessage'
-      );
-
-      expect(slackCall).toBeDefined();
-      expect(slackCall[1].method).toBe('POST');
-      expect(slackCall[1].headers.Authorization).toBe('Bearer test-slack-token');
-
-      const payload = JSON.parse(slackCall[1].body);
-      expect(payload.channel).toBe('test-channel-id');
-      expect(payload.blocks[0].text.text).toContain('New Trial Generated');
-    });
-
-    test('sends failure notification to Slack', async () => {
-      const request = createMockRequest({
-        firstName: 'Jane',
-        lastName: 'Smith',
-        requestorEmail: 'requestor@example.com',
-        customerEmail: 'jane@example.com',
-        propertyName: 'Failed Hotel',
-        propertyCountry: 'Germany',
-        preferredLanguage: 'German',
-        propertyType: 'hotel',
-      });
-
-      const apiError = { Message: 'API failure' };
-
-      (global.fetch as any)
-        .mockResolvedValueOnce({
-          ok: false,
-          json: async () => apiError,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ ok: true }),
-        });
-
-      await POST(request);
-
-      const slackCall = (global.fetch as any).mock.calls.find(
-        (call: any) => call[0] === 'https://slack.com/api/chat.postMessage'
-      );
-
-      expect(slackCall).toBeDefined();
-      const payload = JSON.parse(slackCall[1].body);
-      expect(payload.blocks[0].text.text).toContain('Trial Generation Failed');
-    });
-
-    test('skips Slack notification when not configured', async () => {
-      const originalSlackToken = process.env.SLACK_BOT_TOKEN;
-      const originalChannelId = process.env.SLACK_CHANNEL_ID;
-
-      delete process.env.SLACK_BOT_TOKEN;
-      delete process.env.SLACK_CHANNEL_ID;
-
-      const request = createMockRequest({
-        firstName: 'John',
-        lastName: 'Doe',
-        customerEmail: 'john@example.com',
-        propertyName: 'Test Hotel',
-        propertyCountry: 'United Kingdom',
-        preferredLanguage: 'English (UK)',
-        propertyType: 'hotel',
+        durationDays: 30,
       });
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -526,21 +490,81 @@ describe('POST /api/create-trial', () => {
 
       await POST(request);
 
-      const slackCall = (global.fetch as any).mock.calls.find(
-        (call: any) => call[0] === 'https://slack.com/api/chat.postMessage'
+      // Success notifications are sent from webhook handler, not create-trial
+      expect(mockSendZapierNotification).not.toHaveBeenCalled();
+    });
+
+    test('sends failure notification to Zapier', async () => {
+      const request = createMockRequest({
+        firstName: 'Jane',
+        lastName: 'Smith',
+        requestorEmail: 'requestor@example.com',
+        customerEmail: 'jane@example.com',
+        propertyName: 'Failed Hotel',
+        propertyCountry: 'Germany',
+        preferredLanguage: 'German',
+        propertyType: 'hotel',
+        durationDays: 30,
+      });
+
+      const apiError = { Message: 'API failure' };
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        json: async () => apiError,
+      });
+
+      await POST(request);
+
+      expect(mockSendZapierNotification).toHaveBeenCalledWith(
+        'trial_generation_failure',
+        expect.objectContaining({
+          status: 'failure',
+          propertyName: 'Failed Hotel',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          customerName: 'Jane Smith',
+          requestorEmail: 'requestor@example.com',
+          customerEmail: 'jane@example.com',
+          error: 'Failed to create trial environment',
+        })
       );
+    });
 
-      expect(slackCall).toBeUndefined();
-      expect(console.log).toHaveBeenCalledWith('Slack API not configured, skipping notification');
+    test('continues even if Zapier notification fails', async () => {
+      const request = createMockRequest({
+        firstName: 'Jane',
+        lastName: 'Smith',
+        requestorEmail: 'requestor@example.com',
+        customerEmail: 'jane@example.com',
+        propertyName: 'Failed Hotel',
+        propertyCountry: 'Germany',
+        preferredLanguage: 'German',
+        propertyType: 'hotel',
+        durationDays: 30,
+      });
 
-      // Restore environment variables
-      process.env.SLACK_BOT_TOKEN = originalSlackToken;
-      process.env.SLACK_CHANNEL_ID = originalChannelId;
+      const apiError = { Message: 'API failure' };
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        json: async () => apiError,
+      });
+
+      mockSendZapierNotification.mockRejectedValueOnce(new Error('Zapier error'));
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      // Should still return the API error response
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Failed to create trial');
     });
   });
 
   describe('Error Handling', () => {
-    test('handles internal server error', async () => {
+    test('handles fetch error during API call', async () => {
       const request = createMockRequest({
         firstName: 'John',
         lastName: 'Doe',
@@ -549,22 +573,24 @@ describe('POST /api/create-trial', () => {
         propertyCountry: 'United Kingdom',
         preferredLanguage: 'English (UK)',
         propertyType: 'hotel',
+        durationDays: 30,
       });
 
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      const fetchError = new Error('fetch failed');
+      (global.fetch as any).mockRejectedValueOnce(fetchError);
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Internal server error');
+      expect(data.error).toBe('Failed to communicate with Mews API');
     });
 
     test('handles JSON parsing error', async () => {
       const request = {
         json: async () => {
-          throw new Error('Invalid JSON');
+          throw new SyntaxError('Invalid JSON');
         },
       } as NextRequest;
 
@@ -573,6 +599,7 @@ describe('POST /api/create-trial', () => {
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
+      expect(data.error).toBe('Invalid request format');
     });
   });
 });
