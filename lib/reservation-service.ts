@@ -455,8 +455,36 @@ function generateReservationData(
     }
   }
 
-  console.log(`[RESERVATIONS] Generated ${reservations.length} total reservations`);
-  return reservations;
+  // Shuffle reservations to avoid clustering by stay length
+  const shuffled = shuffleArray(reservations);
+
+  console.log(`[RESERVATIONS] Generated and shuffled ${shuffled.length} total reservations`);
+  return shuffled;
+}
+
+/**
+ * Simple seeded random number generator (Linear Congruential Generator)
+ */
+function seededRandom(seed: number): () => number {
+  let state = seed;
+  return () => {
+    state = (state * 1103515245 + 12345) & 0x7fffffff;
+    return state / 0x7fffffff;
+  };
+}
+
+/**
+ * Shuffle array using Fisher-Yates algorithm with seeded RNG for deterministic results
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  const random = seededRandom(42); // Fixed seed for consistent ordering
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 /**
