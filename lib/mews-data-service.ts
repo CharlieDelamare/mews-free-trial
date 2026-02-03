@@ -631,10 +631,13 @@ export async function updateBestPriceRate(
   const firstTimeUnitUtc = fromZonedTime(`${todayStr} 00:00:00`, timezone).toISOString();
   const lastTimeUnitUtc = fromZonedTime(`${endDateStr} 00:00:00`, timezone).toISOString();
 
+  console.log('[RATE-UPDATE] ========== Rate Update Request Details ==========');
   console.log('[RATE-UPDATE] Property timezone:', timezone);
-  console.log('[RATE-UPDATE] Local midnight today:', todayStr);
-  console.log('[RATE-UPDATE] First time unit (UTC):', firstTimeUnitUtc);
-  console.log('[RATE-UPDATE] Last time unit (UTC):', lastTimeUnitUtc);
+  console.log('[RATE-UPDATE] Today (local date string):', todayStr);
+  console.log('[RATE-UPDATE] End date (local date string):', endDateStr);
+  console.log('[RATE-UPDATE] First time unit (UTC ISO):', firstTimeUnitUtc);
+  console.log('[RATE-UPDATE] Last time unit (UTC ISO):', lastTimeUnitUtc);
+  console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
 
   const payload = {
     ClientToken: clientToken,
@@ -650,10 +653,9 @@ export async function updateBestPriceRate(
     ]
   };
 
-  console.log('[RATE-UPDATE] Starting Best Price rate update...');
+  console.log('[RATE-UPDATE] ========== Sending Request ==========');
   console.log('[RATE-UPDATE] Endpoint:', endpoint);
-  console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
-  console.log('[RATE-UPDATE] Payload:', JSON.stringify({
+  console.log('[RATE-UPDATE] Full payload:', JSON.stringify({
     ...payload,
     ClientToken: '***REDACTED***',
     AccessToken: '***REDACTED***'
