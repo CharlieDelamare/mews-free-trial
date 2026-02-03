@@ -46,7 +46,7 @@ interface MewsRate {
 
 interface MewsResourceCategory {
   Id: string;
-  Name: string;
+  Names: Record<string, string>; // Localized names object (e.g., { "en-US": "Standard Room" })
   Type: string;
 }
 
@@ -87,6 +87,28 @@ interface VouchersGetAllResponse {
   Vouchers: MewsVoucher[] | null;
   VoucherAssignments: MewsVoucherAssignment[] | null;
   VoucherCodes: MewsVoucherCode[] | null;
+}
+
+/**
+ * Extract a name from a localized Names object
+ * Prefers English variants, falls back to first available
+ */
+function extractName(names: Record<string, string> | undefined): string {
+  if (!names || typeof names !== 'object') {
+    return 'Unknown';
+  }
+
+  // Try common English locale keys first
+  const englishKeys = ['en-US', 'en-GB', 'en'];
+  for (const key of englishKeys) {
+    if (names[key]) {
+      return names[key];
+    }
+  }
+
+  // Fall back to first available name
+  const values = Object.values(names);
+  return values.length > 0 ? values[0] : 'Unknown';
 }
 
 /**
@@ -144,7 +166,24 @@ export async function fetchMewsData(
 
     // Step 4: Count resources per category
     console.log('[MEWS-DATA] Counting resources per category...');
-    console.log('[MEWS-DATA] Resource category IDs:', resourceCategories.map((rc: any) => rc.Id));
+    const categoryIds = new Set(resourceCategories.map((rc: any) => rc.Id));
+    const resourceCategoryIds = new Set(resources.map((r: any) => r.CategoryId));
+
+    console.log('[MEWS-DATA] Category IDs from resourceCategories API:', Array.from(categoryIds));
+    console.log('[MEWS-DATA] CategoryIds from resources API:', Array.from(resourceCategoryIds));
+
+    // Check for ID mismatches
+    const matchingIds = Array.from(categoryIds).filter(id => resourceCategoryIds.has(id));
+    const unmatchedCategoryIds = Array.from(categoryIds).filter(id => !resourceCategoryIds.has(id));
+    const unmatchedResourceIds = Array.from(resourceCategoryIds).filter(id => !categoryIds.has(id));
+
+    console.log('[MEWS-DATA] ✓ Matching IDs:', matchingIds);
+    if (unmatchedCategoryIds.length > 0) {
+      console.log('[MEWS-DATA] ⚠️  Category IDs with no resources:', unmatchedCategoryIds);
+    }
+    if (unmatchedResourceIds.length > 0) {
+      console.log('[MEWS-DATA] ⚠️  Resource CategoryIds not in categories list:', unmatchedResourceIds);
+    }
 
     const resourceCountsPerCategory = new Map<string, number>();
     for (const resource of resources) {
@@ -158,14 +197,14 @@ export async function fetchMewsData(
     console.log('[MEWS-DATA] Mapping resource categories...');
     console.log('[MEWS-DATA] Input categories:', resourceCategories.map((rc: any) => ({
       Id: rc.Id,
-      Name: rc.Name,
+      Names: rc.Names,
       Type: rc.Type,
       allFields: Object.keys(rc)
     })));
 
     const resourceCategoryList = resourceCategories.map((rc: MewsResourceCategory) => ({
       id: rc.Id,
-      name: rc.Name,
+      name: extractName(rc.Names),
       type: rc.Type,
       resourceCount: resourceCountsPerCategory.get(rc.Id) || 0
     }));
@@ -296,6 +335,7 @@ async function fetchResourceCategories(
   if (categories.length > 0) {
     console.log('[MEWS-DATA] First category sample:', JSON.stringify(categories[0], null, 2));
     console.log('[MEWS-DATA] All category fields:', Object.keys(categories[0]));
+    console.log('[MEWS-DATA] Names field structure:', JSON.stringify(categories[0].Names, null, 2));
   }
 
   return categories;
