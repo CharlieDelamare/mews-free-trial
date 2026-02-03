@@ -703,7 +703,12 @@ async function updateResourceStates(
           Client: 'Free Trial Generator',
           ResourceUpdates: resourceIds.map(resourceId => ({
             ResourceId: resourceId,
-            State: { Value: 'Inspected' }
+            State: {
+              Value: 'Inspected'
+            },
+            StateReason: {
+              Value: 'Room inspection completed'
+            }
           }))
         })
       }
