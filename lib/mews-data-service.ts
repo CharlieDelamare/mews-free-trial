@@ -5,6 +5,8 @@
  * Data is held in memory only (no database storage).
  */
 
+import { fromZonedTime } from 'date-fns-tz';
+
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
 export interface MewsData {
@@ -598,39 +600,34 @@ function parseISO8601Duration(duration: string): { hours: number; minutes: numbe
 
 /**
  * Update the "Best Price" rate price to 90 for all resource categories
+ * Uses midnight in the property's local timezone, converted to UTC
  */
 export async function updateBestPriceRate(
   clientToken: string,
   accessToken: string,
-  bestPriceRateId: string
+  bestPriceRateId: string,
+  timezone: string
 ): Promise<boolean> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
 
-  // Fetch service to get StartOffset
-  const services = await fetchServices(clientToken, accessToken);
-  const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
-
-  if (!bookableService || !bookableService.Data.Value?.StartOffset) {
-    console.error('[RATE-UPDATE] ❌ No bookable service with StartOffset found');
-    return false;
-  }
-
-  const startOffset = bookableService.Data.Value.StartOffset;
-  console.log('[RATE-UPDATE] Service StartOffset:', startOffset);
-
-  // Parse the StartOffset (e.g., "P0M0DT15H0M0S" -> { hours: 15, minutes: 0 })
-  const { hours, minutes } = parseISO8601Duration(startOffset);
-  console.log('[RATE-UPDATE] Parsed offset:', { hours, minutes });
-
   // Calculate date range: today to 100 days from now
-  const today = new Date().toISOString().split('T')[0];  // "YYYY-MM-DD"
-  const endDate = new Date(Date.now() + 100 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  // Use midnight in property's local timezone, converted to UTC
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  // Build UTC timestamps using StartOffset time
-  const h = String(hours).padStart(2, '0');
-  const m = String(minutes).padStart(2, '0');
-  const firstTimeUnitUtc = `${today}T${h}:${m}:00Z`;
-  const lastTimeUnitUtc = `${endDate}T${h}:${m}:00Z`;
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + 100);
+
+  // Convert midnight local time to UTC
+  // fromZonedTime takes a date that represents local time in the given timezone
+  // and returns the equivalent UTC date
+  const firstTimeUnitUtc = fromZonedTime(today, timezone).toISOString();
+  const lastTimeUnitUtc = fromZonedTime(endDate, timezone).toISOString();
+
+  console.log('[RATE-UPDATE] Property timezone:', timezone);
+  console.log('[RATE-UPDATE] Local midnight today:', today.toISOString().split('T')[0]);
+  console.log('[RATE-UPDATE] First time unit (UTC):', firstTimeUnitUtc);
+  console.log('[RATE-UPDATE] Last time unit (UTC):', lastTimeUnitUtc);
 
   const payload = {
     ClientToken: clientToken,
@@ -649,7 +646,6 @@ export async function updateBestPriceRate(
   console.log('[RATE-UPDATE] Starting Best Price rate update...');
   console.log('[RATE-UPDATE] Endpoint:', endpoint);
   console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
-  console.log('[RATE-UPDATE] Date range (UTC):', firstTimeUnitUtc, 'to', lastTimeUnitUtc);
   console.log('[RATE-UPDATE] Payload:', JSON.stringify({
     ...payload,
     ClientToken: '***REDACTED***',
