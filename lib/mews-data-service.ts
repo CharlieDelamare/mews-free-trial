@@ -587,12 +587,22 @@ export async function updateBestPriceRate(
 ): Promise<boolean> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
 
+  // Calculate date range: today to 100 days from now
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Start of today
+
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + 100); // 100 days from now
+  endDate.setHours(23, 59, 59, 999); // End of that day
+
   const payload = {
     ClientToken: clientToken,
     AccessToken: accessToken,
     RateId: bestPriceRateId,
     PriceUpdates: [
       {
+        FirstTimeUnitStartUtc: today.toISOString(),
+        LastTimeUnitStartUtc: endDate.toISOString(),
         Value: 90
       }
     ]
@@ -601,6 +611,7 @@ export async function updateBestPriceRate(
   console.log('[RATE-UPDATE] Starting Best Price rate update...');
   console.log('[RATE-UPDATE] Endpoint:', endpoint);
   console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
+  console.log('[RATE-UPDATE] Date range:', today.toISOString(), 'to', endDate.toISOString());
   console.log('[RATE-UPDATE] Payload:', JSON.stringify({
     ...payload,
     ClientToken: '***REDACTED***',
