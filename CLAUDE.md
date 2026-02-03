@@ -38,6 +38,16 @@ When modifying the Prisma schema (`prisma/schema.prisma`), you MUST:
 
 Pushing schema changes without migrations will cause production deployment failures.
 
+**CRITICAL: Working with External APIs**
+
+When integrating with external APIs (Mews API or any other):
+1. **Read API documentation carefully** when provided - do not skip or skim documentation
+2. **If unsure about an endpoint**, ALWAYS ask for an example request & response before implementing
+3. **Never guess** at API payload structures, parameters, or response formats
+4. **Verify** the exact field names, data types, and required vs optional parameters from documentation or examples
+
+This prevents implementing incorrect API calls that will fail in production.
+
 ## Project Overview
 
 **Mews Free Trial** is a Next.js web application that allows Mews sales representatives to create trial hotel environments (7, 30, or 60 days) in the Mews demo system. The app integrates with the Mews API to provision sample hotels with automatic customer and reservation creation, stores environment logs in PostgreSQL, and sends notifications via Zapier webhooks.
