@@ -411,8 +411,8 @@ function generateReservationData(
       // Assign customer (rotate through available customers)
       const customerId = customerIds[globalIndex % customerIds.length];
 
-      // Determine stay length based on distribution
-      const stayLength = getStayLength(globalIndex, totalReservations);
+      // Determine stay length based on per-category distribution
+      const stayLength = getStayLength(i, target.targetReservations);
 
       // Spread check-in dates across time window
       const dayOffset = -2 + (globalIndex % totalDays);
