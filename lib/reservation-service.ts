@@ -596,12 +596,27 @@ async function createReservationGroups(
       const data = await response.json();
       const reservationIds = data.Reservations?.map((r: any) => r.Id) || [];
 
-      // Store reservations with desired states for later state transitions
+      // Validate and store reservations with desired states for later state transitions
       for (let j = 0; j < reservationIds.length; j++) {
-        createdReservations.push({
-          id: reservationIds[j],
-          desiredState: group[j].desiredState
-        });
+        const id = reservationIds[j];
+        // Only add valid reservation IDs
+        if (id && typeof id === 'string' && id.trim() !== '') {
+          createdReservations.push({
+            id: id,
+            desiredState: group[j].desiredState
+          });
+        } else {
+          console.warn(`[RESERVATIONS] ⚠️ Invalid reservation ID at index ${j} in group ${i}: ${id}`);
+          failures.push({ ...group[j], error: 'Invalid reservation ID returned from API' });
+        }
+      }
+
+      // If we got fewer IDs than expected, mark the missing ones as failures
+      if (reservationIds.length < group.length) {
+        console.warn(`[RESERVATIONS] ⚠️ Expected ${group.length} reservations but only got ${reservationIds.length} IDs`);
+        for (let j = reservationIds.length; j < group.length; j++) {
+          failures.push({ ...group[j], error: 'No reservation ID returned from API' });
+        }
       }
 
     } catch (error) {
@@ -614,33 +629,61 @@ async function createReservationGroups(
 }
 
 /**
- * Apply state transitions (Start and Process)
+ * Apply state transitions (Start and Process) with resilient error handling
  */
 async function applyStateTransitions(
   reservations: Array<{ id: string; desiredState: string }>,
   accessToken: string
 ): Promise<void> {
-  const startedIds = reservations.filter(r => r.desiredState === 'Started').map(r => r.id);
-  const processedIds = reservations.filter(r => r.desiredState === 'Processed').map(r => r.id);
+  // Filter out invalid IDs and group by desired state
+  const validReservations = reservations.filter(r => r.id && typeof r.id === 'string' && r.id.trim() !== '');
+  const startedIds = validReservations.filter(r => r.desiredState === 'Started').map(r => r.id);
+  const processedIds = validReservations.filter(r => r.desiredState === 'Processed').map(r => r.id);
+
+  const invalidCount = reservations.length - validReservations.length;
+  if (invalidCount > 0) {
+    console.warn(`[RESERVATIONS] ⚠️ Filtered out ${invalidCount} invalid reservation ID(s)`);
+  }
 
   console.log(`[RESERVATIONS] Applying state transitions: ${startedIds.length} Started, ${processedIds.length} Processed`);
 
-  try {
-    // Start reservations
-    if (startedIds.length > 0) {
-      await callStateTransitionAPI('start', startedIds, accessToken);
-    }
+  let successCount = 0;
+  let failureCount = 0;
 
-    // Process reservations (must start first, then process)
-    if (processedIds.length > 0) {
-      await callStateTransitionAPI('start', processedIds, accessToken);
-      await callStateTransitionAPI('process', processedIds, accessToken);
+  // Process Started reservations individually
+  if (startedIds.length > 0) {
+    console.log(`[RESERVATIONS] Processing ${startedIds.length} 'Started' transitions...`);
+    for (const id of startedIds) {
+      try {
+        await callStateTransitionAPI('start', [id], accessToken);
+        successCount++;
+      } catch (error) {
+        console.error(`[RESERVATIONS] ❌ Failed to start reservation ${id}:`, (error as Error).message);
+        failureCount++;
+      }
     }
+  }
 
-    console.log(`[RESERVATIONS] ✅ State transitions completed successfully`);
-  } catch (error) {
-    console.error(`[RESERVATIONS] ❌ State transition error:`, error);
-    throw error; // Re-throw to be caught by caller
+  // Process Processed reservations individually (start then process)
+  if (processedIds.length > 0) {
+    console.log(`[RESERVATIONS] Processing ${processedIds.length} 'Processed' transitions...`);
+    for (const id of processedIds) {
+      try {
+        await callStateTransitionAPI('start', [id], accessToken);
+        await callStateTransitionAPI('process', [id], accessToken);
+        successCount++;
+      } catch (error) {
+        console.error(`[RESERVATIONS] ❌ Failed to process reservation ${id}:`, (error as Error).message);
+        failureCount++;
+      }
+    }
+  }
+
+  console.log(`[RESERVATIONS] State transitions complete: ${successCount} succeeded, ${failureCount} failed`);
+
+  // Don't throw error - log failures but continue
+  if (failureCount > 0) {
+    console.warn(`[RESERVATIONS] ⚠️ ${failureCount} state transition(s) failed, but continuing...`);
   }
 }
 
