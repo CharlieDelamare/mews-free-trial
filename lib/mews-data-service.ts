@@ -166,7 +166,24 @@ export async function fetchMewsData(
 
     // Step 4: Count resources per category
     console.log('[MEWS-DATA] Counting resources per category...');
-    console.log('[MEWS-DATA] Resource category IDs:', resourceCategories.map((rc: any) => rc.Id));
+    const categoryIds = new Set(resourceCategories.map((rc: any) => rc.Id));
+    const resourceCategoryIds = new Set(resources.map((r: any) => r.CategoryId));
+
+    console.log('[MEWS-DATA] Category IDs from resourceCategories API:', Array.from(categoryIds));
+    console.log('[MEWS-DATA] CategoryIds from resources API:', Array.from(resourceCategoryIds));
+
+    // Check for ID mismatches
+    const matchingIds = Array.from(categoryIds).filter(id => resourceCategoryIds.has(id));
+    const unmatchedCategoryIds = Array.from(categoryIds).filter(id => !resourceCategoryIds.has(id));
+    const unmatchedResourceIds = Array.from(resourceCategoryIds).filter(id => !categoryIds.has(id));
+
+    console.log('[MEWS-DATA] ✓ Matching IDs:', matchingIds);
+    if (unmatchedCategoryIds.length > 0) {
+      console.log('[MEWS-DATA] ⚠️  Category IDs with no resources:', unmatchedCategoryIds);
+    }
+    if (unmatchedResourceIds.length > 0) {
+      console.log('[MEWS-DATA] ⚠️  Resource CategoryIds not in categories list:', unmatchedResourceIds);
+    }
 
     const resourceCountsPerCategory = new Map<string, number>();
     for (const resource of resources) {
