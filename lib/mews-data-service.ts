@@ -612,20 +612,27 @@ export async function updateBestPriceRate(
 
   // Calculate date range: today to 100 days from now
   // Use midnight in property's local timezone, converted to UTC
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayUtc = new Date();
+  const year = todayUtc.getUTCFullYear();
+  const month = String(todayUtc.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(todayUtc.getUTCDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
 
-  const endDate = new Date(today);
-  endDate.setDate(endDate.getDate() + 100);
+  // Create end date (100 days from now)
+  const endDateUtc = new Date(todayUtc);
+  endDateUtc.setUTCDate(endDateUtc.getUTCDate() + 100);
+  const endYear = endDateUtc.getUTCFullYear();
+  const endMonth = String(endDateUtc.getUTCMonth() + 1).padStart(2, '0');
+  const endDay = String(endDateUtc.getUTCDate()).padStart(2, '0');
+  const endDateStr = `${endYear}-${endMonth}-${endDay}`;
 
-  // Convert midnight local time to UTC
-  // fromZonedTime takes a date that represents local time in the given timezone
-  // and returns the equivalent UTC date
-  const firstTimeUnitUtc = fromZonedTime(today, timezone).toISOString();
-  const lastTimeUnitUtc = fromZonedTime(endDate, timezone).toISOString();
+  // Create midnight times in property's local timezone, then convert to UTC
+  // fromZonedTime interprets the date string as being in the specified timezone
+  const firstTimeUnitUtc = fromZonedTime(`${todayStr} 00:00:00`, timezone).toISOString();
+  const lastTimeUnitUtc = fromZonedTime(`${endDateStr} 00:00:00`, timezone).toISOString();
 
   console.log('[RATE-UPDATE] Property timezone:', timezone);
-  console.log('[RATE-UPDATE] Local midnight today:', today.toISOString().split('T')[0]);
+  console.log('[RATE-UPDATE] Local midnight today:', todayStr);
   console.log('[RATE-UPDATE] First time unit (UTC):', firstTimeUnitUtc);
   console.log('[RATE-UPDATE] Last time unit (UTC):', lastTimeUnitUtc);
 
