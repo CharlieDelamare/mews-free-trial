@@ -655,7 +655,7 @@ async function applyStateTransitions(
     console.log(`[RESERVATIONS] Processing ${startedIds.length} 'Started' transitions...`);
     for (const id of startedIds) {
       try {
-        await callStateTransitionAPI('start', [id], accessToken);
+        await callStateTransitionAPI('start', id, accessToken);
         successCount++;
       } catch (error) {
         console.error(`[RESERVATIONS] ❌ Failed to start reservation ${id}:`, (error as Error).message);
@@ -669,8 +669,8 @@ async function applyStateTransitions(
     console.log(`[RESERVATIONS] Processing ${processedIds.length} 'Processed' transitions...`);
     for (const id of processedIds) {
       try {
-        await callStateTransitionAPI('start', [id], accessToken);
-        await callStateTransitionAPI('process', [id], accessToken);
+        await callStateTransitionAPI('start', id, accessToken);
+        await callStateTransitionAPI('process', id, accessToken);
         successCount++;
       } catch (error) {
         console.error(`[RESERVATIONS] ❌ Failed to process reservation ${id}:`, (error as Error).message);
@@ -689,24 +689,31 @@ async function applyStateTransitions(
 
 /**
  * Call state transition API with detailed logging
+ * Note: Both start and process APIs accept only a single reservation ID at a time
  */
 async function callStateTransitionAPI(
   action: 'start' | 'process',
-  reservationIds: string[],
+  reservationId: string,
   accessToken: string
 ): Promise<void> {
   const endpoint = action === 'start' ? 'reservations/start' : 'reservations/process';
   const url = `${MEWS_API_URL}/api/connector/v1/${endpoint}`;
 
-  // Prepare payload
-  const payload = {
+  // Prepare payload - use singular ReservationId
+  const payload: any = {
     ClientToken: MEWS_CLIENT_TOKEN,
     AccessToken: accessToken,
     Client: 'Free Trial Generator',
-    ReservationIds: reservationIds
+    ReservationId: reservationId
   };
 
-  console.log(`[RESERVATIONS] 📤 Calling ${action} API for ${reservationIds.length} reservation(s)`);
+  // Add required fields for process action
+  if (action === 'process') {
+    payload.CloseBills = false;
+    payload.AllowOpenBalance = true;
+  }
+
+  console.log(`[RESERVATIONS] 📤 Calling ${action} API for reservation ${reservationId}`);
   console.log(`[RESERVATIONS] URL: ${url}`);
   console.log(`[RESERVATIONS] Payload:`, JSON.stringify(payload, null, 2));
 
@@ -733,10 +740,10 @@ async function callStateTransitionAPI(
 
     console.error(`[RESERVATIONS] ❌ ${action} transition FAILED`);
     console.error(`[RESERVATIONS] HTTP Status: ${response.status} ${response.statusText}`);
-    console.error(`[RESERVATIONS] Reservation IDs: ${reservationIds.join(', ')}`);
+    console.error(`[RESERVATIONS] Reservation ID: ${reservationId}`);
     console.error(`[RESERVATIONS] Error Response:`, errorDetails);
 
-    throw new Error(`Failed to ${action} reservations: ${response.status} - ${errorText}`);
+    throw new Error(`Failed to ${action} reservation: ${response.status} - ${errorText}`);
   }
 
   // Log success response
@@ -749,6 +756,6 @@ async function callStateTransitionAPI(
     // Keep as plain text if not JSON
   }
 
-  console.log(`[RESERVATIONS] ✅ Successfully ${action === 'start' ? 'started' : 'processed'} ${reservationIds.length} reservation(s)`);
+  console.log(`[RESERVATIONS] ✅ Successfully ${action === 'start' ? 'started' : 'processed'} reservation ${reservationId}`);
   console.log(`[RESERVATIONS] Response Data:`, responseData);
 }
