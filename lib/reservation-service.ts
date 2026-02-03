@@ -552,7 +552,7 @@ class ReservationStateTracker {
   constructor(
     private config: StateTrackingConfig = {
       maxUncheckedYesterdayArrivals: 2,
-      maxUncheckedTodayDepartures: 2
+      maxUncheckedTodayDepartures: 3
     }
   ) {}
 
@@ -572,16 +572,23 @@ class ReservationStateTracker {
       return 'Processed';
     }
 
-    // Case 2: Checkout is today -> limit unchecked departures to max 2
+    // Case 2: Checkout is today -> ensure 2-3 departures remain Started (ready for checkout)
     if (isSameDay(checkOutDate, today)) {
-      if (
+      // Deterministic logic to ensure we get 2-3 Started departures:
+      // - If we have < 2: always make it Started (ensure minimum of 2)
+      // - If we have == 2: 50% chance to make it Started (sometimes get 3)
+      // - If we have >= 3: always make it Processed (cap at 3)
+      if (this.uncheckedTodayDepartures < 2) {
+        this.uncheckedTodayDepartures++;
+        return 'Started'; // Still checked in, ready for checkout
+      } else if (
         this.uncheckedTodayDepartures < this.config.maxUncheckedTodayDepartures &&
-        Math.random() < 0.15
+        Math.random() < 0.5
       ) {
         this.uncheckedTodayDepartures++;
-        return 'Started'; // Still checked in, not yet departed
+        return 'Started'; // Still checked in, ready for checkout
       }
-      return 'Processed'; // Checked out
+      return 'Processed'; // Already checked out
     }
 
     // Case 3: Check-in before yesterday (2+ days ago) -> MUST be checked in
