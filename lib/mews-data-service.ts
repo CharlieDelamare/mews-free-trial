@@ -76,11 +76,13 @@ interface MewsVoucherAssignment {
   UpdatedUtc: string;
 }
 
-interface MewsResource {
+interface MewsResourceCategoryAssignment {
   Id: string;
-  Name: string;
+  ResourceId: string;
   CategoryId: string;
-  State: string;
+  IsActive: boolean;
+  CreatedUtc: string;
+  UpdatedUtc: string;
 }
 
 interface VouchersGetAllResponse {
@@ -129,13 +131,16 @@ export async function fetchMewsData(
 
     const serviceId = bookableService.Id;
 
-    // Step 2: Fetch rates, resource categories, age categories, and resources in parallel
-    const [rates, resourceCategories, ageCategories, resources] = await Promise.all([
+    // Step 2: Fetch rates, resource categories, and age categories in parallel
+    const [rates, resourceCategories, ageCategories] = await Promise.all([
       fetchRates(clientToken, accessToken, serviceId),
       fetchResourceCategories(clientToken, accessToken, serviceId),
-      fetchAgeCategories(clientToken, accessToken, serviceId),
-      fetchResources(clientToken, accessToken, serviceId)
+      fetchAgeCategories(clientToken, accessToken, serviceId)
     ]);
+
+    // Step 3: Fetch resource category assignments (needs category IDs from previous step)
+    const categoryIds = resourceCategories.map((rc: MewsResourceCategory) => rc.Id);
+    const assignments = await fetchResourceCategoryAssignments(clientToken, accessToken, categoryIds);
 
     // Map rates by hardcoded names
     const rateMap = mapRatesByName(rates);
@@ -164,31 +169,18 @@ export async function fetchMewsData(
       console.log('[MEWS-DATA] No voucher assignments found, proceeding without voucher codes');
     }
 
-    // Step 4: Count resources per category
-    console.log('[MEWS-DATA] Counting resources per category...');
-    const categoryIds = new Set(resourceCategories.map((rc: any) => rc.Id));
-    const resourceCategoryIds = new Set(resources.map((r: any) => r.CategoryId));
+    // Step 4: Count resources per category using assignments
+    console.log('[MEWS-DATA] Counting resources per category from assignments...');
+    console.log(`[MEWS-DATA] Total assignments: ${assignments.length}`);
 
-    console.log('[MEWS-DATA] Category IDs from resourceCategories API:', Array.from(categoryIds));
-    console.log('[MEWS-DATA] CategoryIds from resources API:', Array.from(resourceCategoryIds));
-
-    // Check for ID mismatches
-    const matchingIds = Array.from(categoryIds).filter(id => resourceCategoryIds.has(id));
-    const unmatchedCategoryIds = Array.from(categoryIds).filter(id => !resourceCategoryIds.has(id));
-    const unmatchedResourceIds = Array.from(resourceCategoryIds).filter(id => !categoryIds.has(id));
-
-    console.log('[MEWS-DATA] ✓ Matching IDs:', matchingIds);
-    if (unmatchedCategoryIds.length > 0) {
-      console.log('[MEWS-DATA] ⚠️  Category IDs with no resources:', unmatchedCategoryIds);
-    }
-    if (unmatchedResourceIds.length > 0) {
-      console.log('[MEWS-DATA] ⚠️  Resource CategoryIds not in categories list:', unmatchedResourceIds);
-    }
+    // Only count active assignments
+    const activeAssignments = assignments.filter((a: MewsResourceCategoryAssignment) => a.IsActive);
+    console.log(`[MEWS-DATA] Active assignments: ${activeAssignments.length}`);
 
     const resourceCountsPerCategory = new Map<string, number>();
-    for (const resource of resources) {
-      const count = resourceCountsPerCategory.get(resource.CategoryId) || 0;
-      resourceCountsPerCategory.set(resource.CategoryId, count + 1);
+    for (const assignment of activeAssignments) {
+      const count = resourceCountsPerCategory.get(assignment.CategoryId) || 0;
+      resourceCountsPerCategory.set(assignment.CategoryId, count + 1);
     }
 
     console.log('[MEWS-DATA] Resource counts map:', Object.fromEntries(resourceCountsPerCategory));
@@ -226,7 +218,7 @@ export async function fetchMewsData(
     console.log(`[MEWS-DATA] - Service: ${serviceId}`);
     console.log(`[MEWS-DATA] - Rates: ${Object.keys(rateMap).length}`);
     console.log(`[MEWS-DATA] - Resource categories: ${resourceCategoryList.length}`);
-    console.log(`[MEWS-DATA] - Total resources: ${resources.length}`);
+    console.log(`[MEWS-DATA] - Total resource assignments: ${activeAssignments.length}`);
     console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
     console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
     console.log('[MEWS-DATA] ✅ Fetch complete:', {
@@ -370,45 +362,45 @@ async function fetchAgeCategories(
 }
 
 /**
- * Fetch resources from Mews API
+ * Fetch resource category assignments from Mews API
+ * This tells us how many resources are assigned to each category
  */
-async function fetchResources(
+async function fetchResourceCategoryAssignments(
   clientToken: string,
   accessToken: string,
-  serviceId: string
-): Promise<MewsResource[]> {
-  console.log('[MEWS-DATA] Fetching resources...');
+  resourceCategoryIds: string[]
+): Promise<MewsResourceCategoryAssignment[]> {
+  console.log('[MEWS-DATA] Fetching resource category assignments...');
+  console.log(`[MEWS-DATA] Requesting assignments for ${resourceCategoryIds.length} categories`);
 
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resources/getAll`, {
+  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceCategoryAssignments/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
       Client: 'Free Trial Generator',
-      ServiceIds: [serviceId]
+      ResourceCategoryIds: resourceCategoryIds,
+      Limitation: {
+        Count: 1000
+      }
     })
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Resources fetch failed: ${response.status} - ${errorText}`);
+    throw new Error(`Resource category assignments fetch failed: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
-  const resources = data.Resources || [];
-  console.log(`[MEWS-DATA] Found ${resources.length} resources`);
+  const assignments = data.ResourceCategoryAssignments || [];
+  console.log(`[MEWS-DATA] Found ${assignments.length} resource category assignments`);
 
-  if (resources.length > 0) {
-    console.log('[MEWS-DATA] First resource sample:', JSON.stringify(resources[0], null, 2));
-    console.log('[MEWS-DATA] All resource fields:', Object.keys(resources[0]));
-
-    // Log unique CategoryIds
-    const categoryIds = new Set(resources.map((r: any) => r.CategoryId));
-    console.log('[MEWS-DATA] Unique CategoryIds from resources:', Array.from(categoryIds));
+  if (assignments.length > 0) {
+    console.log('[MEWS-DATA] First assignment sample:', JSON.stringify(assignments[0], null, 2));
   }
 
-  return resources;
+  return assignments;
 }
 
 /**
