@@ -105,18 +105,20 @@ describe('saveEnvironmentLog', () => {
       loginUrl: 'https://app.mews-demo.com',
       loginEmail: 'bob@example.com',
       loginPassword: 'Sample123',
-      status: 'success' as const,
+      status: 'building' as const,
     };
 
     const dbError = new Error('Database connection failed');
     mockCreate.mockRejectedValue(dbError);
 
-    // Should not throw
-    await expect(saveEnvironmentLog(logData)).resolves.toBeUndefined();
+    // Should throw with wrapped error message
+    await expect(saveEnvironmentLog(logData)).rejects.toThrow(
+      'Database error: Failed to save environment log - Database connection failed'
+    );
 
     expect(console.error).toHaveBeenCalledWith(
-      'Failed to save environment log:',
-      dbError
+      '[LOGGER] Failed to save environment log:',
+      'Database connection failed'
     );
   });
 
@@ -130,17 +132,22 @@ describe('saveEnvironmentLog', () => {
       loginUrl: 'https://app.mews-demo.com',
       loginEmail: 'alice@example.com',
       loginPassword: 'Sample123',
-      status: 'success' as const,
+      status: 'building' as const,
     };
 
     const error = new Error('Constraint violation');
     mockCreate.mockRejectedValue(error);
 
-    await saveEnvironmentLog(logData);
+    // Function now throws, so we need to catch it
+    try {
+      await saveEnvironmentLog(logData);
+    } catch {
+      // Expected to throw
+    }
 
     expect(console.error).toHaveBeenCalledWith(
-      'Failed to save environment log:',
-      error
+      '[LOGGER] Failed to save environment log:',
+      'Constraint violation'
     );
   });
 
