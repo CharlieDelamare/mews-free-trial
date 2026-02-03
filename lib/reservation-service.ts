@@ -594,7 +594,7 @@ async function createReservationGroups(
       }
 
       const data = await response.json();
-      const reservationIds = data.Reservations?.map((r: any) => r.Id) || [];
+      const reservationIds = data.Reservations?.map((r: any) => r.Reservation?.Id) || [];
 
       // Validate and store reservations with desired states for later state transitions
       for (let j = 0; j < reservationIds.length; j++) {
