@@ -2,7 +2,7 @@
  * Customer Service - Automatically creates sample customers in Mews trial environments
  *
  * This service is triggered automatically when a webhook receives an access token
- * from Mews after creating a trial environment. It creates 100 predetermined
+ * from Mews after creating a trial environment. It creates 300 predetermined
  * customer profiles using the Mews Connector API.
  */
 
@@ -40,7 +40,7 @@ interface CustomerCreationResult {
 }
 
 /**
- * Main entry point: Create 100 sample customers in a Mews trial environment
+ * Main entry point: Create 300 sample customers in a Mews trial environment
  *
  * This function is called automatically from the webhook handler after receiving
  * an access token. It processes customers in batches with concurrency control.
@@ -57,14 +57,17 @@ export async function createSampleCustomers(
 ): Promise<CustomerCreationResult> {
   const startTime = Date.now();
 
-  console.log(`[CUSTOMERS] Starting creation of ${getSampleCustomers().length} customers for:`, enterpriseId);
+  // Get sample customers (defaults to 300)
+  const customers = getSampleCustomers();
+
+  console.log(`[CUSTOMERS] Starting creation of ${customers.length} customers for:`, enterpriseId);
 
   // Create log entry with status 'processing'
   const log = await prisma.customerCreationLog.create({
     data: {
       enterpriseId,
       accessTokenId,
-      totalCustomers: 100,
+      totalCustomers: customers.length,
       successCount: 0,
       failureCount: 0,
       status: 'processing',
@@ -73,8 +76,6 @@ export async function createSampleCustomers(
   });
 
   try {
-    // Get sample customers
-    const customers = getSampleCustomers();
 
     // Process in batches with concurrency control
     const results = await processBatch(customers, accessToken, CONCURRENCY);
