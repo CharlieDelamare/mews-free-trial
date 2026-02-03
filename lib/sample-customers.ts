@@ -17,6 +17,8 @@ export interface SampleCustomer {
   CompanyIdentifier?: {
     Name: string;
   };
+  Classifications?: string[]; // Guest classifications (e.g., "Returning", "VeryImportant", "FriendOrFamily")
+  Notes?: string;             // Free text notes about the guest
 }
 
 /**
@@ -37,7 +39,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'GB',
-    PreferredLanguageCode: 'en-GB'
+    PreferredLanguageCode: 'en-GB',
+    Classifications: ['Returning', 'Important'],
+    Notes: 'Regular guest who visits quarterly. Prefers rooms on higher floors with city views. Allergic to down pillows.'
   },
   {
     FirstName: 'James',
@@ -48,7 +52,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'US',
-    PreferredLanguageCode: 'en-US'
+    PreferredLanguageCode: 'en-US',
+    Classifications: ['Military'],
+    Notes: 'US Navy veteran. Prefers quiet rooms away from elevators and ice machines. Early riser who appreciates breakfast service starting at 6 AM.'
   },
   {
     FirstName: 'Sophie',
@@ -70,7 +76,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'DE',
-    PreferredLanguageCode: 'de-DE'
+    PreferredLanguageCode: 'de-DE',
+    Classifications: ['FriendOrFamily'],
+    Notes: 'Brother-in-law of the Assistant Manager. Enjoys room 212 when available. Vegetarian dietary preferences.'
   },
   {
     FirstName: 'Isabella',
@@ -81,7 +89,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'IT',
-    PreferredLanguageCode: 'it-IT'
+    PreferredLanguageCode: 'it-IT',
+    Classifications: ['Student'],
+    Notes: 'Erasmus exchange student. Budget conscious. Needs strong WiFi for online classes. Prefers rooms near common areas for socializing.'
   },
   {
     FirstName: 'Carlos',
@@ -103,7 +113,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Misses',
     NationalityCode: 'PL',
-    PreferredLanguageCode: 'pl-PL'
+    PreferredLanguageCode: 'pl-PL',
+    Classifications: ['DisabledPerson', 'HealthCompliant'],
+    Notes: 'Requires wheelchair accessible room on ground floor. Needs bathroom with grab bars and roll-in shower. Patient and understanding guest.'
   },
   {
     FirstName: 'Lars',
@@ -114,7 +126,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'SE',
-    PreferredLanguageCode: 'sv-SE'
+    PreferredLanguageCode: 'sv-SE',
+    Classifications: ['PreviousComplaint', 'Returning'],
+    Notes: 'Had previous issue with noisy neighbors which was resolved professionally. Now satisfied and continues to return. Appreciates proactive communication from staff.'
   },
   {
     FirstName: 'Maria',
@@ -136,7 +150,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'CZ',
-    PreferredLanguageCode: 'cs-CZ'
+    PreferredLanguageCode: 'cs-CZ',
+    Classifications: ['Cashlist'],
+    Notes: 'Prefers to pay all charges in cash. Requests itemized receipts for all services. Polite and organized guest.'
   },
   {
     FirstName: 'Olivia',
@@ -147,7 +163,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'GB',
-    PreferredLanguageCode: 'en-GB'
+    PreferredLanguageCode: 'en-GB',
+    Classifications: ['Media'],
+    Notes: 'Freelance journalist covering travel and hospitality. May request information about property operations. Professional and discreet.'
   },
   {
     FirstName: 'Michael',
@@ -158,7 +176,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'US',
-    PreferredLanguageCode: 'en-US'
+    PreferredLanguageCode: 'en-US',
+    Classifications: ['Problematic'],
+    Notes: 'Can be very particular about room cleanliness and temperature. Requires extra attention to detail. Best to assign experienced housekeeping staff.'
   },
   {
     FirstName: 'Julie',
@@ -180,7 +200,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'DE',
-    PreferredLanguageCode: 'de-DE'
+    PreferredLanguageCode: 'de-DE',
+    Classifications: ['Returning', 'VeryImportant'],
+    Notes: 'Long-time guest who stays biannually. Prefers corner rooms with balconies. Enjoys local recommendations for authentic restaurants. Always leaves generous reviews.'
   },
   {
     FirstName: 'Giulia',
@@ -191,7 +213,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'IT',
-    PreferredLanguageCode: 'it-IT'
+    PreferredLanguageCode: 'it-IT',
+    Classifications: ['Airline'],
+    Notes: 'Alitalia flight attendant with irregular schedule. Often requires late check-in after international flights. Prefers blackout curtains for daytime sleeping.'
   },
   {
     FirstName: 'Miguel',
@@ -213,7 +237,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'PL',
-    PreferredLanguageCode: 'pl-PL'
+    PreferredLanguageCode: 'pl-PL',
+    Classifications: ['Staff', 'FriendOrFamily'],
+    Notes: 'Niece of the Head Chef. Works as intern in hospitality management. Observant and learns from guest service practices.'
   },
   {
     FirstName: 'Erik',
@@ -257,7 +283,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Misses',
     NationalityCode: 'GB',
-    PreferredLanguageCode: 'en-GB'
+    PreferredLanguageCode: 'en-GB',
+    Classifications: ['Returning'],
+    Notes: 'Anniversary tradition to stay each September. Enjoys surprise room upgrades when available. Celebrates with partner room 308.'
   },
   {
     FirstName: 'Robert',
@@ -268,7 +296,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'US',
-    PreferredLanguageCode: 'en-US'
+    PreferredLanguageCode: 'en-US',
+    Classifications: ['Military', 'Returning'],
+    Notes: 'US Air Force Colonel based in Germany. Stays during family visits. Prefers connecting rooms when traveling with adult children. Respectful of property rules.'
   },
   {
     FirstName: 'Camille',
@@ -290,7 +320,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'DE',
-    PreferredLanguageCode: 'de-DE'
+    PreferredLanguageCode: 'de-DE',
+    Classifications: ['Student'],
+    Notes: 'PhD researcher attending conferences. Requires quiet study environment. Often works late in room. Appreciates strong desk lighting.'
   },
   {
     FirstName: 'Francesca',
@@ -323,7 +355,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'PL',
-    PreferredLanguageCode: 'pl-PL'
+    PreferredLanguageCode: 'pl-PL',
+    Classifications: ['Important'],
+    Notes: 'Concert pianist who stays during performance tours. Requires guarantee of quiet neighbors. Sometimes practices in room - has arranged keyboard setup.'
   },
   {
     FirstName: 'Oskar',
@@ -356,7 +390,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'CZ',
-    PreferredLanguageCode: 'cs-CZ'
+    PreferredLanguageCode: 'cs-CZ',
+    Classifications: ['HealthCompliant'],
+    Notes: 'Gluten-free dietary requirements. Always confirms breakfast options in advance. Carries medical documentation. Appreciates staff awareness of allergen information.'
   },
   {
     FirstName: 'Grace',
@@ -367,7 +403,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'GB',
-    PreferredLanguageCode: 'en-GB'
+    PreferredLanguageCode: 'en-GB',
+    Classifications: ['Airline'],
+    Notes: 'British Airways cabin crew member. Layover stays typically 24-48 hours. Prefers rooms away from street noise. Professional and low maintenance guest.'
   },
   {
     FirstName: 'David',
@@ -389,7 +427,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'FR',
-    PreferredLanguageCode: 'fr-FR'
+    PreferredLanguageCode: 'fr-FR',
+    Classifications: ['Student', 'Returning'],
+    Notes: 'Architecture student who sketches in hotel lobbies and gardens. Stays during study breaks. Respectful of communal spaces. Often requests local architecture recommendations.'
   },
   {
     FirstName: 'Felix',
@@ -411,7 +451,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'IT',
-    PreferredLanguageCode: 'it-IT'
+    PreferredLanguageCode: 'it-IT',
+    Classifications: ['Important', 'Returning'],
+    Notes: 'Fashion buyer who stays during seasonal buying trips. VIP treatment appreciated. Prefers modern, stylish rooms. Influential on social media - often posts about stay experiences.'
   },
   {
     FirstName: 'Diego',
@@ -433,7 +475,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'PL',
-    PreferredLanguageCode: 'pl-PL'
+    PreferredLanguageCode: 'pl-PL',
+    Classifications: ['Returning', 'Important'],
+    Notes: 'Travel blogger with 50K+ followers. Stays frequently during content creation trips. Values authenticity and unique experiences. Posts positive reviews when impressed.'
   },
   {
     FirstName: 'Gustav',
@@ -444,7 +488,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'SE',
-    PreferredLanguageCode: 'sv-SE'
+    PreferredLanguageCode: 'sv-SE',
+    Classifications: ['FriendOrFamily'],
+    Notes: 'Former colleague of the General Manager from previous property. Enjoys catching up during stays. Prefers quiet corner rooms with workspace.'
   },
   {
     FirstName: 'Inês',
@@ -477,7 +523,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'GB',
-    PreferredLanguageCode: 'en-GB'
+    PreferredLanguageCode: 'en-GB',
+    Classifications: ['DisabledPerson'],
+    Notes: 'Hearing impaired guest. Appreciates visual alerts for fire alarms and door knocks. Prefers written communication for check-in details. Very appreciative of accessibility accommodations.'
   },
   {
     FirstName: 'Christopher',
@@ -488,7 +536,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'US',
-    PreferredLanguageCode: 'en-US'
+    PreferredLanguageCode: 'en-US',
+    Classifications: ['Military'],
+    Notes: 'US Marine Corps veteran. Appreciates straightforward, efficient service. Prefers ground floor rooms for easier access. Often travels with service dog.'
   },
   {
     FirstName: 'Chloé',
@@ -510,7 +560,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'DE',
-    PreferredLanguageCode: 'de-DE'
+    PreferredLanguageCode: 'de-DE',
+    Classifications: ['PreviousComplaint', 'Returning'],
+    Notes: 'Previous complaint about WiFi connectivity was addressed with upgraded router. Now satisfied and continues to book. Requires reliable internet for work.'
   },
   {
     FirstName: 'Valentina',
@@ -532,7 +584,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'ES',
-    PreferredLanguageCode: 'es-ES'
+    PreferredLanguageCode: 'es-ES',
+    Classifications: ['Cashlist', 'Returning'],
+    Notes: 'Regular guest who prefers cash transactions for business expense tracking. Always requests detailed invoices. Organized and efficient check-in process.'
   },
   {
     FirstName: 'Agnieszka',
@@ -543,7 +597,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Misses',
     NationalityCode: 'PL',
-    PreferredLanguageCode: 'pl-PL'
+    PreferredLanguageCode: 'pl-PL',
+    Classifications: ['Media', 'Important'],
+    Notes: 'Food critic for major Polish lifestyle magazine. Evaluates hotel restaurants and breakfast service. Professional and fair in assessments. Maintains anonymity when possible.'
   },
   {
     FirstName: 'Nils',
@@ -565,7 +621,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'PT',
-    PreferredLanguageCode: 'pt-PT'
+    PreferredLanguageCode: 'pt-PT',
+    Classifications: ['Airline'],
+    Notes: 'TAP Air Portugal flight attendant. Regular layovers on European routes. Prefers early breakfast before 6 AM departures. Reliable and punctual guest.'
   },
   {
     FirstName: 'Martin',
@@ -587,7 +645,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'GB',
-    PreferredLanguageCode: 'en-GB'
+    PreferredLanguageCode: 'en-GB',
+    Classifications: ['Returning', 'VeryImportant'],
+    Notes: 'Award-winning novelist who writes in hotel rooms for inspiration. Stays for week-long writing retreats. Requests "Do Not Disturb" for extended periods. Values privacy and quiet atmosphere.'
   },
   {
     FirstName: 'Daniel',
@@ -609,7 +669,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'FR',
-    PreferredLanguageCode: 'fr-FR'
+    PreferredLanguageCode: 'fr-FR',
+    Classifications: ['Student'],
+    Notes: 'Medical student attending clinical rotations. Budget conscious but values cleanliness. Studies late into the night. Appreciates quiet environment and good lighting.'
   },
   {
     FirstName: 'Alexander',
@@ -642,7 +704,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'ES',
-    PreferredLanguageCode: 'es-ES'
+    PreferredLanguageCode: 'es-ES',
+    Classifications: ['Returning', 'Problematic'],
+    Notes: 'Particular about towel quality and room temperature. Has specific requests but is consistent guest. Best to review his preferences before arrival to ensure smooth stay.'
   },
   {
     FirstName: 'Zofia',
@@ -653,7 +717,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'PL',
-    PreferredLanguageCode: 'pl-PL'
+    PreferredLanguageCode: 'pl-PL',
+    Classifications: ['HealthCompliant'],
+    Notes: 'Severe peanut allergy. Requires detailed allergen information for all meals. Carries EpiPen. Staff should be briefed on emergency procedures before arrival.'
   },
   {
     FirstName: 'Viktor',
@@ -686,7 +752,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Male',
     Title: 'Mister',
     NationalityCode: 'CZ',
-    PreferredLanguageCode: 'cs-CZ'
+    PreferredLanguageCode: 'cs-CZ',
+    Classifications: ['FriendOrFamily', 'Staff'],
+    Notes: 'Cousin of the Night Manager. Part-time hospitality consultant. Often provides helpful feedback on operations. Professional and supportive.'
   },
   {
     FirstName: 'Sophia',
@@ -697,7 +765,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'GB',
-    PreferredLanguageCode: 'en-GB'
+    PreferredLanguageCode: 'en-GB',
+    Classifications: ['Important', 'Returning'],
+    Notes: 'Art gallery owner who attends regional exhibitions. Appreciates art in hotel decor. Books extended stays for major art fairs. Cultured and engaging guest.'
   },
   {
     FirstName: 'Matthew',
@@ -719,7 +789,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'FR',
-    PreferredLanguageCode: 'fr-FR'
+    PreferredLanguageCode: 'fr-FR',
+    Classifications: ['Airline', 'Returning'],
+    Notes: 'Air France long-haul pilot. Irregular schedules with 48-72 hour layovers. Prefers blackout rooms for jet lag recovery. Professional and understanding of service limitations.'
   },
   {
     FirstName: 'Sebastian',
@@ -741,7 +813,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'IT',
-    PreferredLanguageCode: 'it-IT'
+    PreferredLanguageCode: 'it-IT',
+    Classifications: ['Student', 'Returning'],
+    Notes: 'Language instructor attending summer teaching programs. Stays for 2-3 week periods. Enjoys practicing local language with staff. Friendly and culturally curious guest.'
   },
   {
     FirstName: 'Rafael',
@@ -763,7 +837,9 @@ export const sampleCustomers: SampleCustomer[] = [
     Sex: 'Female',
     Title: 'Miss',
     NationalityCode: 'PL',
-    PreferredLanguageCode: 'pl-PL'
+    PreferredLanguageCode: 'pl-PL',
+    Classifications: ['Important'],
+    Notes: 'Professional photographer who documents hotel architecture and design. May take photos in public areas. Respectful of other guests privacy. Creates beautiful property portfolios.'
   },
   {
     FirstName: 'Anders',
@@ -801,7 +877,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'en-GB',
     CompanyIdentifier: {
       Name: 'TechCorp International'
-    }
+    },
+    Classifications: ['VeryImportant', 'Returning'],
+    Notes: 'C-level executive who books 10+ nights monthly. Prefers executive floor rooms with meeting space. Requires 24/7 business center access. Loyal corporate account.'
   },
   {
     FirstName: 'Jennifer',
@@ -815,7 +893,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'en-US',
     CompanyIdentifier: {
       Name: 'Global Ventures Inc'
-    }
+    },
+    Classifications: ['Important', 'Returning'],
+    Notes: 'VP of Operations with frequent stays. Holds client meetings in hotel conference rooms. Prefers rooms near business facilities. Professional and courteous.'
   },
   {
     FirstName: 'Pierre',
@@ -829,7 +909,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'fr-FR',
     CompanyIdentifier: {
       Name: 'Paris Consulting Group'
-    }
+    },
+    Classifications: ['VeryImportant'],
+    Notes: 'Senior partner who brings high-value client meetings to property. Requires premium suites when entertaining. Excellent tipper and ambassador for the property.'
   },
   {
     FirstName: 'Sabine',
@@ -843,7 +925,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'de-DE',
     CompanyIdentifier: {
       Name: 'Deutsch Banking Solutions'
-    }
+    },
+    Classifications: ['Important', 'Problematic'],
+    Notes: 'Banking executive with high standards. Expects prompt service and attention to detail. Can be demanding but fair. Best to assign senior staff for check-in.'
   },
   {
     FirstName: 'Marco',
@@ -857,7 +941,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'it-IT',
     CompanyIdentifier: {
       Name: 'ItalDesign SpA'
-    }
+    },
+    Classifications: ['Returning'],
+    Notes: 'Design director who stays during trade shows. Books months in advance. Appreciates modern aesthetics. Sometimes extends stay last minute for project work.'
   },
   {
     FirstName: 'Carmen',
@@ -871,7 +957,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'es-ES',
     CompanyIdentifier: {
       Name: 'IberTech Solutions'
-    }
+    },
+    Classifications: ['Important', 'Cashlist'],
+    Notes: 'Tech sales manager who closes deals over property meals. Prefers to settle accounts in cash for expense reports. Brings valuable corporate clients to restaurant.'
   },
   {
     FirstName: 'Andrzej',
@@ -885,7 +973,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'pl-PL',
     CompanyIdentifier: {
       Name: 'Warsaw Corporation'
-    }
+    },
+    Classifications: ['Returning', 'Important'],
+    Notes: 'Regional manager with weekly stays. Books same room number 405 when available. Needs reliable wake-up calls for early meetings. Punctual and organized.'
   },
   {
     FirstName: 'Ingrid',
@@ -899,7 +989,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'sv-SE',
     CompanyIdentifier: {
       Name: 'Nordic Business Group'
-    }
+    },
+    Classifications: ['VeryImportant', 'Returning'],
+    Notes: 'Board member who books executive suites for multi-day strategy sessions. Requires conference room access and catering services. High-value corporate account.'
   },
   {
     FirstName: 'João',
@@ -941,7 +1033,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'en-GB',
     CompanyIdentifier: {
       Name: 'London Finance Partners'
-    }
+    },
+    Classifications: ['VeryImportant', 'Important'],
+    Notes: 'Managing partner of major financial firm. Extremely discreet service required. Often accompanied by business associates. Premium service expectations.'
   },
   {
     FirstName: 'Sarah',
@@ -955,7 +1049,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'en-US',
     CompanyIdentifier: {
       Name: 'Silicon Valley Innovations'
-    }
+    },
+    Classifications: ['Important', 'Returning'],
+    Notes: 'Startup founder attending investor meetings. Books last minute but stays frequently. Values fast WiFi above all else. Night owl who works until 2 AM.'
   },
   {
     FirstName: 'François',
@@ -983,7 +1079,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'de-DE',
     CompanyIdentifier: {
       Name: 'Munich Systems GmbH'
-    }
+    },
+    Classifications: ['Returning', 'PreviousComplaint'],
+    Notes: 'IT consultant with monthly visits. Previous complaint about slow internet was resolved with upgraded service. Now satisfied and loyal guest. Requires technical support occasionally.'
   },
   {
     FirstName: 'Alessandro',
@@ -997,7 +1095,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'it-IT',
     CompanyIdentifier: {
       Name: 'Milano Holdings'
-    }
+    },
+    Classifications: ['Important', 'Media'],
+    Notes: 'Investment banker featured in financial publications. Values privacy and discretion. Often works on confidential deals from room. Professional and low-key presence.'
   },
   {
     FirstName: 'Lucía',
@@ -1025,7 +1125,9 @@ export const sampleCustomers: SampleCustomer[] = [
     PreferredLanguageCode: 'pl-PL',
     CompanyIdentifier: {
       Name: 'Kraków iTech'
-    }
+    },
+    Classifications: ['Returning'],
+    Notes: 'Software developer who stays during training sessions. Prefers quiet floors for concentration. Early check-in requested when possible. Appreciates technical amenities.'
   },
   {
     FirstName: 'Emma',

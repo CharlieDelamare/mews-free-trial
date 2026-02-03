@@ -215,7 +215,9 @@ async function createSingleCustomer(
       Title: customer.Title,
       NationalityCode: customer.NationalityCode,
       PreferredLanguageCode: customer.PreferredLanguageCode,
-      CompanyIdentifier: customer.CompanyIdentifier
+      CompanyIdentifier: customer.CompanyIdentifier,
+      Classifications: customer.Classifications,
+      Notes: customer.Notes
     };
 
     const response = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
