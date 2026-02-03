@@ -7,7 +7,7 @@
 
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
-import { fromZonedTime } from 'date-fns-tz';
+import { fromZonedTime, utcToZonedTime } from 'date-fns-tz';
 import { addDays, startOfDay } from 'date-fns';
 
 export interface MewsData {
@@ -592,10 +592,14 @@ export async function updateBestPriceRate(
   const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
 
   // Calculate date range: today to 100 days from now in property timezone
-  const todayLocal = startOfDay(new Date()); // Midnight today in property timezone
-  const endDateLocal = startOfDay(addDays(new Date(), 100)); // Midnight 100 days from now
+  // First, get current time in the property timezone
+  const nowInPropertyTz = utcToZonedTime(new Date(), timezone);
 
-  // Convert to UTC using property timezone
+  // Get start of day (midnight) in property timezone
+  const todayLocal = startOfDay(nowInPropertyTz); // Midnight today in property timezone
+  const endDateLocal = startOfDay(addDays(nowInPropertyTz, 100)); // Midnight 100 days from now
+
+  // Convert to UTC - these will be valid time unit starts
   const firstTimeUnitUtc = fromZonedTime(todayLocal, timezone);
   const lastTimeUnitUtc = fromZonedTime(endDateLocal, timezone);
 
