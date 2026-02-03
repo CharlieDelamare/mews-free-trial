@@ -17,7 +17,7 @@ const nextConfig = {
 
   // Experimental optimizations
   experimental: {
-    optimizePackageImports: ['react', 'react-dom'],
+    optimizePackageImports: ['react', 'react-dom', 'date-fns', 'date-fns-tz'],
   },
 }
 
