@@ -688,7 +688,7 @@ async function applyStateTransitions(
 }
 
 /**
- * Call state transition API
+ * Call state transition API with detailed logging
  */
 async function callStateTransitionAPI(
   action: 'start' | 'process',
@@ -696,19 +696,27 @@ async function callStateTransitionAPI(
   accessToken: string
 ): Promise<void> {
   const endpoint = action === 'start' ? 'reservations/start' : 'reservations/process';
+  const url = `${MEWS_API_URL}/api/connector/v1/${endpoint}`;
 
-  console.log(`[RESERVATIONS] Calling ${action} API for ${reservationIds.length} reservation(s)`);
+  // Prepare payload
+  const payload = {
+    ClientToken: MEWS_CLIENT_TOKEN,
+    AccessToken: accessToken,
+    Client: 'Free Trial Generator',
+    ReservationIds: reservationIds
+  };
 
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/${endpoint}`, {
+  console.log(`[RESERVATIONS] 📤 Calling ${action} API for ${reservationIds.length} reservation(s)`);
+  console.log(`[RESERVATIONS] URL: ${url}`);
+  console.log(`[RESERVATIONS] Payload:`, JSON.stringify(payload, null, 2));
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ClientToken: MEWS_CLIENT_TOKEN,
-      AccessToken: accessToken,
-      Client: 'Free Trial Generator',
-      ReservationIds: reservationIds
-    })
+    body: JSON.stringify(payload)
   });
+
+  console.log(`[RESERVATIONS] 📥 Response Status: ${response.status} ${response.statusText}`);
 
   if (!response.ok) {
     // Capture the full error response body
@@ -731,5 +739,16 @@ async function callStateTransitionAPI(
     throw new Error(`Failed to ${action} reservations: ${response.status} - ${errorText}`);
   }
 
+  // Log success response
+  const responseText = await response.text();
+  let responseData = responseText;
+  try {
+    const responseJson = JSON.parse(responseText);
+    responseData = JSON.stringify(responseJson, null, 2);
+  } catch {
+    // Keep as plain text if not JSON
+  }
+
   console.log(`[RESERVATIONS] ✅ Successfully ${action === 'start' ? 'started' : 'processed'} ${reservationIds.length} reservation(s)`);
+  console.log(`[RESERVATIONS] Response Data:`, responseData);
 }
