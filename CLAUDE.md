@@ -547,7 +547,7 @@ durationDays: 7 | 30 | 60  // Default: 30
 
 ### Special Rules
 
-- **Charlie Delamare exception**: Trials created by Charlie Delamare (`charlie.delamare@mews.com`) are automatically set to 7 days regardless of selection
+- **Charlie Delamare exception**: Trials created by Charlie Delamare (`charlie.delamare@mews.com`) are automatically set to 1 day regardless of selection
 - Duration stored in `EnvironmentLog.durationDays` field
 - Duration utilities provided in `lib/duration.ts`:
   ```typescript
