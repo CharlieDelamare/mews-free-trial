@@ -892,8 +892,20 @@ async function applyStateTransitionsSequentially(
     console.log(`[RESERVATIONS] Processing ${roomReservations.length} reservations for ${roomName}...`);
 
     // Process reservations in this room one by one (sequential)
-    for (const res of roomReservations) {
+    for (let i = 0; i < roomReservations.length; i++) {
+      const res = roomReservations[i];
+      const prevRes = i > 0 ? roomReservations[i - 1] : null;
+
       try {
+        // If previous reservation was processed (checked out), re-inspect the room before starting next
+        if (prevRes && prevRes.desiredState === 'Processed' && res.assignedResourceId !== 'unassigned') {
+          console.log(`[RESERVATIONS] Re-inspecting room ${res.assignedResourceId} after checkout before starting next reservation...`);
+          const inspectResult = await updateResourceStates([res.assignedResourceId], accessToken);
+          if (!inspectResult.success) {
+            console.warn(`[RESERVATIONS] ⚠️ Failed to re-inspect room ${res.assignedResourceId}: ${inspectResult.error}`);
+          }
+        }
+
         if (res.desiredState === 'Started') {
           await callStateTransitionAPI('start', res.id, accessToken);
           successCount++;
