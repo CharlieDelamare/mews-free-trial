@@ -143,14 +143,19 @@ export async function createReservationsForEnvironment(
       mewsData.vouchersByRate
     );
 
-    // Prepare resources for check-in (set to Inspected state)
+    // Fetch reservation details to get assigned resource IDs
     const reservationIds = createdReservations.map(r => r.id);
+    let reservationDetails: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }> = [];
+
     if (reservationIds.length > 0) {
-      await prepareResourcesForCheckIn(reservationIds, accessToken);
+      reservationDetails = await fetchReservationDetails(reservationIds, accessToken);
+
+      // Prepare resources for check-in (set to Inspected state)
+      await prepareResourcesForCheckIn(reservationDetails, accessToken);
     }
 
-    // Apply state transitions
-    await applyStateTransitions(createdReservations, accessToken);
+    // Apply state transitions sequentially per room
+    await applyStateTransitionsSequentially(createdReservations, reservationDetails, accessToken);
 
     // Log results
     const duration = Date.now() - startTime;
@@ -663,13 +668,13 @@ async function createReservationGroups(
 }
 
 /**
- * Fetch reservation details including assigned resources
+ * Fetch reservation details including assigned resources and start times
  */
 async function fetchReservationDetails(
   reservationIds: string[],
   accessToken: string
-): Promise<Array<{ Id: string; AssignedResourceId?: string }>> {
-  const allReservations: Array<{ Id: string; AssignedResourceId?: string }> = [];
+): Promise<Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }>> {
+  const allReservations: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }> = [];
 
   // Batch requests if more than 1000 IDs (unlikely but handle it)
   for (let i = 0; i < reservationIds.length; i += 1000) {
@@ -766,20 +771,17 @@ async function updateResourceStates(
  * Prepare resources for check-in by setting them to "Inspected" state
  */
 async function prepareResourcesForCheckIn(
-  reservationIds: string[],
+  reservations: Array<{ Id: string; AssignedResourceId?: string }>,
   accessToken: string
 ): Promise<{ successCount: number; failureCount: number }> {
-  console.log(`[RESOURCE_PREP] Preparing resources for ${reservationIds.length} reservations...`);
-
-  // Step 1: Fetch reservation details to get assigned resources
-  const reservations = await fetchReservationDetails(reservationIds, accessToken);
+  console.log(`[RESOURCE_PREP] Preparing resources for ${reservations.length} reservations...`);
 
   if (reservations.length === 0) {
-    console.warn('[RESOURCE_PREP] ⚠️ No reservation details fetched, skipping resource preparation');
+    console.warn('[RESOURCE_PREP] ⚠️ No reservations provided, skipping resource preparation');
     return { successCount: 0, failureCount: 0 };
   }
 
-  // Step 2: Extract unique resource IDs
+  // Extract unique resource IDs
   const resourceIds = Array.from(
     new Set(
       reservations
@@ -832,51 +834,77 @@ async function prepareResourcesForCheckIn(
 }
 
 /**
- * Apply state transitions (Start and Process) with resilient error handling
+ * Apply state transitions sequentially per room to ensure proper ordering
+ * Reservations in the same room are processed in chronological order
  */
-async function applyStateTransitions(
+async function applyStateTransitionsSequentially(
   reservations: Array<{ id: string; desiredState: string }>,
+  reservationDetails: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }>,
   accessToken: string
 ): Promise<void> {
-  // Filter out invalid IDs and group by desired state
+  // Filter out invalid IDs
   const validReservations = reservations.filter(r => r.id && typeof r.id === 'string' && r.id.trim() !== '');
-  const startedIds = validReservations.filter(r => r.desiredState === 'Started').map(r => r.id);
-  const processedIds = validReservations.filter(r => r.desiredState === 'Processed').map(r => r.id);
 
   const invalidCount = reservations.length - validReservations.length;
   if (invalidCount > 0) {
     console.warn(`[RESERVATIONS] ⚠️ Filtered out ${invalidCount} invalid reservation ID(s)`);
   }
 
-  console.log(`[RESERVATIONS] Applying state transitions: ${startedIds.length} Started, ${processedIds.length} Processed`);
+  // Create a map for quick lookup of reservation details
+  const detailsMap = new Map(reservationDetails.map(d => [d.Id, d]));
+
+  // Enrich reservations with assignment and timing data
+  const enrichedReservations = validReservations
+    .map(r => {
+      const details = detailsMap.get(r.id);
+      return {
+        id: r.id,
+        desiredState: r.desiredState,
+        assignedResourceId: details?.AssignedResourceId || 'unassigned',
+        startUtc: details?.StartUtc || ''
+      };
+    });
+
+  // Group by assigned resource (room)
+  const byRoom = new Map<string, typeof enrichedReservations>();
+  for (const res of enrichedReservations) {
+    if (!byRoom.has(res.assignedResourceId)) {
+      byRoom.set(res.assignedResourceId, []);
+    }
+    byRoom.get(res.assignedResourceId)!.push(res);
+  }
+
+  // Sort each room's reservations chronologically
+  for (const [roomId, roomReservations] of Array.from(byRoom.entries())) {
+    roomReservations.sort((a: typeof enrichedReservations[0], b: typeof enrichedReservations[0]) =>
+      a.startUtc.localeCompare(b.startUtc)
+    );
+  }
+
+  console.log(`[RESERVATIONS] Applying state transitions across ${byRoom.size} rooms/categories...`);
 
   let successCount = 0;
   let failureCount = 0;
 
-  // Process Started reservations individually
-  if (startedIds.length > 0) {
-    console.log(`[RESERVATIONS] Processing ${startedIds.length} 'Started' transitions...`);
-    for (const id of startedIds) {
-      try {
-        await callStateTransitionAPI('start', id, accessToken);
-        successCount++;
-      } catch (error) {
-        console.error(`[RESERVATIONS] ❌ Failed to start reservation ${id}:`, (error as Error).message);
-        failureCount++;
-      }
-    }
-  }
+  // Process each room sequentially
+  for (const [roomId, roomReservations] of Array.from(byRoom.entries())) {
+    const roomName = roomId === 'unassigned' ? 'unassigned reservations' : `room ${roomId}`;
+    console.log(`[RESERVATIONS] Processing ${roomReservations.length} reservations for ${roomName}...`);
 
-  // Process Processed reservations individually (start then process)
-  if (processedIds.length > 0) {
-    console.log(`[RESERVATIONS] Processing ${processedIds.length} 'Processed' transitions...`);
-    for (const id of processedIds) {
+    // Process reservations in this room one by one (sequential)
+    for (const res of roomReservations) {
       try {
-        await callStateTransitionAPI('start', id, accessToken);
-        await callStateTransitionAPI('process', id, accessToken);
-        successCount++;
+        if (res.desiredState === 'Started') {
+          await callStateTransitionAPI('start', res.id, accessToken);
+          successCount++;
+        } else if (res.desiredState === 'Processed') {
+          await callStateTransitionAPI('start', res.id, accessToken);
+          await callStateTransitionAPI('process', res.id, accessToken);
+          successCount++;
+        }
+        // Confirmed state doesn't need transitions
       } catch (error) {
-        console.error(`[RESERVATIONS] ❌ Failed to process reservation ${id}:`, (error as Error).message);
+        console.error(`[RESERVATIONS] ❌ Failed to transition reservation ${res.id} in ${roomName}:`, (error as Error).message);
         failureCount++;
       }
     }
