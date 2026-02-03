@@ -143,6 +143,12 @@ export async function createReservationsForEnvironment(
       mewsData.vouchersByRate
     );
 
+    // Prepare resources for check-in (set to Inspected state)
+    const reservationIds = createdReservations.map(r => r.id);
+    if (reservationIds.length > 0) {
+      await prepareResourcesForCheckIn(reservationIds, accessToken);
+    }
+
     // Apply state transitions
     await applyStateTransitions(createdReservations, accessToken);
 
@@ -626,6 +632,170 @@ async function createReservationGroups(
   }
 
   return { createdReservations, failures };
+}
+
+/**
+ * Fetch reservation details including assigned resources
+ */
+async function fetchReservationDetails(
+  reservationIds: string[],
+  accessToken: string
+): Promise<Array<{ Id: string; AssignedResourceId?: string }>> {
+  const allReservations: Array<{ Id: string; AssignedResourceId?: string }> = [];
+
+  // Batch requests if more than 1000 IDs (unlikely but handle it)
+  for (let i = 0; i < reservationIds.length; i += 1000) {
+    const batch = reservationIds.slice(i, Math.min(i + 1000, reservationIds.length));
+
+    try {
+      const response = await fetch(
+        `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ClientToken: MEWS_CLIENT_TOKEN,
+            AccessToken: accessToken,
+            Client: 'Free Trial Generator',
+            ReservationIds: batch,
+            Limitation: { Count: 1000 }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[RESOURCE_PREP] ❌ Failed to fetch reservation details: ${response.status} - ${errorText}`);
+        continue; // Skip this batch, continue with next
+      }
+
+      const data = await response.json();
+      const reservations = data.Reservations || [];
+      allReservations.push(...reservations);
+
+      console.log(`[RESOURCE_PREP] Fetched ${reservations.length} reservation details`);
+
+    } catch (error) {
+      console.error('[RESOURCE_PREP] ❌ Error fetching reservation details:', error);
+      // Continue with what we have
+    }
+  }
+
+  return allReservations;
+}
+
+/**
+ * Update resource states to "Inspected"
+ */
+async function updateResourceStates(
+  resourceIds: string[],
+  accessToken: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(
+      `${MEWS_API_URL}/api/connector/v1/resources/update`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Free Trial Generator',
+          ResourceUpdates: resourceIds.map(resourceId => ({
+            ResourceId: resourceId,
+            State: { Value: 'Inspected' }
+          }))
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return {
+        success: false,
+        error: `HTTP ${response.status}: ${errorText}`
+      };
+    }
+
+    // API returns empty object on success
+    await response.json();
+    return { success: true };
+
+  } catch (error) {
+    return {
+      success: false,
+      error: (error as Error).message
+    };
+  }
+}
+
+/**
+ * Prepare resources for check-in by setting them to "Inspected" state
+ */
+async function prepareResourcesForCheckIn(
+  reservationIds: string[],
+  accessToken: string
+): Promise<{ successCount: number; failureCount: number }> {
+  console.log(`[RESOURCE_PREP] Preparing resources for ${reservationIds.length} reservations...`);
+
+  // Step 1: Fetch reservation details to get assigned resources
+  const reservations = await fetchReservationDetails(reservationIds, accessToken);
+
+  if (reservations.length === 0) {
+    console.warn('[RESOURCE_PREP] ⚠️ No reservation details fetched, skipping resource preparation');
+    return { successCount: 0, failureCount: 0 };
+  }
+
+  // Step 2: Extract unique resource IDs
+  const resourceIds = Array.from(
+    new Set(
+      reservations
+        .filter(r => r.AssignedResourceId)
+        .map(r => r.AssignedResourceId!)
+    )
+  );
+
+  console.log(`[RESOURCE_PREP] Found ${resourceIds.length} unique resources to prepare`);
+
+  if (resourceIds.length === 0) {
+    console.log('[RESOURCE_PREP] No resources assigned yet, skipping preparation');
+    return { successCount: 0, failureCount: 0 };
+  }
+
+  // Step 3: Batch update resources (max 1000 per call)
+  let successCount = 0;
+  let failureCount = 0;
+
+  for (let i = 0; i < resourceIds.length; i += 1000) {
+    const batch = resourceIds.slice(i, Math.min(i + 1000, resourceIds.length));
+    const batchNum = Math.floor(i / 1000) + 1;
+    const totalBatches = Math.ceil(resourceIds.length / 1000);
+
+    console.log(`[RESOURCE_PREP] Updating batch ${batchNum}/${totalBatches} (${batch.length} resources)...`);
+
+    try {
+      const result = await updateResourceStates(batch, accessToken);
+      if (result.success) {
+        successCount += batch.length;
+        console.log(`[RESOURCE_PREP] ✅ Batch ${batchNum}/${totalBatches} updated successfully`);
+      } else {
+        failureCount += batch.length;
+        console.error(`[RESOURCE_PREP] ❌ Batch ${batchNum}/${totalBatches} failed: ${result.error}`);
+      }
+    } catch (error) {
+      failureCount += batch.length;
+      console.error(`[RESOURCE_PREP] ❌ Batch ${batchNum}/${totalBatches} error:`, error);
+    }
+  }
+
+  console.log(`[RESOURCE_PREP] ✅ Resource preparation complete: ${successCount} succeeded, ${failureCount} failed`);
+
+  // Don't throw - just log and continue
+  if (failureCount > 0) {
+    console.warn(`[RESOURCE_PREP] ⚠️ ${failureCount} resource(s) failed to update, but continuing...`);
+  }
+
+  return { successCount, failureCount };
 }
 
 /**
