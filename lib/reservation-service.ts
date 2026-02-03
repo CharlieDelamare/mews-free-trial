@@ -222,31 +222,19 @@ async function fetchEnvironmentData(enterpriseId: string): Promise<EnvironmentDa
 }
 
 /**
- * Filter resource categories based on what was actually created in the environment
- * Uses the environment counts to determine which category types should have reservations
+ * Filter resource categories - exclude Dorm type, allow all others
  */
 function filterResourceCategories(
   categories: MewsData['resourceCategories'],
   envData: EnvironmentData
 ): MewsData['resourceCategories'] {
-  const allowedTypes: string[] = [];
+  // Exclude Dorm type, allow all others
+  const excludedTypes = ['Dorm'];
 
-  // Include category types based on what was configured
-  if (envData.roomCount > 0) {
-    allowedTypes.push('Room');
-  }
-  if (envData.apartmentCount > 0) {
-    allowedTypes.push('Apartment');
-  }
-  if (envData.dormCount > 0) {
-    allowedTypes.push('Bed'); // Beds are bookable units in hostels, not dorms
-  }
+  const filtered = categories.filter(c => !excludedTypes.includes(c.type));
 
-  console.log(`[RESERVATIONS] Allowing category types: ${allowedTypes.join(', ')}`);
-
-  const filtered = categories.filter(c => allowedTypes.includes(c.type));
-
-  // Log what we found
+  // Log what we're including
+  console.log(`[RESERVATIONS] Filtered resource categories (excluding ${excludedTypes.join(', ')}):`)
   filtered.forEach(cat => {
     console.log(`[RESERVATIONS]   ✓ Including ${cat.name} (${cat.type}): ${cat.resourceCount} units`);
   });
@@ -608,31 +596,11 @@ async function createReservationGroups(
       const data = await response.json();
       const reservationIds = data.Reservations?.map((r: any) => r.Id) || [];
 
-      // Identify reservations that need immediate start (check-in in the past)
-      const needsImmediateStart: string[] = [];
-      const now = new Date();
-
-      // Store with desired states
+      // Store reservations with desired states for later state transitions
       for (let j = 0; j < reservationIds.length; j++) {
-        const reservation = group[j];
-
-        // If check-in is in the past, start immediately
-        if (reservation.checkInUtc < now) {
-          needsImmediateStart.push(reservationIds[j]);
-        }
-
         createdReservations.push({
           id: reservationIds[j],
           desiredState: group[j].desiredState
-        });
-      }
-
-      // Start past-dated reservations immediately (fire-and-forget)
-      if (needsImmediateStart.length > 0) {
-        callStateTransitionAPI('start', needsImmediateStart, accessToken).catch(err => {
-          console.error('[RESERVATIONS] ⚠️  Failed to start past reservations (fire-and-forget)');
-          console.error('[RESERVATIONS] Error details:', err.message);
-          console.error('[RESERVATIONS] Affected reservation IDs:', needsImmediateStart.join(', '));
         });
       }
 
@@ -655,10 +623,6 @@ async function applyStateTransitions(
   const startedIds = reservations.filter(r => r.desiredState === 'Started').map(r => r.id);
   const processedIds = reservations.filter(r => r.desiredState === 'Processed').map(r => r.id);
 
-  // Start reservations
-  if (startedIds.length > 0) {
-    await callStateTransitionAPI('start', startedIds, accessToken);
-  }
   console.log(`[RESERVATIONS] Applying state transitions: ${startedIds.length} Started, ${processedIds.length} Processed`);
 
   try {
