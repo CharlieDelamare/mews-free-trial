@@ -348,10 +348,10 @@ async function fetchTimezoneFromConfiguration(accessToken: string): Promise<stri
     }
 
     const data = await response.json();
-    const timezone = data.TimeZoneIdentifier;
+    const timezone = data.Enterprise?.TimeZoneIdentifier;
 
     if (!timezone) {
-      console.warn('[WEBHOOK] TimeZoneIdentifier not found in configuration response, using UTC');
+      console.warn('[WEBHOOK] TimeZoneIdentifier not found at Data.Enterprise.TimeZoneIdentifier, using UTC');
       return 'UTC';
     }
 
