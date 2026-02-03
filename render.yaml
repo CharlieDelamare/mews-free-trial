@@ -2,13 +2,15 @@ services:
   - type: web
     name: mews-free-trial-2
     env: node
-    buildCommand: npm install && npm run migrate:deploy && npm run build
+    buildCommand: npm ci --prefer-offline --no-audit --no-fund && npm run migrate:smart && npm run build && cp -r .next/static .next/standalone/.next/static
     startCommand: npm start
     # Note: Previously used "npx prisma db push" which is for development only.
     # Changed to "npm run migrate:deploy" which handles production migrations properly.
     envVars:
       - key: NODE_VERSION
         value: 22.22.0
+      - key: NEXT_TELEMETRY_DISABLED
+        value: 1
       - key: DATABASE_URL
         sync: false
       - key: MEWS_SAMPLE_TOKEN
