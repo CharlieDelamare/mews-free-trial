@@ -598,6 +598,15 @@ export async function updateBestPriceRate(
     ]
   };
 
+  console.log('[RATE-UPDATE] Starting Best Price rate update...');
+  console.log('[RATE-UPDATE] Endpoint:', endpoint);
+  console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
+  console.log('[RATE-UPDATE] Payload:', JSON.stringify({
+    ...payload,
+    ClientToken: '***REDACTED***',
+    AccessToken: '***REDACTED***'
+  }, null, 2));
+
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -605,16 +614,33 @@ export async function updateBestPriceRate(
       body: JSON.stringify(payload)
     });
 
+    console.log('[RATE-UPDATE] Response status:', response.status, response.statusText);
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[MEWS-DATA] Rate price update failed: ${response.status} - ${errorText}`);
+      console.error('[RATE-UPDATE] ❌ Rate price update failed');
+      console.error('[RATE-UPDATE] HTTP Status:', response.status, response.statusText);
+      console.error('[RATE-UPDATE] Error response:', errorText);
+
+      // Try to parse error as JSON for better logging
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('[RATE-UPDATE] Error details:', JSON.stringify(errorJson, null, 2));
+      } catch {
+        // Not JSON, already logged as text
+      }
+
       return false;
     }
 
-    console.log('[MEWS-DATA] ✓ Best Price rate updated to 90');
+    const responseData = await response.json();
+    console.log('[RATE-UPDATE] ✅ Best Price rate updated successfully');
+    console.log('[RATE-UPDATE] Response data:', JSON.stringify(responseData, null, 2));
     return true;
   } catch (error) {
-    console.error('[MEWS-DATA] Rate price update error:', error);
+    console.error('[RATE-UPDATE] ❌ Rate price update error:', error);
+    console.error('[RATE-UPDATE] Error message:', (error as Error).message);
+    console.error('[RATE-UPDATE] Error stack:', (error as Error).stack);
     return false;
   }
 }
