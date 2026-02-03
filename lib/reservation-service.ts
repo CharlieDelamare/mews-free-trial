@@ -146,16 +146,18 @@ export async function createReservationsForEnvironment(
     // Fetch reservation details to get assigned resource IDs
     const reservationIds = createdReservations.map(r => r.id);
     let reservationDetails: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }> = [];
+    let inspectedRoomIds = new Set<string>();
 
     if (reservationIds.length > 0) {
       reservationDetails = await fetchReservationDetails(reservationIds, accessToken);
 
       // Prepare resources for check-in (set to Inspected state)
-      await prepareResourcesForCheckIn(reservationDetails, accessToken);
+      const prepResult = await prepareResourcesForCheckIn(reservationDetails, accessToken);
+      inspectedRoomIds = prepResult.inspectedRoomIds;
     }
 
-    // Apply state transitions sequentially per room
-    await applyStateTransitionsSequentially(createdReservations, reservationDetails, accessToken);
+    // Apply state transitions sequentially per room, passing tracked inspections
+    await applyStateTransitionsSequentially(createdReservations, reservationDetails, accessToken, inspectedRoomIds);
 
     // Log results
     const duration = Date.now() - startTime;
@@ -865,12 +867,14 @@ async function updateResourceStates(
 async function prepareResourcesForCheckIn(
   reservations: Array<{ Id: string; AssignedResourceId?: string }>,
   accessToken: string
-): Promise<{ successCount: number; failureCount: number }> {
+): Promise<{ successCount: number; failureCount: number; inspectedRoomIds: Set<string> }> {
   console.log(`[RESOURCE_PREP] Preparing resources for ${reservations.length} reservations...`);
+
+  const inspectedRoomIds = new Set<string>();
 
   if (reservations.length === 0) {
     console.warn('[RESOURCE_PREP] ⚠️ No reservations provided, skipping resource preparation');
-    return { successCount: 0, failureCount: 0 };
+    return { successCount: 0, failureCount: 0, inspectedRoomIds };
   }
 
   // Extract unique resource IDs
@@ -886,7 +890,7 @@ async function prepareResourcesForCheckIn(
 
   if (resourceIds.length === 0) {
     console.log('[RESOURCE_PREP] No resources assigned yet, skipping preparation');
-    return { successCount: 0, failureCount: 0 };
+    return { successCount: 0, failureCount: 0, inspectedRoomIds };
   }
 
   // Step 3: Batch update resources (max 1000 per call)
@@ -903,6 +907,8 @@ async function prepareResourcesForCheckIn(
     try {
       const result = await updateResourceStates(batch, accessToken);
       if (result.success) {
+        // Track successfully inspected rooms
+        batch.forEach(roomId => inspectedRoomIds.add(roomId));
         successCount += batch.length;
         console.log(`[RESOURCE_PREP] ✅ Batch ${batchNum}/${totalBatches} updated successfully`);
       } else {
@@ -916,13 +922,14 @@ async function prepareResourcesForCheckIn(
   }
 
   console.log(`[RESOURCE_PREP] ✅ Resource preparation complete: ${successCount} succeeded, ${failureCount} failed`);
+  console.log(`[RESOURCE_PREP] Successfully inspected ${inspectedRoomIds.size} unique rooms`);
 
   // Don't throw - just log and continue
   if (failureCount > 0) {
     console.warn(`[RESOURCE_PREP] ⚠️ ${failureCount} resource(s) failed to update, but continuing...`);
   }
 
-  return { successCount, failureCount };
+  return { successCount, failureCount, inspectedRoomIds };
 }
 
 /**
@@ -932,8 +939,13 @@ async function prepareResourcesForCheckIn(
 async function applyStateTransitionsSequentially(
   reservations: Array<{ id: string; desiredState: string }>,
   reservationDetails: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }>,
-  accessToken: string
+  accessToken: string,
+  initialInspectedRooms?: Set<string>
 ): Promise<void> {
+  // Initialize with rooms that were successfully inspected in bulk preparation
+  const inspectedRooms = new Set<string>(initialInspectedRooms || []);
+  console.log(`[RESERVATIONS] Starting with ${inspectedRooms.size} pre-inspected rooms`);
+
   // Filter out invalid IDs
   const validReservations = reservations.filter(r => r.id && typeof r.id === 'string' && r.id.trim() !== '');
 
@@ -991,18 +1003,38 @@ async function applyStateTransitionsSequentially(
       try {
         // If previous reservation was processed (checked out), re-inspect the room before starting next
         if (prevRes && prevRes.desiredState === 'Processed' && res.assignedResourceId !== 'unassigned') {
-          console.log(`[RESERVATIONS] Re-inspecting room ${res.assignedResourceId} after checkout before starting next reservation...`);
+          console.log(`[RESERVATIONS] Re-inspecting room ${res.assignedResourceId} after checkout (room is now Dirty)...`);
           const inspectResult = await updateResourceStates([res.assignedResourceId], accessToken);
-          if (!inspectResult.success) {
+          if (inspectResult.success) {
+            inspectedRooms.add(res.assignedResourceId);
+            console.log(`[RESERVATIONS] ✅ Room ${res.assignedResourceId} re-inspected after checkout`);
+          } else {
             console.warn(`[RESERVATIONS] ⚠️ Failed to re-inspect room ${res.assignedResourceId}: ${inspectResult.error}`);
           }
         }
 
+        // Ensure room is inspected before FIRST check-in in this room
+        if ((res.desiredState === 'Started' || res.desiredState === 'Processed') &&
+            res.assignedResourceId !== 'unassigned' &&
+            !inspectedRooms.has(res.assignedResourceId)) {
+          console.log(`[RESERVATIONS] Inspecting room ${res.assignedResourceId} before first check-in (not in tracked set)...`);
+          const inspectResult = await updateResourceStates([res.assignedResourceId], accessToken);
+          if (inspectResult.success) {
+            inspectedRooms.add(res.assignedResourceId);
+            console.log(`[RESERVATIONS] ✅ Room ${res.assignedResourceId} inspected successfully before first check-in`);
+          } else {
+            console.warn(`[RESERVATIONS] ⚠️ Failed to inspect room ${res.assignedResourceId}: ${inspectResult.error}`);
+            console.warn(`[RESERVATIONS] ⚠️ Will attempt retry logic if check-in fails...`);
+            // Don't add to set - let retry logic handle it
+          }
+        }
+
+        // Apply state transitions with enhanced error handling
         if (res.desiredState === 'Started') {
-          await callStateTransitionAPI('start', res.id, accessToken);
+          await callStateTransitionAPI('start', res.id, accessToken, res.assignedResourceId, inspectedRooms);
           successCount++;
         } else if (res.desiredState === 'Processed') {
-          await callStateTransitionAPI('start', res.id, accessToken);
+          await callStateTransitionAPI('start', res.id, accessToken, res.assignedResourceId, inspectedRooms);
           await callStateTransitionAPI('process', res.id, accessToken);
           successCount++;
         }
@@ -1029,7 +1061,9 @@ async function applyStateTransitionsSequentially(
 async function callStateTransitionAPI(
   action: 'start' | 'process',
   reservationId: string,
-  accessToken: string
+  accessToken: string,
+  assignedResourceId?: string,
+  inspectedRooms?: Set<string>
 ): Promise<void> {
   const endpoint = action === 'start' ? 'reservations/start' : 'reservations/process';
   const url = `${MEWS_API_URL}/api/connector/v1/${endpoint}`;
@@ -1072,6 +1106,48 @@ async function callStateTransitionAPI(
       errorDetails = JSON.stringify(errorJson, null, 2);
     } catch {
       // Keep as plain text if not JSON
+    }
+
+    // Retry logic for uninspected room errors
+    if (action === 'start' &&
+        response.status === 403 &&
+        errorText.toLowerCase().includes('not available for check-in') &&
+        assignedResourceId &&
+        assignedResourceId !== 'unassigned' &&
+        inspectedRooms) {
+
+      console.log(`[RESERVATIONS] ⚠️ Check-in failed - room may be uninspected or Dirty. Attempting inspection...`);
+
+      // Attempt to inspect the room
+      const inspectResult = await updateResourceStates([assignedResourceId], accessToken);
+
+      if (inspectResult.success) {
+        inspectedRooms.add(assignedResourceId);
+        console.log(`[RESERVATIONS] ✅ Room ${assignedResourceId} inspected. Retrying check-in...`);
+
+        // Retry the start transition
+        const retryResponse = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        console.log(`[RESERVATIONS] 📥 Retry Response Status: ${retryResponse.status} ${retryResponse.statusText}`);
+
+        if (retryResponse.ok) {
+          const responseText = await retryResponse.text();
+          console.log(`[RESERVATIONS] ✅ Check-in succeeded after room inspection`);
+          return; // Success!
+        } else {
+          const retryError = await retryResponse.text();
+          console.error(`[RESERVATIONS] ❌ Retry failed after inspection`);
+          console.error(`[RESERVATIONS] Retry Error:`, retryError);
+          throw new Error(`Failed to ${action} reservation after inspection: ${retryResponse.status} - ${retryError}`);
+        }
+      } else {
+        console.error(`[RESERVATIONS] ❌ Failed to inspect room ${assignedResourceId}: ${inspectResult.error}`);
+        // Fall through to original error handling
+      }
     }
 
     console.error(`[RESERVATIONS] ❌ ${action} transition FAILED`);
