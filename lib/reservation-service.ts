@@ -914,6 +914,7 @@ async function callStateTransitionAPI(
   if (action === 'process') {
     payload.CloseBills = false;
     payload.AllowOpenBalance = true;
+    payload.Notes = 'Reservation processed via Free Trial Generator';
   }
 
   console.log(`[RESERVATIONS] 📤 Calling ${action} API for reservation ${reservationId}`);
