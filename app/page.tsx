@@ -70,10 +70,26 @@ export default function FreeTrialPage() {
     error?: string;
   } | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // Helper function to format date as YYYY-MM-DD
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getTodayDate = (): string => formatDate(new Date());
+
+  const getTodayPlusThreeDays = (): string => {
+    const date = new Date();
+    date.setDate(date.getDate() + 3);
+    return formatDate(date);
+  };
+
   const [demoFillerData, setDemoFillerData] = useState({
     selectedEnvironment: '',
-    startDate: '',
-    endDate: '',
+    startDate: getTodayDate(),
+    endDate: getTodayPlusThreeDays(),
     reservationCount: 20
   });
   const [demoFillerLoading, setDemoFillerLoading] = useState(false);
