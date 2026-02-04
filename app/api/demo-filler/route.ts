@@ -190,7 +190,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
         enterpriseId: tokenRecord.enterpriseId,
         requestorEmail: null,
         durationDays: null,
-        errorMessage: null
+        errorMessage: null,
+        timezone: existingLog?.timezone,
+        roomCount: existingLog?.roomCount,
+        dormCount: existingLog?.dormCount,
+        apartmentCount: existingLog?.apartmentCount,
+        bedCount: existingLog?.bedCount
       });
       logId = newLog.id;
       console.log(`[DEMO-FILLER] Log entry created with ID: ${logId}`);
