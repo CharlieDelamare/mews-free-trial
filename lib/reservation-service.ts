@@ -295,23 +295,46 @@ function calculateCategoryTargets(
   durationDays: number,
   customReservationCount?: number
 ): CategoryTarget[] {
-  // If custom count provided, distribute proportionally by resource count
+  // If custom count provided, distribute proportionally using Largest Remainder Method
+  // This ensures the sum exactly equals the requested count (no over-allocation)
   if (customReservationCount) {
     const totalResources = categories.reduce((sum, c) => sum + c.resourceCount, 0);
 
-    return categories.map(category => {
-      const resourceCount = category.resourceCount;
-      const proportion = resourceCount / totalResources;
-      const targetReservations = Math.max(1, Math.ceil(proportion * customReservationCount));
+    // Step 1: Calculate exact shares and floor values for each category
+    const allocations = categories.map(category => {
+      const proportion = category.resourceCount / totalResources;
+      const exactShare = proportion * customReservationCount;
+      const floorValue = Math.floor(exactShare);
+      const remainder = exactShare - floorValue;
 
       return {
-        categoryId: category.id,
-        categoryName: category.name,
-        resourceCount,
-        targetReservations,
-        targetOccupancy: 0 // Not applicable for custom count
+        category,
+        floorValue,
+        remainder
       };
     });
+
+    // Step 2: Calculate how many remaining slots need to be distributed
+    const assignedSoFar = allocations.reduce((sum, a) => sum + a.floorValue, 0);
+    let remainingSlots = customReservationCount - assignedSoFar;
+
+    // Step 3: Sort by remainder (descending) to prioritize fair distribution
+    allocations.sort((a, b) => b.remainder - a.remainder);
+
+    // Step 4: Distribute remaining slots to categories with largest remainders
+    for (let i = 0; i < allocations.length && remainingSlots > 0; i++) {
+      allocations[i].floorValue++;
+      remainingSlots--;
+    }
+
+    // Step 5: Build final result
+    return allocations.map(allocation => ({
+      categoryId: allocation.category.id,
+      categoryName: allocation.category.name,
+      resourceCount: allocation.category.resourceCount,
+      targetReservations: allocation.floorValue,
+      targetOccupancy: 0 // Not applicable for custom count
+    }));
   }
 
   // Otherwise, use existing 80% occupancy calculation
