@@ -310,16 +310,6 @@ export default function FreeTrialPage() {
           </button>
         </div>
 
-        {/* View Logs Link */}
-        <div className="flex justify-end mb-4">
-          <Link
-            href="/logs"
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
-            View Environment Logs →
-          </Link>
-        </div>
-
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {activeTab === 'create' && 'Mews Free Trial'}
