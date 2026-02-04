@@ -91,3 +91,20 @@ model ReservationCreationLog {
   @@index([enterpriseId])
   @@index([status])
 }
+
+model ResetOperationLog {
+  id                Int       @id @default(autoincrement())
+  enterpriseId      String
+  accessTokenId     Int
+  status            String    // 'processing' | 'completed' | 'failed'
+  currentStep       Int       @default(0)
+  totalSteps        Int       @default(7)
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+  errorSummary      String?   @db.Text
+  operationDetails  Json?     // Detailed progress and results
+
+  @@index([enterpriseId])
+  @@index([status])
+  @@index([startedAt])
+}
