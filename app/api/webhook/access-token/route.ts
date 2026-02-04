@@ -255,7 +255,8 @@ export async function POST(request: NextRequest) {
           const result = await createReservationsForEnvironment(
             newToken.accessToken,
             newToken.enterpriseId,
-            newToken.id
+            newToken.id,
+            { operationType: 'automatic' }
           );
 
           console.log('[WEBHOOK-SETUP] ✅ Setup complete:', {

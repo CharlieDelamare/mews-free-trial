@@ -156,7 +156,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
     createReservationsForEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id, {
       dateRange: { start, end },
       reservationCount,
-      skipStateTransitions: true
+      skipStateTransitions: true,
+      operationType: 'demo_filler'
     })
       .then(result => {
         console.log(

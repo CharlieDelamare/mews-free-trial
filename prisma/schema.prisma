@@ -87,9 +87,11 @@ model ReservationCreationLog {
   status              String    // 'processing' | 'completed' | 'failed'
   errorSummary        String?   @db.Text
   reservationResults  Json?     // Array of individual reservation results
+  operationType       String?   @default("automatic") // 'automatic' | 'demo_filler'
 
   @@index([enterpriseId])
   @@index([status])
+  @@index([operationType])
 }
 
 model ResetOperationLog {
