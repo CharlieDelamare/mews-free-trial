@@ -690,6 +690,7 @@ export default function FreeTrialPage() {
                 name="startDate"
                 value={demoFillerData.startDate}
                 onChange={(e) => setDemoFillerData(prev => ({ ...prev, startDate: e.target.value }))}
+                min={new Date().toISOString().split('T')[0]}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -705,6 +706,7 @@ export default function FreeTrialPage() {
                 name="endDate"
                 value={demoFillerData.endDate}
                 onChange={(e) => setDemoFillerData(prev => ({ ...prev, endDate: e.target.value }))}
+                min={demoFillerData.startDate || new Date().toISOString().split('T')[0]}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -722,11 +724,11 @@ export default function FreeTrialPage() {
                 onChange={(e) => setDemoFillerData(prev => ({ ...prev, reservationCount: parseInt(e.target.value) || 0 }))}
                 required
                 min="1"
-                max="100"
+                max="500"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Enter a number between 1 and 100
+                Enter a number between 1 and 500
               </p>
             </div>
 

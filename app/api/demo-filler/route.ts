@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveAccessToken } from '@/lib/reservations';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
+import { findEnvironmentLogByEnterpriseId, saveEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
 
 interface DemoFillerRequest {
   enterpriseId: string;
@@ -25,7 +26,7 @@ interface DemoFillerResponse {
  * - enterpriseId: string
  * - startDate: string (ISO date)
  * - endDate: string (ISO date)
- * - reservationCount: number (1-100)
+ * - reservationCount: number (1-500)
  *
  * Response (immediate):
  * - success: boolean
@@ -62,11 +63,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
       );
     }
 
-    if (!reservationCount || reservationCount < 1 || reservationCount > 100) {
+    if (!reservationCount || reservationCount < 1 || reservationCount > 500) {
       return NextResponse.json(
         {
           success: false,
-          error: 'reservationCount must be between 1 and 100'
+          error: 'reservationCount must be between 1 and 500'
         },
         { status: 400 }
       );
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
     // Parse and validate dates
     const start = new Date(startDate);
     const end = new Date(endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return NextResponse.json(
@@ -86,11 +89,37 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
       );
     }
 
+    // Ensure start date is today or in the future
+    const startDateOnly = new Date(start);
+    startDateOnly.setHours(0, 0, 0, 0);
+    if (startDateOnly < today) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Start date must be today or in the future'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Ensure end date is today or in the future
+    const endDateOnly = new Date(end);
+    endDateOnly.setHours(0, 0, 0, 0);
+    if (endDateOnly < today) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'End date must be today or in the future'
+        },
+        { status: 400 }
+      );
+    }
+
     if (start >= end) {
       return NextResponse.json(
         {
           success: false,
-          error: 'startDate must be before endDate'
+          error: 'End date must be after start date'
         },
         { status: 400 }
       );
@@ -140,6 +169,36 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
       );
     }
 
+    // Create log entry for this demo filler operation
+    console.log('[DEMO-FILLER] Creating environment log entry...');
+    let logId: string | null = null;
+    try {
+      // Try to get existing environment details
+      const existingLog = await findEnvironmentLogByEnterpriseId(tokenRecord.enterpriseId);
+
+      // Create a new log entry for this demo filler operation
+      const newLog = await saveEnvironmentLog({
+        propertyName: existingLog?.propertyName || tokenRecord.enterpriseName,
+        customerName: existingLog?.customerName || 'Demo Filler',
+        customerEmail: existingLog?.customerEmail || 'demo@mews.com',
+        propertyCountry: existingLog?.propertyCountry || 'N/A',
+        propertyType: existingLog?.propertyType || 'demo',
+        loginUrl: existingLog?.loginUrl || 'N/A',
+        loginEmail: existingLog?.loginEmail || 'N/A',
+        loginPassword: existingLog?.loginPassword || 'Sample123',
+        status: 'Updating',
+        enterpriseId: tokenRecord.enterpriseId,
+        requestorEmail: null,
+        durationDays: null,
+        errorMessage: null
+      });
+      logId = newLog.id;
+      console.log(`[DEMO-FILLER] Log entry created with ID: ${logId}`);
+    } catch (logError) {
+      console.error('[DEMO-FILLER] ⚠️ Failed to create log entry:', logError);
+      // Continue even if logging fails
+    }
+
     // Trigger reservation creation (fire-and-forget)
     console.log(
       `[DEMO-FILLER] 🎯 Starting demo filler for enterprise: ${tokenRecord.enterpriseId}`,
@@ -168,12 +227,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
             durationSeconds: result.durationSeconds
           }
         );
+
+        // Update log entry to completed
+        if (logId) {
+          updateEnvironmentLogById(logId, { status: 'completed' })
+            .catch(err => console.error('[DEMO-FILLER] Failed to update log:', err));
+        }
       })
       .catch(error => {
         console.error(
           `[DEMO-FILLER] ❌ Failed for ${tokenRecord.enterpriseId}:`,
           error
         );
+
+        // Update log entry to failure
+        if (logId) {
+          updateEnvironmentLogById(logId, {
+            status: 'failure',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          }).catch(err => console.error('[DEMO-FILLER] Failed to update log:', err));
+        }
       });
 
     // Return immediate response
