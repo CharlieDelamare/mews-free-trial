@@ -3,6 +3,24 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
+interface ReservationStateBreakdown {
+  Confirmed: number;
+  Started: number;
+  Processed: number;
+  Canceled: number;
+  Optional: number;
+}
+
+interface EnvironmentStatistics {
+  customersCreated: number | null;
+  customersFailed: number | null;
+  reservationsCreated: number | null;
+  reservationsFailed: number | null;
+  reservationsByState: ReservationStateBreakdown | null;
+  isProcessing: boolean;
+  hasFailed: boolean;
+}
+
 interface EnvironmentLog {
   id: string;
   timestamp: string;
@@ -20,6 +38,7 @@ interface EnvironmentLog {
   requestorEmail?: string;
   durationDays?: number;
   salesforceAccountId?: string;
+  statistics?: EnvironmentStatistics;
 }
 
 export default function LogsPage() {
@@ -213,19 +232,7 @@ export default function LogsPage() {
                       </span>
                     </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3 text-sm">
-                    <div>
-                      <p className="text-xs text-gray-600">Customer</p>
-                      <p className="font-medium text-gray-800">{log.customerName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600">Email</p>
-                      <p className="font-medium text-gray-800">{log.customerEmail}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600">Country</p>
-                      <p className="font-medium text-gray-800">{log.propertyCountry}</p>
-                    </div>
+                  <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
                     <div>
                       <p className="text-xs text-gray-600">Type</p>
                       <p className="font-medium text-gray-800 capitalize">{log.propertyType}</p>
@@ -237,6 +244,59 @@ export default function LogsPage() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Statistics Section */}
+                  {log.statistics && (
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <h3 className="text-xs font-semibold text-gray-700 mb-2">Setup Progress</h3>
+
+                      <div className="space-y-2 text-sm">
+                        {/* Customers */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 flex items-center gap-1">
+                            <span>👥</span> Customers:
+                          </span>
+                          <span className="font-medium text-gray-800">
+                            {log.statistics.customersCreated ?? 'Pending'}
+                            {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
+                          </span>
+                        </div>
+
+                        {/* Reservations */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600 flex items-center gap-1">
+                            <span>🏨</span> Reservations:
+                          </span>
+                          <span className="font-medium text-gray-800">
+                            {log.statistics.reservationsCreated ?? 'Pending'}
+                            {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
+                          </span>
+                        </div>
+
+                        {/* State Breakdown */}
+                        {log.statistics.reservationsByState && (
+                          <div className="ml-6 mt-1 space-y-1 text-xs">
+                            {Object.entries(log.statistics.reservationsByState)
+                              .filter(([_, count]) => count > 0)
+                              .map(([state, count]) => (
+                                <div key={state} className="flex items-center justify-between text-gray-500">
+                                  <span>└─ {state}:</span>
+                                  <span className="font-mono">{count}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+
+                        {/* Error indicators */}
+                        {log.statistics.hasFailed && (
+                          <div className="text-xs text-red-600 flex items-center gap-1 mt-2">
+                            <span>⚠️</span>
+                            <span>Setup encountered errors</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {(log.status === 'building' || log.status === 'Updating') && (
                     <div className="border-t border-gray-200 pt-3 mt-3">
