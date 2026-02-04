@@ -409,6 +409,47 @@ async function createCustomersOnDemand(
 }
 
 /**
+ * Get existing customer by email address
+ */
+async function getCustomerByEmail(email: string, accessToken: string): Promise<string | null> {
+  try {
+    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/getAll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: MEWS_CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Free Trial Generator',
+        Emails: [email],
+        Extent: {
+          Customers: true,
+          Documents: false,
+          Addresses: false
+        }
+      })
+    });
+
+    if (!response.ok) {
+      console.warn(`[CUSTOMERS] Failed to fetch existing customer ${email}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+
+    if (data.Customers && data.Customers.length > 0) {
+      const customerId = data.Customers[0].Id;
+      console.log(`[CUSTOMERS] ✓ Found existing customer ${email}: ${customerId}`);
+      return customerId;
+    }
+
+    return null;
+  } catch (error) {
+    console.warn(`[CUSTOMERS] Error fetching existing customer ${email}:`, error);
+    return null;
+  }
+}
+
+/**
  * Create a single customer
  */
 async function createSingleCustomer(customer: SampleCustomer, accessToken: string): Promise<string> {
@@ -433,7 +474,26 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    console.error(`[RESERVATIONS] Customer API error for ${customer.Email}:`, {
+
+    // Check if customer already exists (400 error with specific message)
+    if (response.status === 400 &&
+        errorData.Message &&
+        errorData.Message.toLowerCase().includes('customer with the specified email already exists')) {
+      console.log(`[CUSTOMERS] ℹ Customer ${customer.Email} already exists, fetching existing ID...`);
+
+      // Try to fetch existing customer ID
+      const existingCustomerId = await getCustomerByEmail(customer.Email, accessToken);
+
+      if (existingCustomerId) {
+        return existingCustomerId;
+      }
+
+      // If we couldn't fetch the existing customer, still throw error
+      console.error(`[CUSTOMERS] ❌ Customer exists but couldn't fetch ID for ${customer.Email}`);
+    }
+
+    // Log all other errors
+    console.error(`[CUSTOMERS] Customer API error for ${customer.Email}:`, {
       status: response.status,
       statusText: response.statusText,
       errorData: errorData
