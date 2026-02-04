@@ -64,6 +64,8 @@ export async function createReservationsForEnvironment(
       start: Date;
       end: Date;
     };
+    reservationCount?: number;
+    skipStateTransitions?: boolean;
   }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
@@ -104,12 +106,12 @@ export async function createReservationsForEnvironment(
       ? Math.ceil((options.dateRange.end.getTime() - options.dateRange.start.getTime()) / (1000 * 60 * 60 * 24))
       : envData.durationDays;
 
-    const categoryTargets = calculateCategoryTargets(filteredCategories, effectiveDuration);
+    const categoryTargets = calculateCategoryTargets(filteredCategories, effectiveDuration, options?.reservationCount);
     const totalReservations = categoryTargets.reduce((sum, ct) => sum + ct.targetReservations, 0);
 
-    console.log(`[RESERVATIONS] Per-category targets for 80% occupancy:`);
+    console.log(`[RESERVATIONS] Per-category targets ${options?.reservationCount ? `for ${options.reservationCount} reservations` : 'for 80% occupancy'}:`);
     categoryTargets.forEach(ct => {
-      console.log(`[RESERVATIONS]   - ${ct.categoryName}: ${ct.resourceCount} units → ${ct.targetReservations} reservations (${ct.targetOccupancy}% target)`);
+      console.log(`[RESERVATIONS]   - ${ct.categoryName}: ${ct.resourceCount} units → ${ct.targetReservations} reservations${ct.targetOccupancy > 0 ? ` (${ct.targetOccupancy}% target)` : ''}`);
     });
     console.log(`[RESERVATIONS] Total target reservations: ${totalReservations}`);
 
@@ -161,16 +163,21 @@ export async function createReservationsForEnvironment(
     let reservationDetails: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }> = [];
     let inspectedRoomIds = new Set<string>();
 
-    if (reservationIds.length > 0) {
-      reservationDetails = await fetchReservationDetails(reservationIds, accessToken);
+    // Skip state transitions if requested (leaves all reservations in Confirmed state)
+    if (!options?.skipStateTransitions) {
+      if (reservationIds.length > 0) {
+        reservationDetails = await fetchReservationDetails(reservationIds, accessToken);
 
-      // Prepare resources for check-in (set to Inspected state)
-      const prepResult = await prepareResourcesForCheckIn(reservationDetails, accessToken);
-      inspectedRoomIds = prepResult.inspectedRoomIds;
+        // Prepare resources for check-in (set to Inspected state)
+        const prepResult = await prepareResourcesForCheckIn(reservationDetails, accessToken);
+        inspectedRoomIds = prepResult.inspectedRoomIds;
+      }
+
+      // Apply state transitions sequentially per room, passing tracked inspections
+      await applyStateTransitionsSequentially(createdReservations, reservationDetails, accessToken, inspectedRoomIds);
+    } else {
+      console.log(`[RESERVATIONS] Skipping state transitions - all reservations will remain in Confirmed state`);
     }
-
-    // Apply state transitions sequentially per room, passing tracked inspections
-    await applyStateTransitionsSequentially(createdReservations, reservationDetails, accessToken, inspectedRoomIds);
 
     // Log results
     const duration = Date.now() - startTime;
@@ -269,12 +276,33 @@ function filterResourceCategories(
 }
 
 /**
- * Calculate per-category reservation targets for 80% occupancy
+ * Calculate per-category reservation targets for 80% occupancy or custom count
  */
 function calculateCategoryTargets(
   categories: MewsData['resourceCategories'],
-  durationDays: number
+  durationDays: number,
+  customReservationCount?: number
 ): CategoryTarget[] {
+  // If custom count provided, distribute proportionally by resource count
+  if (customReservationCount) {
+    const totalResources = categories.reduce((sum, c) => sum + c.resourceCount, 0);
+
+    return categories.map(category => {
+      const resourceCount = category.resourceCount;
+      const proportion = resourceCount / totalResources;
+      const targetReservations = Math.max(1, Math.ceil(proportion * customReservationCount));
+
+      return {
+        categoryId: category.id,
+        categoryName: category.name,
+        resourceCount,
+        targetReservations,
+        targetOccupancy: 0 // Not applicable for custom count
+      };
+    });
+  }
+
+  // Otherwise, use existing 80% occupancy calculation
   const totalDays = durationDays + 2; // Include 2 past days
   const averageStayLength = 2.1; // From stay distribution: 50%*1 + 30%*2 + 15%*3 + 5%*4 = 1.75
   const targetOccupancy = 0.8; // 80% occupancy
