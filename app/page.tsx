@@ -280,7 +280,7 @@ export default function FreeTrialPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Reset Demo Environment
+            Reset Demo
           </button>
           <button
             onClick={() => setActiveTab('demo-filler')}
@@ -307,7 +307,7 @@ export default function FreeTrialPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {activeTab === 'create' && 'Mews Free Trial'}
-            {activeTab === 'reset' && 'Reset Demo Environment'}
+            {activeTab === 'reset' && 'Reset Demo'}
             {activeTab === 'demo-filler' && 'Demo Filler'}
           </h1>
           <p className="text-gray-600">
@@ -569,7 +569,7 @@ export default function FreeTrialPage() {
           </>
         )}
 
-        {/* Reset Demo Environment Tab Content */}
+        {/* Reset Demo Tab Content */}
         {activeTab === 'reset' && (
           <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
             {/* Environment Dropdown */}
@@ -601,6 +601,9 @@ export default function FreeTrialPage() {
                   No environments found. Create a trial or add one manually.
                 </p>
               )}
+              <p className="text-xs text-gray-500 mt-2">
+                If your property isn't available in the dropdown, please add the "Mews Free Trial" integration in the Marketplace within Mews.
+              </p>
             </div>
 
             {/* Reset Button */}
@@ -678,6 +681,9 @@ export default function FreeTrialPage() {
                   No environments found. Create a trial or add one manually.
                 </p>
               )}
+              <p className="text-xs text-gray-500 mt-2">
+                If your property isn't available in the dropdown, please add the "Mews Free Trial" integration in the Marketplace within Mews.
+              </p>
             </div>
 
             {/* Start Date */}
