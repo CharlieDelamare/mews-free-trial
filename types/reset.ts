@@ -44,6 +44,7 @@ export interface ResetOperationDetails {
   reservationsCreated?: number;
   reservationsCreateFailed?: number;
   errors?: string[];
+  [key: string]: any; // Index signature for Prisma Json compatibility
 }
 
 export interface ResetResult {
