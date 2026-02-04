@@ -78,7 +78,7 @@ async function getAllReservationsWithPagination(
       pageCount++;
       console.log(`[RESET-SERVICE] Fetching reservations page ${pageCount}...`);
 
-      const response = await fetch(
+      const response: Response = await fetch(
         `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`,
         {
           method: 'POST',
