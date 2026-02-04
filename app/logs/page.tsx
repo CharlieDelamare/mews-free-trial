@@ -21,9 +21,16 @@ interface EnvironmentStatistics {
   hasFailed: boolean;
 }
 
-interface EnvironmentLog {
+interface BaseLog {
   id: string;
   timestamp: string;
+  enterpriseId?: string;
+  enterpriseName?: string;
+  status: string;
+}
+
+interface EnvironmentLog extends BaseLog {
+  type: 'environment';
   propertyName: string;
   customerName: string;
   customerEmail: string;
@@ -34,15 +41,36 @@ interface EnvironmentLog {
   loginPassword: string;
   status: 'building' | 'Updating' | 'completed' | 'failure';
   errorMessage?: string;
-  enterpriseId?: string;
   requestorEmail?: string;
   durationDays?: number;
   salesforceAccountId?: string;
   statistics?: EnvironmentStatistics;
 }
 
+interface ResetLog extends BaseLog {
+  type: 'reset';
+  status: 'processing' | 'completed' | 'failed';
+  currentStep: number;
+  totalSteps: number;
+  completedAt?: string;
+  errorSummary?: string;
+  operationDetails?: any;
+}
+
+interface DemoFillerLog extends BaseLog {
+  type: 'demo_filler';
+  status: 'processing' | 'completed' | 'failed';
+  totalReservations: number;
+  successCount: number;
+  failureCount: number;
+  completedAt?: string;
+  errorSummary?: string;
+}
+
+type UnifiedLog = EnvironmentLog | ResetLog | DemoFillerLog;
+
 export default function LogsPage() {
-  const [logs, setLogs] = useState<EnvironmentLog[]>([]);
+  const [logs, setLogs] = useState<UnifiedLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -117,6 +145,17 @@ export default function LogsPage() {
     navigator.clipboard.writeText(loginDetails);
   };
 
+  const getLogTypeLabel = (type: UnifiedLog['type']) => {
+    switch (type) {
+      case 'environment':
+        return { label: 'New Environment', color: 'bg-blue-100 text-blue-800' };
+      case 'reset':
+        return { label: 'Environment Reset', color: 'bg-purple-100 text-purple-800' };
+      case 'demo_filler':
+        return { label: 'Demo Filler', color: 'bg-orange-100 text-orange-800' };
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
@@ -132,7 +171,7 @@ export default function LogsPage() {
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-800">
-              Environment Logs
+              Logs
             </h1>
 
             <div className="flex items-center gap-3">
@@ -206,9 +245,23 @@ export default function LogsPage() {
                   failure: {
                     card: 'bg-red-50 border-red-200',
                     badge: 'bg-red-200 text-red-800'
+                  },
+                  processing: {
+                    card: 'bg-yellow-50 border-yellow-200',
+                    badge: 'bg-yellow-200 text-yellow-800'
+                  },
+                  failed: {
+                    card: 'bg-red-50 border-red-200',
+                    badge: 'bg-red-200 text-red-800'
                   }
                 };
-                const style = statusStyles[log.status] || statusStyles.failure;
+                const style = statusStyles[log.status as keyof typeof statusStyles] || statusStyles.completed;
+                const typeInfo = getLogTypeLabel(log.type);
+
+                // Get display name based on log type
+                const displayName = log.type === 'environment' && 'propertyName' in log
+                  ? log.propertyName
+                  : log.enterpriseName || log.enterpriseId || 'Unknown';
 
                 return (
                   <div
@@ -216,9 +269,14 @@ export default function LogsPage() {
                     className={`border rounded-lg p-4 ${style.card}`}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${typeInfo.color}`}>
+                            {typeInfo.label}
+                          </span>
+                        </div>
                         <h2 className="text-lg font-semibold text-gray-800">
-                          {log.propertyName}
+                          {displayName}
                         </h2>
                         <p className="text-xs text-gray-600 mt-0.5">
                           {formatDate(log.timestamp)}
@@ -226,127 +284,194 @@ export default function LogsPage() {
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${style.badge}`}>
                         {log.status === 'building' && '🏗️ Building'}
-                        {log.status === 'Updating' && '⚙️ Setting Up'}
+                        {log.status === 'Updating' && '✅ Created'}
                         {log.status === 'completed' && '✅ Completed'}
                         {log.status === 'failure' && '❌ Failed'}
+                        {log.status === 'failed' && '❌ Failed'}
+                        {log.status === 'processing' && '⏳ Processing'}
                       </span>
                     </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
-                    <div>
-                      <p className="text-xs text-gray-600">Type</p>
-                      <p className="font-medium text-gray-800 capitalize">{log.propertyType}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-600">Duration</p>
-                      <p className="font-medium text-gray-800">
-                        {log.durationDays ? `${log.durationDays} days` : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
+                  {/* Environment-specific content */}
+                  {log.type === 'environment' && (
+                    <>
+                      {/* Statistics Section */}
+                      {log.statistics && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <h3 className="text-xs font-semibold text-gray-700 mb-2">Setup Progress</h3>
 
-                  {/* Statistics Section */}
-                  {log.statistics && (
-                    <div className="border-t border-gray-200 pt-3 mt-3">
-                      <h3 className="text-xs font-semibold text-gray-700 mb-2">Setup Progress</h3>
+                          <div className="space-y-2 text-sm">
+                            {/* Customers */}
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-600 flex items-center gap-1">
+                                <span>👥</span> Customers:
+                              </span>
+                              <span className="font-medium text-gray-800">
+                                {log.statistics.customersCreated ?? 'Pending'}
+                                {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
+                              </span>
+                            </div>
 
-                      <div className="space-y-2 text-sm">
-                        {/* Customers */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600 flex items-center gap-1">
-                            <span>👥</span> Customers:
-                          </span>
-                          <span className="font-medium text-gray-800">
-                            {log.statistics.customersCreated ?? 'Pending'}
-                            {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
-                          </span>
-                        </div>
+                            {/* Reservations */}
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-600 flex items-center gap-1">
+                                <span>🏨</span> Reservations:
+                              </span>
+                              <span className="font-medium text-gray-800">
+                                {log.statistics.reservationsCreated ?? 'Pending'}
+                                {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
+                              </span>
+                            </div>
 
-                        {/* Reservations */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600 flex items-center gap-1">
-                            <span>🏨</span> Reservations:
-                          </span>
-                          <span className="font-medium text-gray-800">
-                            {log.statistics.reservationsCreated ?? 'Pending'}
-                            {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
-                          </span>
-                        </div>
+                            {/* State Breakdown */}
+                            {log.statistics.reservationsByState && (
+                              <div className="ml-6 mt-1 space-y-1 text-xs">
+                                {Object.entries(log.statistics.reservationsByState)
+                                  .filter(([_, count]) => count > 0)
+                                  .map(([state, count]) => (
+                                    <div key={state} className="flex items-center justify-between text-gray-500">
+                                      <span>└─ {state}:</span>
+                                      <span className="font-mono">{count}</span>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
 
-                        {/* State Breakdown */}
-                        {log.statistics.reservationsByState && (
-                          <div className="ml-6 mt-1 space-y-1 text-xs">
-                            {Object.entries(log.statistics.reservationsByState)
-                              .filter(([_, count]) => count > 0)
-                              .map(([state, count]) => (
-                                <div key={state} className="flex items-center justify-between text-gray-500">
-                                  <span>└─ {state}:</span>
-                                  <span className="font-mono">{count}</span>
-                                </div>
-                              ))}
+                            {/* Error indicators */}
+                            {log.statistics.hasFailed && (
+                              <div className="text-xs text-red-600 flex items-center gap-1 mt-2">
+                                <span>⚠️</span>
+                                <span>Setup encountered errors</span>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+                      )}
 
-                        {/* Error indicators */}
-                        {log.statistics.hasFailed && (
-                          <div className="text-xs text-red-600 flex items-center gap-1 mt-2">
-                            <span>⚠️</span>
-                            <span>Setup encountered errors</span>
+                      {(log.status === 'building' || log.status === 'Updating') && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
+                            <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
+                            <p className="text-xs font-medium">
+                              {log.status === 'building' && `Creating ${log.propertyType} for ${log.durationDays || 30} days`}
+                              {log.status === 'Updating' && 'Setting up customers and reservations. Login details will appear when ready.'}
+                            </p>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      )}
+
+                      {log.status === 'completed' && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <button
+                            onClick={() => copyAllLoginDetails(log)}
+                            className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1.5 rounded hover:bg-blue-50 transition-colors"
+                          >
+                            Copy Login Details
+                          </button>
+                        </div>
+                      )}
+
+                      {log.status === 'failure' && log.errorMessage && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
+                          <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
+                            {log.errorMessage}
+                          </pre>
+                        </div>
+                      )}
+                    </>
                   )}
 
-                  {(log.status === 'building' || log.status === 'Updating') && (
-                    <div className="border-t border-gray-200 pt-3 mt-3">
-                      <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
-                        <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
-                        <p className="text-xs font-medium">
-                          {log.status === 'building' && 'Environment is being created. Login details will appear when ready.'}
-                          {log.status === 'Updating' && 'Setting up customers and reservations. Login details will appear when ready.'}
-                        </p>
+                  {/* Reset-specific content */}
+                  {log.type === 'reset' && (
+                    <>
+                      <div className="border-t border-gray-200 pt-3 mt-3">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600">Progress:</span>
+                            <span className="font-medium text-gray-800">
+                              Step {log.currentStep} of {log.totalSteps}
+                            </span>
+                          </div>
+                          {log.completedAt && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-600">Completed:</span>
+                              <span className="font-medium text-gray-800">
+                                {formatDate(log.completedAt)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+
+                      {log.status === 'processing' && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <div className="flex items-center gap-2 text-yellow-700">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+                            <p className="text-xs font-medium">Resetting environment...</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {log.status === 'failed' && log.errorSummary && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
+                          <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
+                            {log.errorSummary}
+                          </pre>
+                        </div>
+                      )}
+                    </>
                   )}
 
-                  {log.status === 'completed' && (
-                    <div className="border-t border-gray-200 pt-3 mt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-gray-800 text-sm">
-                          Login Details
-                        </h3>
-                        <button
-                          onClick={() => copyAllLoginDetails(log)}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors"
-                        >
-                          Copy All
-                        </button>
+                  {/* Demo Filler-specific content */}
+                  {log.type === 'demo_filler' && (
+                    <>
+                      <div className="border-t border-gray-200 pt-3 mt-3">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600 flex items-center gap-1">
+                              <span>🏨</span> Reservations:
+                            </span>
+                            <span className="font-medium text-gray-800">
+                              {log.successCount} / {log.totalReservations}
+                            </span>
+                          </div>
+                          {log.failureCount > 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-red-600">Failed:</span>
+                              <span className="font-medium text-red-800">{log.failureCount}</span>
+                            </div>
+                          )}
+                          {log.completedAt && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-600">Completed:</span>
+                              <span className="font-medium text-gray-800">
+                                {formatDate(log.completedAt)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="bg-white rounded p-3 space-y-1">
-                        <div>
-                          <span className="text-xs text-gray-600">URL: </span>
-                          <span className="font-mono text-xs text-gray-800">{log.loginUrl}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-600">Email: </span>
-                          <span className="font-mono text-xs text-gray-800">{log.loginEmail}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-600">Password: </span>
-                          <span className="font-mono text-xs text-gray-800">{log.loginPassword}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
-                  {log.status === 'failure' && log.errorMessage && (
-                    <div className="border-t border-gray-200 pt-3 mt-3">
-                      <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
-                      <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
-                        {log.errorMessage}
-                      </pre>
-                    </div>
+                      {log.status === 'processing' && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <div className="flex items-center gap-2 text-yellow-700">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+                            <p className="text-xs font-medium">Creating reservations...</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {log.status === 'failed' && log.errorSummary && (
+                        <div className="border-t border-gray-200 pt-3 mt-3">
+                          <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
+                          <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
+                            {log.errorSummary}
+                          </pre>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
                 );

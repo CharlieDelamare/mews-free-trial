@@ -66,6 +66,7 @@ export async function createReservationsForEnvironment(
     };
     reservationCount?: number;
     skipStateTransitions?: boolean;
+    operationType?: 'automatic' | 'demo_filler';
   }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
@@ -81,7 +82,8 @@ export async function createReservationsForEnvironment(
       successCount: 0,
       failureCount: 0,
       status: 'processing',
-      reservationResults: []
+      reservationResults: [],
+      operationType: options?.operationType || 'automatic'
     }
   });
 
