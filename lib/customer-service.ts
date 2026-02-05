@@ -8,6 +8,7 @@
 
 import { prisma } from './prisma';
 import { getSampleCustomers, SampleCustomer } from './sample-customers';
+import { updateEnvironmentCustomerStats } from './unified-logger';
 
 // Hardcoded configuration for Mews demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -48,21 +49,24 @@ interface CustomerCreationResult {
  * @param accessToken - Access token received from webhook for this specific enterprise
  * @param enterpriseId - Enterprise ID to create customers in
  * @param accessTokenId - Database ID of the access token record
+ * @param options - Optional parameters including logId for unified log updates
  * @returns Promise resolving to the customer creation log
  */
 export async function createSampleCustomers(
   accessToken: string,
   enterpriseId: string,
-  accessTokenId: number
+  accessTokenId: number,
+  options?: { logId?: string }
 ): Promise<CustomerCreationResult> {
   const startTime = Date.now();
+  const logId = options?.logId;
 
   // Get sample customers (defaults to 300)
   const customers = getSampleCustomers();
 
   console.log(`[CUSTOMERS] Starting creation of ${customers.length} customers for:`, enterpriseId);
 
-  // Create log entry with status 'processing'
+  // Create log entry with status 'processing' (for backwards compatibility)
   const log = await prisma.customerCreationLog.create({
     data: {
       enterpriseId,
@@ -74,6 +78,20 @@ export async function createSampleCustomers(
       customerResults: []
     }
   });
+
+  // Update unified log's operationDetails if logId provided
+  if (logId) {
+    try {
+      await updateEnvironmentCustomerStats(logId, {
+        status: 'processing',
+        total: customers.length,
+        success: 0,
+        failed: 0
+      });
+    } catch (error) {
+      console.error('[CUSTOMERS] Failed to update unified log stats:', error);
+    }
+  }
 
   try {
 
@@ -93,7 +111,7 @@ export async function createSampleCustomers(
       duration: `${durationSeconds}s`
     });
 
-    // Update log with final results
+    // Update log with final results (for backwards compatibility)
     const updatedLog = await prisma.customerCreationLog.update({
       where: { id: log.id },
       data: {
@@ -107,6 +125,20 @@ export async function createSampleCustomers(
           : null
       }
     });
+
+    // Update unified log's operationDetails if logId provided
+    if (logId) {
+      try {
+        await updateEnvironmentCustomerStats(logId, {
+          status: 'completed',
+          total: customers.length,
+          success: successCount,
+          failed: failureCount
+        });
+      } catch (error) {
+        console.error('[CUSTOMERS] Failed to update unified log stats:', error);
+      }
+    }
 
     return {
       id: updatedLog.id,
@@ -123,7 +155,7 @@ export async function createSampleCustomers(
   } catch (error) {
     console.error('[CUSTOMERS] ❌ Fatal error during customer creation:', error);
 
-    // Update log with failure status
+    // Update log with failure status (for backwards compatibility)
     await prisma.customerCreationLog.update({
       where: { id: log.id },
       data: {
@@ -132,6 +164,20 @@ export async function createSampleCustomers(
         errorSummary: error instanceof Error ? error.message : String(error)
       }
     });
+
+    // Update unified log's operationDetails if logId provided
+    if (logId) {
+      try {
+        await updateEnvironmentCustomerStats(logId, {
+          status: 'failed',
+          total: customers.length,
+          success: 0,
+          failed: customers.length
+        });
+      } catch (updateError) {
+        console.error('[CUSTOMERS] Failed to update unified log stats:', updateError);
+      }
+    }
 
     throw error;
   }

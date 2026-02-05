@@ -110,3 +110,48 @@ model ResetOperationLog {
   @@index([status])
   @@index([startedAt])
 }
+
+model UnifiedLog {
+  id              String    @id @default(cuid())
+  logType         String    // 'environment' | 'reset' | 'demo_filler'
+  timestamp       DateTime  @default(now())
+  enterpriseId    String?
+  status          String    // 'building' | 'processing' | 'completed' | 'failed'
+  completedAt     DateTime?
+  errorMessage    String?   @db.Text
+
+  // === Environment-specific fields ===
+  propertyName        String?
+  customerName        String?
+  customerEmail       String?
+  propertyCountry     String?
+  propertyType        String?
+  loginUrl            String?
+  loginEmail          String?
+  loginPassword       String?
+  requestorEmail      String?
+  durationDays        Int?
+  roomCount           Int?
+  dormCount           Int?
+  apartmentCount      Int?
+  bedCount            Int?
+  timezone            String?
+  salesforceAccountId String?
+
+  // === Reset-specific fields ===
+  currentStep       Int?
+  totalSteps        Int?
+
+  // === Shared operation fields ===
+  accessTokenId       Int?
+  totalItems          Int?        // For demo_filler: total reservations
+  successCount        Int?        // For demo_filler: successful count
+  failureCount        Int?        // For demo_filler: failed count
+  operationDetails    Json?       // Type-specific data (customers/reservations stats, reset details, etc.)
+
+  @@index([timestamp])
+  @@index([logType])
+  @@index([enterpriseId])
+  @@index([status])
+  @@index([logType, timestamp])
+}

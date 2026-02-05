@@ -9,6 +9,7 @@ import { createReservationsForEnvironment } from './reservation-service';
 import { closeBillsForEnvironment } from './bill-service';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { startOfDay, addDays } from 'date-fns';
+import { createResetLog, updateUnifiedLog } from './unified-logger';
 import type { ResetResult, ResetOperationDetails, ResetStep } from '@/types/reset';
 
 // Hardcoded Mews client token for demo environment
@@ -209,16 +210,11 @@ export async function resetEnvironment(
   console.log(`[RESET-SERVICE] Starting reset for enterprise: ${enterpriseId}`);
   console.log(`[RESET-SERVICE] ======================================`);
 
-  // Create operation log
-  const log = await prisma.resetOperationLog.create({
-    data: {
-      enterpriseId,
-      accessTokenId,
-      status: 'processing',
-      currentStep: 0,
-      totalSteps: 7,
-      operationDetails: details
-    }
+  // Create operation log in UnifiedLog table
+  const log = await createResetLog({
+    enterpriseId,
+    accessTokenId,
+    totalSteps: 7
   });
 
   try {
@@ -237,10 +233,7 @@ export async function resetEnvironment(
       nowUtc: config.nowUtc
     };
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: { currentStep: 1, operationDetails: details }
-    });
+    await updateUnifiedLog(log.id, { currentStep: 1, operationDetails: details });
 
     console.log(`[RESET-SERVICE] ✓ Configuration fetched (timezone: ${config.timezone})`);
 
@@ -259,10 +252,7 @@ export async function resetEnvironment(
       serviceName: 'Accommodation'
     };
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: { currentStep: 2, operationDetails: details }
-    });
+    await updateUnifiedLog(log.id, { currentStep: 2, operationDetails: details });
 
     console.log(`[RESET-SERVICE] ✓ Services fetched (serviceId: ${mewsData.serviceId})`);
 
@@ -282,10 +272,7 @@ export async function resetEnvironment(
 
     details.reservationsFetched = reservations.length;
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: { currentStep: 3, operationDetails: details }
-    });
+    await updateUnifiedLog(log.id, { currentStep: 3, operationDetails: details });
 
     console.log(`[RESET-SERVICE] ✓ Found ${reservations.length} reservations to cancel`);
 
@@ -317,20 +304,14 @@ export async function resetEnvironment(
       console.log(`[RESET-SERVICE] ✓ No reservations to cancel`);
     }
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: { currentStep: 4, operationDetails: details }
-    });
+    await updateUnifiedLog(log.id, { currentStep: 4, operationDetails: details });
 
     // ========================================
     // STEP 5: Get Open Bills (implicit in Step 6)
     // ========================================
     console.log(`[RESET-SERVICE] Step 5/7: Preparing to close bills...`);
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: { currentStep: 5, operationDetails: details }
-    });
+    await updateUnifiedLog(log.id, { currentStep: 5, operationDetails: details });
 
     // ========================================
     // STEP 6: Close Bills
@@ -346,10 +327,7 @@ export async function resetEnvironment(
       details.errors?.push(`Failed to close ${billsResult.failureCount} bills`);
     }
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: { currentStep: 6, operationDetails: details }
-    });
+    await updateUnifiedLog(log.id, { currentStep: 6, operationDetails: details });
 
     console.log(
       `[RESET-SERVICE] ✓ Closed ${billsResult.successCount} bills (${billsResult.failureCount} failed)`
@@ -390,10 +368,7 @@ export async function resetEnvironment(
       details.errors?.push(`Failed to create ${reservationResult.failureCount} reservations`);
     }
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: { currentStep: 7, operationDetails: details }
-    });
+    await updateUnifiedLog(log.id, { currentStep: 7, operationDetails: details });
 
     console.log(
       `[RESET-SERVICE] ✓ Created ${reservationResult.successCount} reservations (${reservationResult.failureCount} failed)`
@@ -404,14 +379,11 @@ export async function resetEnvironment(
     // ========================================
     const durationSeconds = Math.round((Date.now() - startTime) / 1000);
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: {
-        status: 'completed',
-        completedAt: new Date(),
-        currentStep: 7,
-        operationDetails: details
-      }
+    await updateUnifiedLog(log.id, {
+      status: 'completed',
+      completedAt: new Date(),
+      currentStep: 7,
+      operationDetails: details
     });
 
     console.log(`[RESET-SERVICE] ======================================`);
@@ -429,14 +401,11 @@ export async function resetEnvironment(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     details.errors?.push(errorMessage);
 
-    await prisma.resetOperationLog.update({
-      where: { id: log.id },
-      data: {
-        status: 'failed',
-        completedAt: new Date(),
-        errorSummary: errorMessage,
-        operationDetails: details
-      }
+    await updateUnifiedLog(log.id, {
+      status: 'failed',
+      completedAt: new Date(),
+      errorMessage: errorMessage,
+      operationDetails: details
     });
 
     console.error(`[RESET-SERVICE] ❌ Reset failed:`, error);
