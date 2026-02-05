@@ -64,7 +64,7 @@ export function Navbar() {
               href="/logs"
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
-              logs
+              Logs
             </Link>
           </div>
         </div>
