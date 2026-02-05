@@ -47,7 +47,8 @@ interface EnvironmentLog extends BaseLog {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
-  status: 'building' | 'processing' | 'completed' | 'failed';
+  // Include legacy status values for backwards compatibility
+  status: 'building' | 'processing' | 'completed' | 'failed' | 'Updating' | 'failure';
   requestorEmail?: string;
   durationDays?: number;
   salesforceAccountId?: string;
