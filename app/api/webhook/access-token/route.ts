@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { findEnvironmentLogByPropertyName, updateEnvironmentLogById, updateEnvironmentLog } from '@/lib/logger';
+import { findEnvironmentLogByPropertyName, updateUnifiedLog } from '@/lib/unified-logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
 import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
@@ -223,10 +223,10 @@ export async function POST(request: NextRequest) {
     if (log) {
       console.log('[WEBHOOK] ✅ Matched environment log:', log.id);
 
-      // Backfill enterpriseId and update status to Updating
-      await updateEnvironmentLogById(log.id, {
+      // Backfill enterpriseId and update status to processing
+      await updateUnifiedLog(log.id, {
         enterpriseId: newToken.enterpriseId,
-        status: 'Updating'
+        status: 'processing'
       });
 
       // Start full environment setup in the background (fire-and-forget)
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
         try {
           // Fetch timezone from configuration API
           const timezone = await fetchTimezoneFromConfiguration(newToken.accessToken);
-          await updateEnvironmentLog(newToken.enterpriseId, { timezone });
+          await updateUnifiedLog(log.id, { timezone });
 
           // Fetch Mews data and update Best Price rate
           const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, newToken.accessToken);
@@ -252,11 +252,12 @@ export async function POST(request: NextRequest) {
           }
 
           // Create customers and reservations
+          // Pass the log ID so the service can update operationDetails
           const result = await createReservationsForEnvironment(
             newToken.accessToken,
             newToken.enterpriseId,
             newToken.id,
-            { operationType: 'automatic' }
+            { operationType: 'automatic', logId: log.id }
           );
 
           console.log('[WEBHOOK-SETUP] ✅ Setup complete:', {
@@ -285,7 +286,7 @@ export async function POST(request: NextRequest) {
           });
 
           // Update status to completed
-          await updateEnvironmentLog(newToken.enterpriseId, { status: 'completed' });
+          await updateUnifiedLog(log.id, { status: 'completed', completedAt: new Date() });
 
         } catch (error) {
           console.error('[WEBHOOK-SETUP] ❌ Setup failed:', {

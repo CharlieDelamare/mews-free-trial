@@ -7,8 +7,8 @@ import {
   languageOptions,
   countryOptions
 } from '@/lib/codes';
-import { saveEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
-import { convertDaysToISO8601, isValidDuration } from '@/lib/duration';
+import { createEnvironmentLog, updateUnifiedLog } from '@/lib/unified-logger';
+import { convertDaysToISO8601 } from '@/lib/duration';
 import { prisma } from '@/lib/prisma';
 import { sendZapierNotification } from '@/lib/zapier';
 
@@ -121,11 +121,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       console.log('[CREATE-TRIAL] Checking for existing environment with Salesforce Account ID:', salesforceAccountId);
 
       try {
-        const existingEnv = await prisma.environmentLog.findFirst({
+        const existingEnv = await prisma.unifiedLog.findFirst({
           where: {
+            logType: 'environment',
             salesforceAccountId,
             status: {
-              in: ['building', 'Updating', 'completed']
+              in: ['building', 'processing', 'completed']
             }
           },
           orderBy: { timestamp: 'desc' },
@@ -249,7 +250,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Create log entry immediately with "building" status
     let log;
     try {
-      log = await saveEnvironmentLog({
+      log = await createEnvironmentLog({
         propertyName,
         customerName: `${firstName} ${lastName}`,
         customerEmail,
@@ -296,8 +297,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       // Update log to failure status
       try {
-        await updateEnvironmentLogById(log.id, {
-          status: 'failure',
+        await updateUnifiedLog(log.id, {
+          status: 'failed',
           errorMessage: JSON.stringify(result)
         });
       } catch (dbError) {

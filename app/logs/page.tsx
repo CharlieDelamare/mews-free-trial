@@ -3,33 +3,41 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-interface ReservationStateBreakdown {
-  Confirmed: number;
-  Started: number;
-  Processed: number;
-  Canceled: number;
-  Optional: number;
+// Stats embedded in environment log's operationDetails
+interface CustomerStats {
+  status: 'processing' | 'completed' | 'failed';
+  total: number;
+  success: number;
+  failed: number;
 }
 
-interface EnvironmentStatistics {
-  customersCreated: number | null;
-  customersFailed: number | null;
-  reservationsCreated: number | null;
-  reservationsFailed: number | null;
-  reservationsByState: ReservationStateBreakdown | null;
-  isProcessing: boolean;
-  hasFailed: boolean;
+interface ReservationStats {
+  status: 'processing' | 'completed' | 'failed';
+  total: number;
+  success: number;
+  failed: number;
+  byState?: Record<string, number>;
+}
+
+interface EnvironmentSetupStats {
+  customers?: CustomerStats;
+  reservations?: ReservationStats;
 }
 
 interface BaseLog {
   id: string;
+  logType: 'environment' | 'reset' | 'demo_filler';
+  type: 'environment' | 'reset' | 'demo_filler'; // Backwards compat
   timestamp: string;
   enterpriseId?: string;
   enterpriseName?: string;
   status: string;
+  completedAt?: string;
+  errorMessage?: string;
 }
 
 interface EnvironmentLog extends BaseLog {
+  logType: 'environment';
   type: 'environment';
   propertyName: string;
   customerName: string;
@@ -39,32 +47,31 @@ interface EnvironmentLog extends BaseLog {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
-  status: 'building' | 'Updating' | 'completed' | 'failure';
-  errorMessage?: string;
+  // Include legacy status values for backwards compatibility
+  status: 'building' | 'processing' | 'completed' | 'failed' | 'Updating' | 'failure';
   requestorEmail?: string;
   durationDays?: number;
   salesforceAccountId?: string;
-  statistics?: EnvironmentStatistics;
+  operationDetails?: EnvironmentSetupStats;
 }
 
 interface ResetLog extends BaseLog {
+  logType: 'reset';
   type: 'reset';
   status: 'processing' | 'completed' | 'failed';
   currentStep: number;
   totalSteps: number;
-  completedAt?: string;
-  errorSummary?: string;
   operationDetails?: any;
 }
 
 interface DemoFillerLog extends BaseLog {
+  logType: 'demo_filler';
   type: 'demo_filler';
   status: 'processing' | 'completed' | 'failed';
-  totalReservations: number;
+  totalItems: number;
   successCount: number;
   failureCount: number;
-  completedAt?: string;
-  errorSummary?: string;
+  operationDetails?: { byState?: Record<string, number> };
 }
 
 type UnifiedLog = EnvironmentLog | ResetLog | DemoFillerLog;
@@ -234,6 +241,11 @@ export default function LogsPage() {
                     card: 'bg-blue-50 border-blue-200',
                     badge: 'bg-blue-200 text-blue-800'
                   },
+                  processing: {
+                    card: 'bg-yellow-50 border-yellow-200',
+                    badge: 'bg-yellow-200 text-yellow-800'
+                  },
+                  // Legacy status - alias to processing
                   Updating: {
                     card: 'bg-yellow-50 border-yellow-200',
                     badge: 'bg-yellow-200 text-yellow-800'
@@ -242,15 +254,12 @@ export default function LogsPage() {
                     card: 'bg-green-50 border-green-200',
                     badge: 'bg-green-200 text-green-800'
                   },
-                  failure: {
+                  failed: {
                     card: 'bg-red-50 border-red-200',
                     badge: 'bg-red-200 text-red-800'
                   },
-                  processing: {
-                    card: 'bg-yellow-50 border-yellow-200',
-                    badge: 'bg-yellow-200 text-yellow-800'
-                  },
-                  failed: {
+                  // Legacy status - alias to failed
+                  failure: {
                     card: 'bg-red-50 border-red-200',
                     badge: 'bg-red-200 text-red-800'
                   }
@@ -284,19 +293,17 @@ export default function LogsPage() {
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${style.badge}`}>
                         {log.status === 'building' && '🏗️ Building'}
-                        {log.status === 'Updating' && '✅ Created'}
+                        {(log.status === 'processing' || log.status === 'Updating') && '⏳ Processing'}
                         {log.status === 'completed' && '✅ Completed'}
-                        {log.status === 'failure' && '❌ Failed'}
-                        {log.status === 'failed' && '❌ Failed'}
-                        {log.status === 'processing' && '⏳ Processing'}
+                        {(log.status === 'failed' || log.status === 'failure') && '❌ Failed'}
                       </span>
                     </div>
 
                   {/* Environment-specific content */}
                   {log.type === 'environment' && (
                     <>
-                      {/* Statistics Section */}
-                      {log.statistics && (
+                      {/* Operation Details Section */}
+                      {log.operationDetails && (log.operationDetails.customers || log.operationDetails.reservations) && (
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <h3 className="text-xs font-semibold text-gray-700 mb-2">Setup Progress</h3>
 
@@ -307,8 +314,10 @@ export default function LogsPage() {
                                 <span>👥</span> Customers:
                               </span>
                               <span className="font-medium text-gray-800">
-                                {log.statistics.customersCreated ?? 'Pending'}
-                                {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
+                                {log.operationDetails.customers
+                                  ? `${log.operationDetails.customers.success} / ${log.operationDetails.customers.total}`
+                                  : 'Pending'}
+                                {log.operationDetails.customers?.status === 'processing' && <span className="text-yellow-600 ml-1">⏳</span>}
                               </span>
                             </div>
 
@@ -318,15 +327,17 @@ export default function LogsPage() {
                                 <span>🏨</span> Reservations:
                               </span>
                               <span className="font-medium text-gray-800">
-                                {log.statistics.reservationsCreated ?? 'Pending'}
-                                {log.statistics.isProcessing && <span className="text-yellow-600 ml-1">⏳</span>}
+                                {log.operationDetails.reservations
+                                  ? `${log.operationDetails.reservations.success} / ${log.operationDetails.reservations.total}`
+                                  : 'Pending'}
+                                {log.operationDetails.reservations?.status === 'processing' && <span className="text-yellow-600 ml-1">⏳</span>}
                               </span>
                             </div>
 
                             {/* State Breakdown */}
-                            {log.statistics.reservationsByState && (
+                            {log.operationDetails.reservations?.byState && (
                               <div className="ml-6 mt-1 space-y-1 text-xs">
-                                {Object.entries(log.statistics.reservationsByState)
+                                {Object.entries(log.operationDetails.reservations.byState)
                                   .filter(([_, count]) => count > 0)
                                   .map(([state, count]) => (
                                     <div key={state} className="flex items-center justify-between text-gray-500">
@@ -338,7 +349,7 @@ export default function LogsPage() {
                             )}
 
                             {/* Error indicators */}
-                            {log.statistics.hasFailed && (
+                            {(log.operationDetails.customers?.status === 'failed' || log.operationDetails.reservations?.status === 'failed') && (
                               <div className="text-xs text-red-600 flex items-center gap-1 mt-2">
                                 <span>⚠️</span>
                                 <span>Setup encountered errors</span>
@@ -348,13 +359,13 @@ export default function LogsPage() {
                         </div>
                       )}
 
-                      {(log.status === 'building' || log.status === 'Updating') && (
+                      {(log.status === 'building' || log.status === 'processing' || log.status === 'Updating') && (
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
                             <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
                             <p className="text-xs font-medium">
                               {log.status === 'building' && `Creating ${log.propertyType} for ${log.durationDays || 30} days`}
-                              {log.status === 'Updating' && 'Setting up customers and reservations. Login details will appear when ready.'}
+                              {(log.status === 'processing' || log.status === 'Updating') && 'Setting up customers and reservations. Login details will appear when ready.'}
                             </p>
                           </div>
                         </div>
@@ -371,7 +382,7 @@ export default function LogsPage() {
                         </div>
                       )}
 
-                      {log.status === 'failure' && log.errorMessage && (
+                      {(log.status === 'failed' || log.status === 'failure') && log.errorMessage && (
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
                           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
@@ -413,11 +424,11 @@ export default function LogsPage() {
                         </div>
                       )}
 
-                      {log.status === 'failed' && log.errorSummary && (
+                      {log.status === 'failed' && log.errorMessage && (
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
                           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
-                            {log.errorSummary}
+                            {log.errorMessage}
                           </pre>
                         </div>
                       )}
@@ -434,7 +445,7 @@ export default function LogsPage() {
                               <span>🏨</span> Reservations:
                             </span>
                             <span className="font-medium text-gray-800">
-                              {log.successCount} / {log.totalReservations}
+                              {log.successCount} / {log.totalItems}
                             </span>
                           </div>
                           {log.failureCount > 0 && (
@@ -463,11 +474,11 @@ export default function LogsPage() {
                         </div>
                       )}
 
-                      {log.status === 'failed' && log.errorSummary && (
+                      {log.status === 'failed' && log.errorMessage && (
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
                           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
-                            {log.errorSummary}
+                            {log.errorMessage}
                           </pre>
                         </div>
                       )}

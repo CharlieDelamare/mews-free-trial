@@ -8,6 +8,7 @@
 import { prisma } from './prisma';
 import { fetchMewsData, MewsData } from './mews-data-service';
 import { getSampleCustomers, SampleCustomer } from './sample-customers';
+import { updateEnvironmentReservationStats, createDemoFillerLog, updateUnifiedLog } from './unified-logger';
 import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
 
@@ -67,13 +68,16 @@ export async function createReservationsForEnvironment(
     reservationCount?: number;
     skipStateTransitions?: boolean;
     operationType?: 'automatic' | 'demo_filler';
+    logId?: string; // Unified log ID for updating operationDetails
   }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
+  const logId = options?.logId;
+  const operationType = options?.operationType || 'automatic';
 
   console.log(`[RESERVATIONS] Starting reservation creation for enterprise ${enterpriseId}`);
 
-  // Create log entry
+  // Create log entry (for backwards compatibility)
   const log = await prisma.reservationCreationLog.create({
     data: {
       enterpriseId,
@@ -83,9 +87,23 @@ export async function createReservationsForEnvironment(
       failureCount: 0,
       status: 'processing',
       reservationResults: [],
-      operationType: options?.operationType || 'automatic'
+      operationType
     }
   });
+
+  // Update unified log if logId provided (for automatic type only)
+  if (logId && operationType === 'automatic') {
+    try {
+      await updateEnvironmentReservationStats(logId, {
+        status: 'processing',
+        total: 0,
+        success: 0,
+        failed: 0
+      });
+    } catch (error) {
+      console.error('[RESERVATIONS] Failed to update unified log stats:', error);
+    }
+  }
 
   try {
     // Fetch environment data
@@ -213,6 +231,28 @@ export async function createReservationsForEnvironment(
       }
     });
 
+    // Update unified log if logId provided (for automatic type only)
+    if (logId && operationType === 'automatic') {
+      try {
+        // Calculate state distribution from results
+        const byState: Record<string, number> = {};
+        for (const r of createdReservations) {
+          const state = r.desiredState || 'Confirmed';
+          byState[state] = (byState[state] || 0) + 1;
+        }
+
+        await updateEnvironmentReservationStats(logId, {
+          status: 'completed',
+          total: createdReservations.length + failures.length,
+          success: createdReservations.length,
+          failed: failures.length,
+          byState
+        });
+      } catch (error) {
+        console.error('[RESERVATIONS] Failed to update unified log stats:', error);
+      }
+    }
+
     return {
       totalReservations: createdReservations.length + failures.length,
       totalCustomers: customerIds.length,
@@ -233,14 +273,53 @@ export async function createReservationsForEnvironment(
       }
     });
 
+    // Update unified log if logId provided (for automatic type only)
+    if (logId && operationType === 'automatic') {
+      try {
+        await updateEnvironmentReservationStats(logId, {
+          status: 'failed',
+          total: 0,
+          success: 0,
+          failed: 0
+        });
+      } catch (updateError) {
+        console.error('[RESERVATIONS] Failed to update unified log stats:', updateError);
+      }
+    }
+
     throw error;
   }
 }
 
 /**
  * Fetch environment data from database
+ * Tries unified log first, falls back to old environment log for backwards compatibility
  */
 async function fetchEnvironmentData(enterpriseId: string): Promise<EnvironmentData> {
+  // Try unified log first
+  const unifiedLog = await prisma.unifiedLog.findFirst({
+    where: { enterpriseId, logType: 'environment' },
+    orderBy: { timestamp: 'desc' }
+  });
+
+  if (unifiedLog) {
+    if (!unifiedLog.timezone) {
+      throw new Error(`Timezone not set for enterprise: ${enterpriseId}`);
+    }
+
+    return {
+      roomCount: unifiedLog.roomCount || 0,
+      dormCount: unifiedLog.dormCount || 0,
+      apartmentCount: unifiedLog.apartmentCount || 0,
+      bedCount: unifiedLog.bedCount || 0,
+      durationDays: unifiedLog.durationDays || 7,
+      timezone: unifiedLog.timezone,
+      propertyType: unifiedLog.propertyType as 'hotel' | 'hostel' | 'apartments',
+      createdAt: unifiedLog.timestamp
+    };
+  }
+
+  // Fallback to old environment log for backwards compatibility
   const envLog = await prisma.environmentLog.findFirst({
     where: { enterpriseId },
     orderBy: { timestamp: 'desc' }

@@ -7,7 +7,7 @@ export interface ResetOperationRequest {
 
 export interface ResetOperationResponse {
   success: boolean;
-  operationId?: number;
+  operationId?: string;
   message?: string;
   enterpriseId?: string;
   error?: string;
@@ -49,7 +49,7 @@ export interface ResetOperationDetails {
 
 export interface ResetResult {
   success: boolean;
-  operationId: number;
+  operationId: string;
   summary: ResetOperationDetails;
   durationSeconds: number;
 }
