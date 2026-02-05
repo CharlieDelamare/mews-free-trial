@@ -244,11 +244,21 @@ export default function LogsPage() {
                     card: 'bg-yellow-50 border-yellow-200',
                     badge: 'bg-yellow-200 text-yellow-800'
                   },
+                  // Legacy status - alias to processing
+                  Updating: {
+                    card: 'bg-yellow-50 border-yellow-200',
+                    badge: 'bg-yellow-200 text-yellow-800'
+                  },
                   completed: {
                     card: 'bg-green-50 border-green-200',
                     badge: 'bg-green-200 text-green-800'
                   },
                   failed: {
+                    card: 'bg-red-50 border-red-200',
+                    badge: 'bg-red-200 text-red-800'
+                  },
+                  // Legacy status - alias to failed
+                  failure: {
                     card: 'bg-red-50 border-red-200',
                     badge: 'bg-red-200 text-red-800'
                   }
@@ -282,9 +292,9 @@ export default function LogsPage() {
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${style.badge}`}>
                         {log.status === 'building' && '🏗️ Building'}
-                        {log.status === 'processing' && '⏳ Processing'}
+                        {(log.status === 'processing' || log.status === 'Updating') && '⏳ Processing'}
                         {log.status === 'completed' && '✅ Completed'}
-                        {log.status === 'failed' && '❌ Failed'}
+                        {(log.status === 'failed' || log.status === 'failure') && '❌ Failed'}
                       </span>
                     </div>
 
@@ -348,13 +358,13 @@ export default function LogsPage() {
                         </div>
                       )}
 
-                      {(log.status === 'building' || log.status === 'processing') && (
+                      {(log.status === 'building' || log.status === 'processing' || log.status === 'Updating') && (
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
                             <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
                             <p className="text-xs font-medium">
                               {log.status === 'building' && `Creating ${log.propertyType} for ${log.durationDays || 30} days`}
-                              {log.status === 'processing' && 'Setting up customers and reservations. Login details will appear when ready.'}
+                              {(log.status === 'processing' || log.status === 'Updating') && 'Setting up customers and reservations. Login details will appear when ready.'}
                             </p>
                           </div>
                         </div>
@@ -371,7 +381,7 @@ export default function LogsPage() {
                         </div>
                       )}
 
-                      {log.status === 'failed' && log.errorMessage && (
+                      {(log.status === 'failed' || log.status === 'failure') && log.errorMessage && (
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
                           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">
