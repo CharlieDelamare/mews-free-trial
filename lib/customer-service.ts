@@ -268,6 +268,16 @@ async function createSingleCustomer(
       Notes: customer.Notes
     };
 
+    // Log payload for customers with Classifications/Notes to verify what we're sending
+    if (customer.Classifications || customer.Notes) {
+      console.log(`[CUSTOMERS] 📤 Sending payload for ${customer.Email}:`, {
+        Classifications: requestBody.Classifications,
+        Notes: requestBody.Notes?.substring(0, 100),
+        hasClassifications: !!requestBody.Classifications,
+        hasNotes: !!requestBody.Notes
+      });
+    }
+
     const response = await fetchWithRateLimit(
       `${MEWS_API_URL}/api/connector/v1/customers/add`,
       accessToken,
@@ -282,7 +292,15 @@ async function createSingleCustomer(
     const data = await response.json();
 
     if (response.ok && data.Id) {
-      // Success
+      // Success - Log response for customers with Classifications/Notes
+      if (customer.Classifications || customer.Notes) {
+        console.log(`[CUSTOMERS] ✅ Response for ${customer.Email}:`, {
+          customerId: data.Id,
+          apiResponse: data,
+          sentClassifications: customer.Classifications,
+          sentNotes: customer.Notes?.substring(0, 50)
+        });
+      }
       return {
         email: customer.Email,
         success: true,
