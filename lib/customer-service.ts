@@ -282,7 +282,15 @@ async function createSingleCustomer(
     const data = await response.json();
 
     if (response.ok && data.Id) {
-      // Success
+      // Success - Log first customer with Classifications/Notes to verify what was sent
+      if (customer.Classifications || customer.Notes) {
+        console.log(`[CUSTOMERS] ℹ Created customer with Classifications:`, {
+          email: customer.Email,
+          id: data.Id,
+          sentClassifications: customer.Classifications,
+          sentNotes: customer.Notes?.substring(0, 50)
+        });
+      }
       return {
         email: customer.Email,
         success: true,
