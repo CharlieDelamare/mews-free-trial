@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This document provides an overview of the Mews Free Trial application for AI assistants working on this codebase.
+This document provides an overview of the Mews Sandbox Manager application for AI assistants working on this codebase.
 
 ## AI Assistant Instructions
 
@@ -50,21 +50,21 @@ This prevents implementing incorrect API calls that will fail in production.
 
 ## Project Overview
 
-**Mews Free Trial** is a Next.js web application that allows Mews sales representatives to create trial hotel environments (7, 30, or 60 days) in the Mews demo system. The app integrates with the Mews API to provision sample hotels with automatic customer and reservation creation, stores environment logs in PostgreSQL, and sends notifications via Zapier webhooks.
+**Mews Sandbox Manager** is a Next.js web application that allows Mews sales representatives to create trial hotel sandboxes (7, 30, or 60 days) in the Mews demo system. The app integrates with the Mews API to provision sample hotels with automatic customer and reservation creation, stores environment logs in PostgreSQL, and sends notifications via Zapier webhooks.
 
 ### Key Features
 
-- **Flexible trial durations**: Create 7, 30, or 60-day trial environments
+- **Flexible trial durations**: Create 7, 30, or 60-day trial sandboxes
 - **Customizable property types**: Hotels, hostels, and apartments with configurable room/apartment counts
 - **50+ country support**: Proper legal environment, currency, and tax configurations
-- **Automatic customer creation**: 100 diverse sample customers added to each trial
+- **Automatic customer creation**: 100 diverse sample customers added to each sandbox
 - **Automatic reservation creation**: Realistic reservations with intelligent distribution across property lifecycle
-- **Manual environment management**: Reset tab for adding existing environments via access token
-- **Real-time environment tracking**: Auto-refreshing dashboard with status updates (building → Updating → completed)
-- **Reservation management**: Get and cancel all reservations for any environment
+- **Manual sandbox management**: Reset Sandbox tab for adding existing sandboxes via access token
+- **Real-time sandbox tracking**: Auto-refreshing dashboard with status updates (building → Updating → completed)
+- **Reservation management**: Get and cancel all reservations for any sandbox
 - **Dynamic Mews data fetching**: Services, rates, and categories fetched automatically (no hardcoded IDs)
 - **Webhook integration**: Receive and process access tokens from Mews
-- **Zapier notifications**: Trial creation, environment setup, and CRM integration
+- **Zapier notifications**: Sandbox creation, sandbox setup, and CRM integration
 - **Comprehensive testing**: Vitest test suite with API mocking and React Testing Library
 - **Debug tools**: Database inspection endpoint for troubleshooting
 
@@ -83,23 +83,23 @@ This prevents implementing incorrect API calls that will fail in production.
 mews-free-trial-2/
 ├── app/                          # Next.js App Router
 │   ├── api/                      # API routes
-│   │   ├── add-environment/      # POST - Manually add environment via access token
-│   │   ├── create-trial/         # POST - Create trial environment
+│   │   ├── add-environment/      # POST - Manually add sandbox via access token
+│   │   ├── create-trial/         # POST - Create trial sandbox
 │   │   ├── create-reservation/   # POST - Create reservation (alternate flow)
 │   │   ├── debug/                # GET - Debug database inspection
 │   │   ├── environments/
-│   │   │   └── list/             # GET - List all environments
+│   │   │   └── list/             # GET - List all sandboxes
 │   │   ├── logs/                 # GET - Retrieve environment logs
 │   │   ├── reservations/
 │   │   │   ├── cancel-all/       # POST - Cancel all reservations
 │   │   │   └── get-all/          # POST - Get all reservations
 │   │   └── webhook/
 │   │       └── access-token/     # POST/GET - Webhook for access tokens
-│   ├── logs/                     # Environment logs page
+│   ├── logs/                     # Sandbox logs page
 │   │   └── page.tsx
 │   ├── globals.css               # Global styles
 │   ├── layout.tsx                # Root layout
-│   └── page.tsx                  # Main form page (with reset tab)
+│   └── page.tsx                  # Main form page (with Reset Sandbox tab)
 ├── lib/                          # Shared utilities
 │   ├── codes.ts                  # Country/language code mappings
 │   ├── customer-service.ts       # Automatic customer creation service
@@ -193,7 +193,7 @@ Optional:
 
 ### POST `/api/create-trial`
 
-Creates a new trial hotel environment in the Mews demo system with automatic customer and reservation creation.
+Creates a new trial hotel sandbox in the Mews demo system with automatic customer and reservation creation.
 
 **Request Body:**
 ```typescript
@@ -230,7 +230,7 @@ Creates a new trial hotel environment in the Mews demo system with automatic cus
 
 ### POST `/api/add-environment`
 
-Manually adds an existing trial environment to the system using an access token from Mews.
+Manually adds an existing trial sandbox to the system using an access token from Mews.
 
 **Request Body:**
 ```typescript
@@ -241,7 +241,7 @@ Manually adds an existing trial environment to the system using an access token 
 }
 ```
 
-**Use Case:** For environments created outside the main flow that need to be tracked in the logs.
+**Use Case:** For sandboxes created outside the main flow that need to be tracked in the logs.
 
 ### POST `/api/create-reservation`
 
@@ -274,7 +274,7 @@ Returns all environment creation logs from the database, sorted by timestamp (ne
 
 ### GET `/api/environments/list`
 
-Lists all available trial environments with their details.
+Lists all available trial sandboxes with their details.
 
 **Response:**
 ```typescript
@@ -294,7 +294,7 @@ Lists all available trial environments with their details.
 
 ### POST `/api/reservations/get-all`
 
-Retrieves all reservations for a specific environment.
+Retrieves all reservations for a specific sandbox.
 
 **Request Body:**
 ```typescript
@@ -306,7 +306,7 @@ Retrieves all reservations for a specific environment.
 
 ### POST `/api/reservations/cancel-all`
 
-Cancels all reservations in a specific environment.
+Cancels all reservations in a specific sandbox.
 
 **Request Body:**
 ```typescript
@@ -356,7 +356,7 @@ model AccessToken {
 
 ### EnvironmentLog
 
-Tracks created trial environments with complete configuration details:
+Tracks created trial sandboxes with complete configuration details:
 
 ```prisma
 model EnvironmentLog {
@@ -392,7 +392,7 @@ model EnvironmentLog {
 
 ### CustomerCreationLog
 
-Tracks automatic creation of sample customers in trial environments:
+Tracks automatic creation of sample customers in trial sandboxes:
 
 ```prisma
 model CustomerCreationLog {
@@ -412,7 +412,7 @@ model CustomerCreationLog {
 
 ### ReservationCreationLog
 
-Tracks automatic creation of sample reservations in trial environments:
+Tracks automatic creation of sample reservations in trial sandboxes:
 
 ```prisma
 model ReservationCreationLog {
@@ -432,7 +432,7 @@ model ReservationCreationLog {
 
 ## Automatic Customer Creation
 
-When a trial environment is created, 100 sample customer profiles are automatically added to the Mews demo environment after the webhook access token is received.
+When a trial sandbox is created, 100 sample customer profiles are automatically added to the Mews demo environment after the webhook access token is received.
 
 ### Process Flow
 
@@ -479,7 +479,7 @@ All customer creation attempts are logged in the `CustomerCreationLog` table wit
 
 ## Automatic Reservation Creation
 
-After customers are created, realistic sample reservations are automatically added to populate the trial environment with booking data.
+After customers are created, realistic sample reservations are automatically added to populate the trial sandbox with booking data.
 
 ### Process Flow
 
@@ -530,7 +530,7 @@ All reservation creation attempts are logged in the `ReservationCreationLog` tab
 
 ## Trial Duration Feature
 
-Trial environments can be created with flexible durations to match customer needs.
+Trial sandboxes can be created with flexible durations to match customer needs.
 
 ### Available Durations
 
@@ -568,21 +568,21 @@ The duration feature is implemented in:
 
 | File | Purpose |
 |------|---------|
-| `app/page.tsx` | Main trial creation form with duration selection and reset tab (client component) |
-| `app/logs/page.tsx` | Environment logs dashboard with auto-refresh (client component) |
+| `app/page.tsx` | Main trial creation form with duration selection and Reset Sandbox tab (client component) |
+| `app/logs/page.tsx` | Sandbox logs dashboard with auto-refresh (client component) |
 | `app/api/create-trial/route.ts` | Core trial creation logic, Mews API calls, Zapier notifications |
-| `app/api/add-environment/route.ts` | Manual environment addition via access token |
+| `app/api/add-environment/route.ts` | Manual sandbox addition via access token |
 | `app/api/webhook/access-token/route.ts` | Webhook handler, triggers customer and reservation creation |
-| `app/api/environments/list/route.ts` | List all trial environments |
-| `app/api/reservations/get-all/route.ts` | Retrieve all reservations for an environment |
-| `app/api/reservations/cancel-all/route.ts` | Cancel all reservations in an environment |
+| `app/api/environments/list/route.ts` | List all trial sandboxes |
+| `app/api/reservations/get-all/route.ts` | Retrieve all reservations for a sandbox |
+| `app/api/reservations/cancel-all/route.ts` | Cancel all reservations in a sandbox |
 | `app/api/debug/route.ts` | Debug endpoint for database inspection |
 | `lib/codes.ts` | Country/language mappings for 50+ countries with legal environment codes, currencies, and tax configurations |
 | `lib/customer-service.ts` | Automatic customer creation service with batch processing |
 | `lib/reservation-service.ts` | Automatic reservation creation with realistic distributions |
 | `lib/mews-data-service.ts` | Dynamic fetching of services, rates, and resource categories from Mews API |
 | `lib/duration.ts` | Trial duration utilities and type definitions |
-| `lib/logger.ts` | Database logging functions for environment creation |
+| `lib/logger.ts` | Database logging functions for sandbox creation |
 | `lib/prisma.ts` | Prisma client singleton pattern for Next.js |
 | `lib/zapier.ts` | Zapier webhook notification utility for all notification types |
 | `lib/sample-customers.ts` | 100 predetermined customer profiles |
@@ -638,7 +638,7 @@ The duration feature is implemented in:
 - Webhook integration for all notifications (Slack, CRM, etc.)
 - Simple JSON payload with messageType for routing in Zapier
 - Configured via `ZAPIER_WEBHOOK_URL` environment variable
-- Notifications include trial creation, environment setup, and manual operations
+- Notifications include sandbox creation, sandbox setup, and manual operations
 - Message types: trial_generation_failure, environment_ready, access_token_no_match, manual_environment_configured, manual_environment_added
 
 ## Production Deployment
@@ -724,9 +724,9 @@ npm run test:coverage
 
 **Never push schema changes without their migrations** - this will cause production deployment failures.
 
-### Manually Adding an Existing Environment
+### Manually Adding an Existing Sandbox
 
-To add a trial environment created outside the main flow:
+To add a trial sandbox created outside the main flow:
 
 1. Obtain the access token from Mews webhook or admin panel
 2. Get the enterprise ID from the Mews environment
@@ -738,22 +738,22 @@ To add a trial environment created outside the main flow:
      "salesforceAccountId": "optional-sf-id"
    }
    ```
-4. Environment will be added to logs and tracked in the system
+4. Sandbox will be added to logs and tracked in the system
 
-### Debugging Environment Issues
+### Debugging Sandbox Issues
 
 1. Use `/api/debug` endpoint to inspect database records:
    ```
    GET /api/debug?enterpriseId=xxx&limit=10
    ```
-2. Check environment status in logs dashboard
+2. Check sandbox status in logs dashboard
 3. Review `CustomerCreationLog` and `ReservationCreationLog` for setup issues
 4. Verify access token exists in `AccessToken` table
 
 ### Testing Customer/Reservation Creation
 
-1. Use the reset tab in the main UI to test on existing environments
-2. Select an environment from the dropdown
+1. Use the Reset Sandbox tab in the main UI to test on existing sandboxes
+2. Select a sandbox from the dropdown
 3. Trigger customer/reservation creation
 4. Monitor logs dashboard for real-time status updates
 5. Use `/api/reservations/get-all` to verify reservations were created
@@ -779,4 +779,4 @@ To add a trial environment created outside the main flow:
      // ... modify as needed
    }
    ```
-3. Test with existing environments using reset tab
+3. Test with existing sandboxes using Reset Sandbox tab

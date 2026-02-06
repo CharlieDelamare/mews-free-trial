@@ -20,7 +20,7 @@ export function Navbar() {
           {/* Left: Brand */}
           <div className="flex items-center">
             <Link href="/" className="text-xl font-bold text-gray-900">
-              Mews Free Trial
+              Mews Sandbox Manager
             </Link>
           </div>
 
@@ -34,7 +34,7 @@ export function Navbar() {
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
             >
-              Create Free Trial
+              Create Sandbox
             </Link>
             <Link
               href="/reset"
@@ -44,7 +44,7 @@ export function Navbar() {
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
             >
-              Reset Demo
+              Reset Sandbox
             </Link>
             <Link
               href="/demo-filler"
@@ -54,7 +54,7 @@ export function Navbar() {
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
             >
-              Demo Filler
+              Sandbox Filler
             </Link>
           </div>
 

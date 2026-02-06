@@ -23,7 +23,7 @@ export async function getBills(
       body: JSON.stringify({
         ClientToken: MEWS_CLIENT_TOKEN,
         AccessToken: accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         ...(states && { States: states }),
         Limitation: { Count: 1000 }
       })
@@ -65,7 +65,7 @@ export async function getOrderItems(
       body: JSON.stringify({
         ClientToken: MEWS_CLIENT_TOKEN,
         AccessToken: accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         BillIds: billIds,
         Limitation: { Count: 1000 }
       })
@@ -134,7 +134,7 @@ export async function addExternalPayment(
       body: JSON.stringify({
         ClientToken: MEWS_CLIENT_TOKEN,
         AccessToken: accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         Payments: [
           {
             AccountId: accountId,
@@ -144,7 +144,7 @@ export async function addExternalPayment(
               GrossValue: amount
             },
             Type: 'Cash',
-            Notes: 'Demo reset - auto payment'
+            Notes: 'Sandbox reset - auto payment'
           }
         ]
       })
@@ -181,7 +181,7 @@ export async function closeBill(
       body: JSON.stringify({
         ClientToken: MEWS_CLIENT_TOKEN,
         AccessToken: accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         BillId: billId,
         Type: 'Receipt',
         Options: {

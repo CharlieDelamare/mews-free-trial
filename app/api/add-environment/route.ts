@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     const configRequest: ConfigurationRequest = {
       ClientToken: MEWS_CLIENT_TOKEN,
       AccessToken: accessToken,
-      Client: 'Mews Free Trial App v1.0'
+      Client: 'Mews Sandbox Manager'
     };
 
     const configResponse = await fetch(configUrl, {
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             ClientToken: MEWS_CLIENT_TOKEN,
             AccessToken: accessToken,
-            Client: 'Mews Free Trial App v1.0',
+            Client: 'Mews Sandbox Manager',
             FirstName: firstName,
             LastName: lastName,
             Email: log.customerEmail
@@ -295,7 +295,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Environment added successfully and configured',
+      message: 'Sandbox added successfully and configured',
       data: {
         id: newToken.id,
         enterpriseId: newToken.enterpriseId,

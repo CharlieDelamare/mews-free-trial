@@ -14,7 +14,7 @@ interface Environment {
   accessTokenId: number;
 }
 
-export default function ResetDemoPage() {
+export default function ResetSandboxPage() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState('');
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
@@ -83,19 +83,19 @@ export default function ResetDemoPage() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Demo</h1>
-          <p className="text-gray-600">Reset an existing demo environment</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Sandbox</h1>
+          <p className="text-gray-600">Reset an existing sandbox</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-          {/* Environment Dropdown */}
+          {/* Sandbox Dropdown */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Environment *
+              Select Sandbox *
             </label>
             {environmentsLoading ? (
               <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-                Loading environments...
+                Loading sandboxes...
               </div>
             ) : (
               <select
@@ -104,7 +104,7 @@ export default function ResetDemoPage() {
                 onChange={(e) => setSelectedEnvironment(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">-- Select an environment --</option>
+                <option value="">-- Select a sandbox --</option>
                 {environments.map((env) => (
                   <option key={env.enterpriseId} value={env.enterpriseId}>
                     {env.propertyName || env.enterpriseName} ({env.enterpriseId})
@@ -114,11 +114,11 @@ export default function ResetDemoPage() {
             )}
             {!environmentsLoading && environments.length === 0 && (
               <p className="text-sm text-gray-500 mt-2">
-                No environments found. Create a trial or add one manually.
+                No sandboxes found. Create a sandbox or add one manually.
               </p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              If your property isn't available in the dropdown, please add the "Mews Free Trial" integration in the Marketplace within Mews.
+              If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
             </p>
           </div>
 
@@ -132,7 +132,7 @@ export default function ResetDemoPage() {
                 : 'bg-red-600 text-white hover:bg-red-700'
             }`}
           >
-            {resetting ? 'Resetting Environment...' : 'Reset Environment'}
+            {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
           </button>
 
           {/* Success Message */}
@@ -140,10 +140,10 @@ export default function ResetDemoPage() {
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
               <p className="font-semibold">✅ Reset operation started!</p>
               <p className="text-sm mt-1">
-                The environment is being reset. This may take a few minutes.
+                The sandbox is being reset. This may take a few minutes.
                 Check the{' '}
                 <Link href="/logs" className="underline font-semibold">
-                  Environment Logs
+                  Sandbox Logs
                 </Link>{' '}
                 for progress.
               </p>
@@ -169,7 +169,7 @@ export default function ResetDemoPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Confirm Environment Reset
+              Confirm Sandbox Reset
             </h2>
             <p className="text-gray-700 mb-4">
               This will perform the following actions:
@@ -193,7 +193,7 @@ export default function ResetDemoPage() {
                 onClick={handleResetConfirm}
                 className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
               >
-                Yes, Reset Environment
+                Yes, Reset Sandbox
               </button>
             </div>
           </div>

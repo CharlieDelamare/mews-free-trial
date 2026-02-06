@@ -1,6 +1,6 @@
 # Testing Guide
 
-This document describes the testing infrastructure for the Mews Free Trial Generator application.
+This document describes the testing infrastructure for the Mews Sandbox Manager application.
 
 ## Overview
 

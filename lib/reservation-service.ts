@@ -1,5 +1,5 @@
 /**
- * Reservation Service - Creates realistic reservations in Mews trial environments
+ * Reservation Service - Creates realistic reservations in Mews trial sandboxes
  *
  * This service orchestrates the creation of customers and reservations with proper
  * states (Confirmed, Started, Processed) and realistic distributions.
@@ -523,7 +523,7 @@ async function getCustomerByEmail(email: string, accessToken: string): Promise<s
       body: JSON.stringify({
         ClientToken: MEWS_CLIENT_TOKEN,
         AccessToken: accessToken,
-        Client: 'Free Trial Generator',
+        Client: 'Mews Sandbox Manager',
         Emails: [email],
         Extent: {
           Customers: true,
@@ -929,7 +929,7 @@ async function createReservationGroups(
         body: JSON.stringify({
           ClientToken: MEWS_CLIENT_TOKEN,
           AccessToken: accessToken,
-          Client: 'Free Trial Generator',
+          Client: 'Mews Sandbox Manager',
           ServiceId: serviceId,
           Reservations: group.map(r => {
             const reservation: any = {
@@ -1024,7 +1024,7 @@ async function fetchReservationDetails(
           body: JSON.stringify({
             ClientToken: MEWS_CLIENT_TOKEN,
             AccessToken: accessToken,
-            Client: 'Free Trial Generator',
+            Client: 'Mews Sandbox Manager',
             ReservationIds: batch,
             Limitation: { Count: 1000 }
           })
@@ -1068,7 +1068,7 @@ async function updateResourceStates(
         body: JSON.stringify({
           ClientToken: MEWS_CLIENT_TOKEN,
           AccessToken: accessToken,
-          Client: 'Free Trial Generator',
+          Client: 'Mews Sandbox Manager',
           ResourceUpdates: resourceIds.map(resourceId => ({
             ResourceId: resourceId,
             State: {
@@ -1321,7 +1321,7 @@ async function callStateTransitionAPI(
   if (action === 'process') {
     payload.CloseBills = false;
     payload.AllowOpenBalance = true;
-    payload.Notes = 'Reservation processed via Free Trial Generator';
+    payload.Notes = 'Reservation processed via Mews Sandbox Manager';
   }
 
   console.log(`[RESERVATIONS] 📤 Calling ${action} API for reservation ${reservationId}`);

@@ -52,9 +52,9 @@ function truncate(text: string, maxLength: number = 500): string {
  * Format trial generation failure message
  */
 function formatTrialGenerationFailure(data: Partial<ZapierNotificationData>): string {
-  return `:x: *Trial Generation Failed*
+  return `:x: *Trial Sandbox Generation Failed*
 
-Failed to create trial environment for *${data.propertyName || 'Unknown Property'}*
+Failed to create trial sandbox for *${data.propertyName || 'Unknown Property'}*
 
 *Customer:* ${data.firstName || ''} ${data.lastName || ''}
 *Email:* ${data.customerEmail || 'N/A'}
@@ -69,7 +69,7 @@ _Please review the error details and try again or contact support if the issue p
  * Format environment ready message
  */
 function formatEnvironmentReady(data: Partial<ZapierNotificationData>): string {
-  return `:white_check_mark: *Trial Environment Ready!*
+  return `:white_check_mark: *Trial Sandbox Ready!*
 
 *${data.propertyName || 'Property'}* is now live and ready for *${data.customerName || 'customer'}*
 
@@ -91,7 +91,7 @@ function formatEnvironmentReady(data: Partial<ZapierNotificationData>): string {
 function formatAccessTokenNoMatch(data: Partial<ZapierNotificationData>): string {
   return `:warning: *Access Token Received - No Matching Log Found*
 
-Received access token for enterprise *${data.enterpriseName || 'Unknown'}* but couldn't find a matching environment log.
+Received access token for enterprise *${data.enterpriseName || 'Unknown'}* but couldn't find a matching sandbox log.
 
 *Details:*
 • Enterprise ID: \`${data.enterpriseId || 'N/A'}\`
@@ -99,16 +99,16 @@ Received access token for enterprise *${data.enterpriseName || 'Unknown'}* but c
 • Token ID: ${data.tokenId || 'N/A'}
 • Received: ${data.receivedAt || 'N/A'}
 
-_This may indicate a manually created environment or a webhook timing issue. The token has been stored for future use._`;
+_This may indicate a manually created sandbox or a webhook timing issue. The token has been stored for future use._`;
 }
 
 /**
  * Format manual environment configured message
  */
 function formatManualEnvironmentConfigured(data: Partial<ZapierNotificationData>): string {
-  return `:gear: *Manual Environment Configured Successfully*
+  return `:gear: *Manual Sandbox Configured Successfully*
 
-Environment *${data.propertyName || 'Property'}* has been manually added and fully configured for *${data.customerName || 'customer'}*
+Sandbox *${data.propertyName || 'Property'}* has been manually added and fully configured for *${data.customerName || 'customer'}*
 
 *Login Credentials:*
 • URL: <${data.loginUrl || 'https://app.mews-demo.com'}|${data.loginUrl || 'https://app.mews-demo.com'}>
@@ -132,16 +132,16 @@ Environment *${data.propertyName || 'Property'}* has been manually added and ful
  * Format manual environment added message
  */
 function formatManualEnvironmentAdded(data: Partial<ZapierNotificationData>): string {
-  return `:information_source: *Manual Environment Added*
+  return `:information_source: *Manual Sandbox Added*
 
-Environment *${data.enterpriseName || 'Unknown'}* has been manually added to the system.
+Sandbox *${data.enterpriseName || 'Unknown'}* has been manually added to the system.
 
 *Details:*
 • Enterprise ID: \`${data.enterpriseId || 'N/A'}\`
 • :wastebasket: Reservations canceled: ${data.reservationsCanceled || 0}
 • Action: ${data.action || 'N/A'}
 
-:warning: _No matching environment log found. This environment was likely created outside the trial generator or via a direct Mews integration._`;
+:warning: _No matching sandbox log found. This sandbox was likely created outside the trial generator or via a direct Mews integration._`;
 }
 
 /**

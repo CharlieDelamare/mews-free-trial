@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { convertDaysToISO8601, isValidDuration, DURATION_OPTIONS, type TrialDuration } from './duration';
+import { convertDaysToISO8601, isValidDuration, DURATION_OPTIONS, type SandboxDuration } from './duration';
 
 describe('duration utilities', () => {
   describe('convertDaysToISO8601', () => {
@@ -54,8 +54,8 @@ describe('duration utilities', () => {
     it('should correctly narrow TypeScript type', () => {
       const value = 30;
       if (isValidDuration(value)) {
-        // TypeScript should recognize this as TrialDuration
-        const duration: TrialDuration = value;
+        // TypeScript should recognize this as SandboxDuration
+        const duration: SandboxDuration = value;
         expect(duration).toBe(30);
       }
     });

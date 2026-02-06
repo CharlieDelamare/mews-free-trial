@@ -261,7 +261,7 @@ async function fetchServices(clientToken: string, accessToken: string): Promise<
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
-      Client: 'Free Trial Generator',
+      Client: 'Mews Sandbox Manager',
       ServiceType: 'Bookable' // Filter for bookable services only
     })
   });
@@ -285,7 +285,7 @@ async function fetchRates(clientToken: string, accessToken: string, serviceId: s
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
-      Client: 'Free Trial Generator',
+      Client: 'Mews Sandbox Manager',
       ServiceIds: [serviceId]
     })
   });
@@ -315,7 +315,7 @@ async function fetchResourceCategories(
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
-      Client: 'Free Trial Generator',
+      Client: 'Mews Sandbox Manager',
       ServiceIds: [serviceId]
     })
   });
@@ -353,7 +353,7 @@ async function fetchAgeCategories(
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
-      Client: 'Free Trial Generator',
+      Client: 'Mews Sandbox Manager',
       ServiceIds: [serviceId]
     })
   });
@@ -385,7 +385,7 @@ async function fetchResourceCategoryAssignments(
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
-      Client: 'Free Trial Generator',
+      Client: 'Mews Sandbox Manager',
       ResourceCategoryIds: resourceCategoryIds,
       Limitation: {
         Count: 1000
@@ -519,7 +519,7 @@ async function fetchVoucherCodes(
     body: JSON.stringify({
       ClientToken: clientToken,
       AccessToken: accessToken,
-      Client: 'Free Trial Generator',
+      Client: 'Mews Sandbox Manager',
       VoucherIds: voucherIds,
       Limitation: {
         Count: 1000

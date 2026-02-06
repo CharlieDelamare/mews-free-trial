@@ -155,11 +155,11 @@ export default function LogsPage() {
   const getLogTypeLabel = (type: UnifiedLog['type']) => {
     switch (type) {
       case 'environment':
-        return { label: 'New Environment', color: 'bg-blue-100 text-blue-800' };
+        return { label: 'New Sandbox', color: 'bg-blue-100 text-blue-800' };
       case 'reset':
-        return { label: 'Environment Reset', color: 'bg-purple-100 text-purple-800' };
+        return { label: 'Sandbox Reset', color: 'bg-purple-100 text-purple-800' };
       case 'demo_filler':
-        return { label: 'Demo Filler', color: 'bg-orange-100 text-orange-800' };
+        return { label: 'Sandbox Filler', color: 'bg-orange-100 text-orange-800' };
     }
   };
 
@@ -219,12 +219,12 @@ export default function LogsPage() {
 
           {!loading && !error && logs.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              <p className="text-lg">No environments created yet.</p>
+              <p className="text-lg">No sandboxes created yet.</p>
               <Link
                 href="/"
                 className="mt-4 inline-block text-blue-600 hover:text-blue-700 font-medium"
               >
-                Create your first trial →
+                Create your first sandbox →
               </Link>
             </div>
           )}
@@ -232,7 +232,7 @@ export default function LogsPage() {
           {!loading && !error && logs.length > 0 && (
             <div className="space-y-3">
               <div className="mb-3 text-xs text-gray-600">
-                Total environments: {logs.length}
+                Total sandboxes: {logs.length}
               </div>
 
               {logs.map((log) => {
@@ -419,7 +419,7 @@ export default function LogsPage() {
                         <div className="border-t border-gray-200 pt-3 mt-3">
                           <div className="flex items-center gap-2 text-yellow-700">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
-                            <p className="text-xs font-medium">Resetting environment...</p>
+                            <p className="text-xs font-medium">Resetting sandbox...</p>
                           </div>
                         </div>
                       )}
@@ -435,7 +435,7 @@ export default function LogsPage() {
                     </>
                   )}
 
-                  {/* Demo Filler-specific content */}
+                  {/* Sandbox Filler-specific content */}
                   {log.type === 'demo_filler' && (
                     <>
                       <div className="border-t border-gray-200 pt-3 mt-3">

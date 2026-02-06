@@ -56,7 +56,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching environments:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch environments' },
+      { success: false, error: 'Failed to fetch sandboxes' },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 /**
  * Reset Service
- * Orchestrates the complete reset flow for trial environments
+ * Orchestrates the complete reset flow for trial sandboxes
  */
 
 import { prisma } from './prisma';
@@ -87,7 +87,7 @@ async function getAllReservationsWithPagination(
           body: JSON.stringify({
             ClientToken: MEWS_CLIENT_TOKEN,
             AccessToken: accessToken,
-            Client: 'Mews Free Trial App',
+            Client: 'Mews Sandbox Manager',
             ServiceIds: [serviceId],
             States: states,
             Limitation: {
@@ -156,7 +156,7 @@ async function cancelReservationsInBatches(
         body: JSON.stringify({
           ClientToken: MEWS_CLIENT_TOKEN,
           AccessToken: accessToken,
-          Client: 'Mews Free Trial App',
+          Client: 'Mews Sandbox Manager',
           ReservationIds: batch,
           PostCancellationFee: false,
           SendEmail: false,
