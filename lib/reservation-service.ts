@@ -949,15 +949,6 @@ async function createReservationGroups(
     const group = groups[i];
 
     try {
-      const response = await fetch(`${MEWS_API_URL}/api/connector/v1/reservations/add`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
-          AccessToken: accessToken,
-          Client: 'Mews Sandbox Manager',
-          ServiceId: serviceId,
-          Reservations: group.map(r => {
       const response = await fetchWithRateLimit(
         `${MEWS_API_URL}/api/connector/v1/reservations/add`,
         accessToken,
@@ -967,7 +958,7 @@ async function createReservationGroups(
           body: JSON.stringify({
             ClientToken: MEWS_CLIENT_TOKEN,
             AccessToken: accessToken,
-            Client: 'Free Trial Generator',
+            Client: 'Mews Sandbox Manager',
             ServiceId: serviceId,
             Reservations: group.map(r => {
             const reservation: any = {
