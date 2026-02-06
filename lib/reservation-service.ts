@@ -11,6 +11,7 @@ import { getSampleCustomers, SampleCustomer } from './sample-customers';
 import { updateEnvironmentReservationStats, createDemoFillerLog, updateUnifiedLog } from './unified-logger';
 import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
+import { fetchWithRateLimit } from './mews-rate-limiter';
 
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
@@ -532,6 +533,26 @@ async function getCustomerByEmail(email: string, accessToken: string): Promise<s
         }
       })
     });
+    const response = await fetchWithRateLimit(
+      `${MEWS_API_URL}/api/connector/v1/customers/getAll`,
+      accessToken,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Free Trial Generator',
+          Emails: [email],
+          Extent: {
+            Customers: true,
+            Documents: false,
+            Addresses: false
+          }
+        })
+      },
+      'customers/getAll'
+    );
 
     if (!response.ok) {
       console.warn(`[CUSTOMERS] Failed to fetch existing customer ${email}: ${response.status}`);
@@ -557,24 +578,29 @@ async function getCustomerByEmail(email: string, accessToken: string): Promise<s
  * Create a single customer
  */
 async function createSingleCustomer(customer: SampleCustomer, accessToken: string): Promise<string> {
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ClientToken: MEWS_CLIENT_TOKEN,
-      AccessToken: accessToken,
-      Client: 'Free Trial Generator',
-      FirstName: customer.FirstName,
-      LastName: customer.LastName,
-      Email: customer.Email,
-      Phone: customer.Phone,
-      BirthDate: customer.BirthDate,
-      NationalityCode: customer.NationalityCode,
-      Sex: customer.Sex,
-      Title: customer.Title,
-      ...(customer.CompanyIdentifier && { CompanyIdentifier: customer.CompanyIdentifier })
-    })
-  });
+  const response = await fetchWithRateLimit(
+    `${MEWS_API_URL}/api/connector/v1/customers/add`,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: MEWS_CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Free Trial Generator',
+        FirstName: customer.FirstName,
+        LastName: customer.LastName,
+        Email: customer.Email,
+        Phone: customer.Phone,
+        BirthDate: customer.BirthDate,
+        NationalityCode: customer.NationalityCode,
+        Sex: customer.Sex,
+        Title: customer.Title,
+        ...(customer.CompanyIdentifier && { CompanyIdentifier: customer.CompanyIdentifier })
+      })
+    },
+    'customers/add'
+  );
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -932,6 +958,18 @@ async function createReservationGroups(
           Client: 'Mews Sandbox Manager',
           ServiceId: serviceId,
           Reservations: group.map(r => {
+      const response = await fetchWithRateLimit(
+        `${MEWS_API_URL}/api/connector/v1/reservations/add`,
+        accessToken,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ClientToken: MEWS_CLIENT_TOKEN,
+            AccessToken: accessToken,
+            Client: 'Free Trial Generator',
+            ServiceId: serviceId,
+            Reservations: group.map(r => {
             const reservation: any = {
               State: 'Confirmed',
               StartUtc: r.checkInUtc.toISOString(),
@@ -954,7 +992,9 @@ async function createReservationGroups(
             return reservation;
           })
         })
-      });
+      },
+      'reservations/add'
+    );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1016,8 +1056,9 @@ async function fetchReservationDetails(
     const batch = reservationIds.slice(i, Math.min(i + 1000, reservationIds.length));
 
     try {
-      const response = await fetch(
+      const response = await fetchWithRateLimit(
         `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`,
+        accessToken,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1028,7 +1069,8 @@ async function fetchReservationDetails(
             ReservationIds: batch,
             Limitation: { Count: 1000 }
           })
-        }
+        },
+        'reservations/getAll'
       );
 
       if (!response.ok) {
@@ -1060,8 +1102,9 @@ async function updateResourceStates(
   accessToken: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await fetch(
+    const response = await fetchWithRateLimit(
       `${MEWS_API_URL}/api/connector/v1/resources/update`,
+      accessToken,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1079,7 +1122,8 @@ async function updateResourceStates(
             }
           }))
         })
-      }
+      },
+      'resources/update'
     );
 
     if (!response.ok) {
@@ -1328,11 +1372,16 @@ async function callStateTransitionAPI(
   console.log(`[RESERVATIONS] URL: ${url}`);
   console.log(`[RESERVATIONS] Payload:`, JSON.stringify(payload, null, 2));
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  const response = await fetchWithRateLimit(
+    url,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    },
+    `reservations/${action}`
+  );
 
   console.log(`[RESERVATIONS] 📥 Response Status: ${response.status} ${response.statusText}`);
 
@@ -1370,11 +1419,16 @@ async function callStateTransitionAPI(
         console.log(`[RESERVATIONS] ✅ Room ${assignedResourceId} inspected. Retrying check-in...`);
 
         // Retry the start transition
-        const retryResponse = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        const retryResponse = await fetchWithRateLimit(
+          url,
+          accessToken,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          },
+          `reservations/${action}-retry`
+        );
 
         console.log(`[RESERVATIONS] 📥 Retry Response Status: ${retryResponse.status} ${retryResponse.statusText}`);
 
@@ -1384,16 +1438,18 @@ async function callStateTransitionAPI(
           return; // Success!
         } else {
           const retryError = await retryResponse.text();
-          console.error(`[RESERVATIONS] ❌ Retry failed after inspection`);
-          console.error(`[RESERVATIONS] Retry Error:`, retryError);
 
-          // If still blocked after inspection, it's likely due to overlapping reservations
+          // Check if it's a blocked error first (overlapping reservation - expected scenario)
           if (retryError.toLowerCase().includes('blocked')) {
             console.warn(`[RESERVATIONS] ⚠️ Room ${assignedResourceId} remains blocked - likely has an overlapping reservation`);
             console.warn(`[RESERVATIONS] ⚠️ Skipping check-in for reservation ${reservationId} to avoid conflict`);
-            throw new Error(`Room blocked by overlapping reservation: ${retryResponse.status} - ${retryError}`);
+            console.log(`[RESERVATIONS] ℹ️ Reservation ${reservationId} will remain in Confirmed state`);
+            return; // Gracefully skip this check-in without throwing error
           }
 
+          // For other errors, log and throw
+          console.error(`[RESERVATIONS] ❌ Retry failed after inspection`);
+          console.error(`[RESERVATIONS] Retry Error:`, retryError);
           throw new Error(`Failed to ${action} reservation after inspection: ${retryResponse.status} - ${retryError}`);
         }
       } else {

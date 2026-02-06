@@ -9,6 +9,7 @@
 import { prisma } from './prisma';
 import { getSampleCustomers, SampleCustomer } from './sample-customers';
 import { updateEnvironmentCustomerStats } from './unified-logger';
+import { fetchWithRateLimit } from './mews-rate-limiter';
 
 // Hardcoded configuration for Mews demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -267,11 +268,16 @@ async function createSingleCustomer(
       Notes: customer.Notes
     };
 
-    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
-    });
+    const response = await fetchWithRateLimit(
+      `${MEWS_API_URL}/api/connector/v1/customers/add`,
+      accessToken,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      },
+      'customers/add'
+    );
 
     const data = await response.json();
 
