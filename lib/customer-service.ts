@@ -1,8 +1,8 @@
 /**
- * Customer Service - Automatically creates sample customers in Mews trial environments
+ * Customer Service - Automatically creates sample customers in Mews trial sandboxes
  *
  * This service is triggered automatically when a webhook receives an access token
- * from Mews after creating a trial environment. It creates 300 predetermined
+ * from Mews after creating a trial sandbox. It creates 300 predetermined
  * customer profiles using the Mews Connector API.
  */
 
@@ -42,7 +42,7 @@ interface CustomerCreationResult {
 }
 
 /**
- * Main entry point: Create 300 sample customers in a Mews trial environment
+ * Main entry point: Create 300 sample customers in a Mews trial sandbox
  *
  * This function is called automatically from the webhook handler after receiving
  * an access token. It processes customers in batches with concurrency control.
@@ -253,7 +253,7 @@ async function createSingleCustomer(
     const requestBody = {
       ClientToken: MEWS_CLIENT_TOKEN,
       AccessToken: accessToken,
-      Client: 'Mews Free Trial App - Sample Data',
+      Client: 'Mews Sandbox Manager - Sample Data',
       FirstName: customer.FirstName,
       LastName: customer.LastName,
       Email: customer.Email,

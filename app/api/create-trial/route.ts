@@ -14,7 +14,7 @@ import { sendZapierNotification } from '@/lib/zapier';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 
-interface TrialRequest {
+interface SandboxRequest {
   requestorEmail: string;
   firstName: string;
   lastName: string;
@@ -29,7 +29,7 @@ interface TrialRequest {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const body: TrialRequest = await request.json();
+    const body: SandboxRequest = await request.json();
     
     const {
       requestorEmail,
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Build the API request body
     const apiBody: Record<string, unknown> = {
-      Client: 'Free Trial Generator',
+      Client: 'Mews Sandbox Manager',
       AccessToken: accessToken,
       LanguageCode: languageCode,
       CultureCode: languageCode,

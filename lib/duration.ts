@@ -1,11 +1,11 @@
 /**
- * Trial duration utilities for environment creation
+ * Sandbox duration utilities for sandbox creation
  */
 
-export type TrialDuration = 7 | 30 | 60;
+export type SandboxDuration = 7 | 30 | 60;
 
 /**
- * Available trial duration options for the UI
+ * Available sandbox duration options for the UI
  */
 export const DURATION_OPTIONS = [
   { value: 7, label: '7 days' },
@@ -27,6 +27,6 @@ export function convertDaysToISO8601(days: number): string {
  * @param days - Number to validate
  * @returns true if the duration is 7, 30, or 60 days
  */
-export function isValidDuration(days: number): days is TrialDuration {
+export function isValidDuration(days: number): days is SandboxDuration {
   return days === 7 || days === 30 || days === 60;
 }

@@ -341,7 +341,7 @@ async function fetchTimezoneFromConfiguration(accessToken: string): Promise<stri
       body: JSON.stringify({
         ClientToken: MEWS_CLIENT_TOKEN,
         AccessToken: accessToken,
-        Client: 'Free Trial Generator'
+        Client: 'Mews Sandbox Manager'
       })
     });
 

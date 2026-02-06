@@ -14,7 +14,7 @@ interface Environment {
   accessTokenId: number;
 }
 
-export default function DemoFillerPage() {
+export default function SandboxFillerPage() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
 
@@ -34,14 +34,14 @@ export default function DemoFillerPage() {
     return formatDate(date);
   };
 
-  const [demoFillerData, setDemoFillerData] = useState({
+  const [sandboxFillerData, setDemoFillerData] = useState({
     selectedEnvironment: '',
     startDate: getTodayDate(),
     endDate: getTodayPlusThreeDays(),
     reservationCount: 20
   });
-  const [demoFillerLoading, setDemoFillerLoading] = useState(false);
-  const [demoFillerResult, setDemoFillerResult] = useState<{
+  const [sandboxFillerLoading, setDemoFillerLoading] = useState(false);
+  const [sandboxFillerResult, setDemoFillerResult] = useState<{
     success?: boolean;
     message?: string;
     error?: string;
@@ -71,7 +71,7 @@ export default function DemoFillerPage() {
     }
   };
 
-  const handleDemoFillerSubmit = async (e: React.FormEvent) => {
+  const handleSandboxFillerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setDemoFillerLoading(true);
     setDemoFillerResult(null);
@@ -81,10 +81,10 @@ export default function DemoFillerPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          enterpriseId: demoFillerData.selectedEnvironment,
-          startDate: demoFillerData.startDate,
-          endDate: demoFillerData.endDate,
-          reservationCount: demoFillerData.reservationCount
+          enterpriseId: sandboxFillerData.selectedEnvironment,
+          startDate: sandboxFillerData.startDate,
+          endDate: sandboxFillerData.endDate,
+          reservationCount: sandboxFillerData.reservationCount
         })
       });
 
@@ -104,29 +104,29 @@ export default function DemoFillerPage() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Demo Filler</h1>
-          <p className="text-gray-600">Add reservations to an existing demo environment</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sandbox Filler</h1>
+          <p className="text-gray-600">Add reservations to an existing sandbox</p>
         </div>
 
-        <form onSubmit={handleDemoFillerSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-          {/* Environment Dropdown */}
+        <form onSubmit={handleSandboxFillerSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+          {/* Sandbox Dropdown */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Environment *
+              Select Sandbox *
             </label>
             {environmentsLoading ? (
               <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-                Loading environments...
+                Loading sandboxes...
               </div>
             ) : (
               <select
                 name="selectedEnvironment"
-                value={demoFillerData.selectedEnvironment}
+                value={sandboxFillerData.selectedEnvironment}
                 onChange={(e) => setDemoFillerData(prev => ({ ...prev, selectedEnvironment: e.target.value }))}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">-- Select an environment --</option>
+                <option value="">-- Select a sandbox --</option>
                 {environments.map((env) => (
                   <option key={env.enterpriseId} value={env.enterpriseId}>
                     {env.propertyName || env.enterpriseName} ({env.enterpriseId})
@@ -136,11 +136,11 @@ export default function DemoFillerPage() {
             )}
             {!environmentsLoading && environments.length === 0 && (
               <p className="text-sm text-gray-500 mt-2">
-                No environments found. Create a trial or add one manually.
+                No sandboxes found. Create a sandbox or add one manually.
               </p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              If your property isn't available in the dropdown, please add the "Mews Free Trial" integration in the Marketplace within Mews.
+              If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
             </p>
           </div>
 
@@ -152,7 +152,7 @@ export default function DemoFillerPage() {
             <input
               type="date"
               name="startDate"
-              value={demoFillerData.startDate}
+              value={sandboxFillerData.startDate}
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, startDate: e.target.value }))}
               min={new Date().toISOString().split('T')[0]}
               required
@@ -168,9 +168,9 @@ export default function DemoFillerPage() {
             <input
               type="date"
               name="endDate"
-              value={demoFillerData.endDate}
+              value={sandboxFillerData.endDate}
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, endDate: e.target.value }))}
-              min={demoFillerData.startDate || new Date().toISOString().split('T')[0]}
+              min={sandboxFillerData.startDate || new Date().toISOString().split('T')[0]}
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -184,7 +184,7 @@ export default function DemoFillerPage() {
             <input
               type="number"
               name="reservationCount"
-              value={demoFillerData.reservationCount}
+              value={sandboxFillerData.reservationCount}
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, reservationCount: parseInt(e.target.value) || 0 }))}
               required
               min="1"
@@ -199,25 +199,25 @@ export default function DemoFillerPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!demoFillerData.selectedEnvironment || demoFillerLoading}
+            disabled={!sandboxFillerData.selectedEnvironment || sandboxFillerLoading}
             className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
-              !demoFillerData.selectedEnvironment || demoFillerLoading
+              !sandboxFillerData.selectedEnvironment || sandboxFillerLoading
                 ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
           >
-            {demoFillerLoading ? 'Creating Reservations...' : 'Create Reservations'}
+            {sandboxFillerLoading ? 'Creating Reservations...' : 'Create Reservations'}
           </button>
 
           {/* Success Message */}
-          {demoFillerResult?.success && (
+          {sandboxFillerResult?.success && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
               <p className="font-semibold">✅ Reservation creation started!</p>
-              <p className="text-sm mt-1">{demoFillerResult.message}</p>
+              <p className="text-sm mt-1">{sandboxFillerResult.message}</p>
               <p className="text-sm mt-1">
                 Check the{' '}
                 <Link href="/logs" className="underline font-semibold">
-                  Environment Logs
+                  Sandbox Logs
                 </Link>{' '}
                 for progress.
               </p>
@@ -225,10 +225,10 @@ export default function DemoFillerPage() {
           )}
 
           {/* Error Message */}
-          {demoFillerResult?.error && (
+          {sandboxFillerResult?.error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
               <p className="font-semibold">❌ Creation failed</p>
-              <p className="text-sm mt-1">{demoFillerResult.error}</p>
+              <p className="text-sm mt-1">{sandboxFillerResult.error}</p>
             </div>
           )}
 

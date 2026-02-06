@@ -3,8 +3,8 @@ import { Navbar } from './navbar';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Mews Free Trial',
-  description: 'Start your free trial with Mews',
+  title: 'Mews Sandbox Manager',
+  description: 'Create and manage Mews sandbox environments',
 };
 
 export default function RootLayout({

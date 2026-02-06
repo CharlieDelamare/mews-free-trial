@@ -95,7 +95,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       body: JSON.stringify({
         ClientToken: clientToken,
         AccessToken: accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         FirstName: firstName,
         LastName: lastName,
         Email: email,
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       body: JSON.stringify({
         ClientToken: clientToken,
         AccessToken: accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         ServiceId: serviceId,
         Reservations: [
           {

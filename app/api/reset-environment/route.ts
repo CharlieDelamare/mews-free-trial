@@ -6,7 +6,7 @@ import type { ResetOperationRequest, ResetOperationResponse } from '@/types/rese
 
 /**
  * POST /api/reset-environment
- * Triggers a reset operation for a trial environment
+ * Triggers a reset operation for a trial sandbox
  *
  * Request body:
  * - enterpriseId?: string (or)

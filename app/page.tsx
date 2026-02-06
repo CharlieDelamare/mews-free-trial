@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { languageOptions, countryOptions } from '@/lib/codes';
 
-export default function FreeTrialPage() {
+export default function SandboxCreationPage() {
   const [formData, setFormData] = useState({
     requestorEmail: '',
     firstName: '',
@@ -96,29 +96,29 @@ export default function FreeTrialPage() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Free Trial</h1>
-          <p className="text-gray-600">Request a free trial of Mews</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Sandbox Manager</h1>
+          <p className="text-gray-600">Create a demo sandbox environment</p>
         </div>
 
         {result?.success && result?.status === 'building' ? (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-blue-800 mb-4">
-              🏗️ Trial Environment is Being Created!
+              🏗️ Sandbox Environment is Being Created!
             </h2>
             <p className="text-blue-700 mb-4">
-              Your trial environment for <strong>{result.propertyName}</strong> is being set up.
+              Your sandbox environment for <strong>{result.propertyName}</strong> is being set up.
               This usually takes a few minutes, but you'll receive a Slack DM when it is finished.
             </p>
             <p className="text-blue-600 mb-4">
               You can view the status and login details in the{' '}
               <Link href="/logs" className="underline font-semibold hover:text-blue-800">
-                Environment Logs
+                Sandbox Logs
               </Link>.
             </p>
           </div>
         ) : result?.success ? (
           <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-green-800 mb-4">Trial Created Successfully!</h2>
+            <h2 className="text-xl font-semibold text-green-800 mb-4">Sandbox Created Successfully!</h2>
             <div className="space-y-2 text-green-700">
               <p><strong>Login URL:</strong> <a href={result.loginUrl} className="underline">{result.loginUrl}</a></p>
               <p><strong>Email:</strong> {result.loginEmail}</p>
@@ -255,10 +255,10 @@ export default function FreeTrialPage() {
               </select>
             </div>
 
-            {/* Trial Duration */}
+            {/* Sandbox Duration */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Trial Duration *
+                Sandbox Duration *
                 {isCharlie && <span className="text-xs text-gray-500 ml-2">(Fixed at 1 day for internal use)</span>}
               </label>
               <select
@@ -301,7 +301,7 @@ export default function FreeTrialPage() {
                   </div>
                   <div className="ml-3 flex-1">
                     <h3 className="text-sm font-medium text-yellow-800">
-                      Environment Already Exists
+                      Sandbox Already Exists
                     </h3>
                     <div className="mt-2 text-sm text-yellow-700">
                       <p className="mb-2">{result.error}</p>
@@ -319,7 +319,7 @@ export default function FreeTrialPage() {
                         href="/logs"
                         className="inline-block mt-2 text-yellow-800 underline hover:text-yellow-900 font-semibold"
                       >
-                        View Environment Logs →
+                        View Sandbox Logs →
                       </a>
                     </div>
                   </div>
@@ -338,11 +338,11 @@ export default function FreeTrialPage() {
               disabled={loading}
               className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Creating Trial... (this may take a few minutes)' : 'Create Free Trial'}
+              {loading ? 'Creating Sandbox... (this may take a few minutes)' : 'Create Sandbox'}
             </button>
 
             <p className="text-xs text-gray-500 text-center">
-              Trial properties are valid for {formData.durationDays} days. Login details will be sent to the customer email.
+              Sandbox environments are valid for {formData.durationDays} days. Login details will be sent to the customer email.
             </p>
           </form>
         )}

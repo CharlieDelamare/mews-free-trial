@@ -65,7 +65,7 @@ export async function fetchReservations(params: {
       body: JSON.stringify({
         ClientToken: clientToken,
         AccessToken: params.accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         ServiceIds: params.serviceId ? [params.serviceId] : undefined,
         States: params.states,
         Limitation: { Count: 1000 }
@@ -114,11 +114,11 @@ export async function cancelReservation(params: {
       body: JSON.stringify({
         ClientToken: clientToken,
         AccessToken: params.accessToken,
-        Client: 'Mews Free Trial App',
+        Client: 'Mews Sandbox Manager',
         ReservationIds: [params.reservationId],
         PostCancellationFee: params.postCancellationFee ?? false,
         SendEmail: params.sendEmail ?? false,
-        Notes: params.notes || 'Canceled via Free Trial App'
+        Notes: params.notes || 'Canceled via Mews Sandbox Manager'
       })
     });
 
