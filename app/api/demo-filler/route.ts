@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveAccessToken } from '@/lib/reservations';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
-import { findEnvironmentLogByEnterpriseId, saveEnvironmentLog, updateEnvironmentLogById } from '@/lib/logger';
+import { createDemoFillerLog, updateUnifiedLog } from '@/lib/unified-logger';
 
 interface DemoFillerRequest {
   enterpriseId: string;
@@ -170,32 +170,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
     }
 
     // Create log entry for this demo filler operation
-    console.log('[DEMO-FILLER] Creating environment log entry...');
+    console.log('[DEMO-FILLER] Creating demo filler log entry...');
     let logId: string | null = null;
     try {
-      // Try to get existing environment details
-      const existingLog = await findEnvironmentLogByEnterpriseId(tokenRecord.enterpriseId);
-
-      // Create a new log entry for this demo filler operation
-      const newLog = await saveEnvironmentLog({
-        propertyName: existingLog?.propertyName || tokenRecord.enterpriseName,
-        customerName: existingLog?.customerName || 'Demo Filler',
-        customerEmail: existingLog?.customerEmail || 'demo@mews.com',
-        propertyCountry: existingLog?.propertyCountry || 'N/A',
-        propertyType: existingLog?.propertyType || 'demo',
-        loginUrl: existingLog?.loginUrl || 'N/A',
-        loginEmail: existingLog?.loginEmail || 'N/A',
-        loginPassword: existingLog?.loginPassword || 'Sample123',
-        status: 'Updating',
+      // Create a new demo filler log entry
+      const newLog = await createDemoFillerLog({
         enterpriseId: tokenRecord.enterpriseId,
-        requestorEmail: null,
-        durationDays: null,
-        errorMessage: null,
-        timezone: existingLog?.timezone,
-        roomCount: existingLog?.roomCount,
-        dormCount: existingLog?.dormCount,
-        apartmentCount: existingLog?.apartmentCount,
-        bedCount: existingLog?.bedCount
+        accessTokenId: tokenRecord.id,
+        totalItems: reservationCount
       });
       logId = newLog.id;
       console.log(`[DEMO-FILLER] Log entry created with ID: ${logId}`);
@@ -236,7 +218,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
 
         // Update log entry to completed
         if (logId) {
-          updateEnvironmentLogById(logId, { status: 'completed' })
+          updateUnifiedLog(logId, {
+            status: 'completed',
+            successCount: result.successCount,
+            failureCount: result.failureCount,
+            completedAt: new Date()
+          })
             .catch(err => console.error('[DEMO-FILLER] Failed to update log:', err));
         }
       })
@@ -248,9 +235,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
 
         // Update log entry to failure
         if (logId) {
-          updateEnvironmentLogById(logId, {
-            status: 'failure',
-            errorMessage: error instanceof Error ? error.message : 'Unknown error'
+          updateUnifiedLog(logId, {
+            status: 'failed',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            completedAt: new Date()
           }).catch(err => console.error('[DEMO-FILLER] Failed to update log:', err));
         }
       });
