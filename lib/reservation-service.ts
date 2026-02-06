@@ -1384,16 +1384,18 @@ async function callStateTransitionAPI(
           return; // Success!
         } else {
           const retryError = await retryResponse.text();
-          console.error(`[RESERVATIONS] ❌ Retry failed after inspection`);
-          console.error(`[RESERVATIONS] Retry Error:`, retryError);
 
-          // If still blocked after inspection, it's likely due to overlapping reservations
+          // Check if it's a blocked error first (overlapping reservation - expected scenario)
           if (retryError.toLowerCase().includes('blocked')) {
             console.warn(`[RESERVATIONS] ⚠️ Room ${assignedResourceId} remains blocked - likely has an overlapping reservation`);
             console.warn(`[RESERVATIONS] ⚠️ Skipping check-in for reservation ${reservationId} to avoid conflict`);
-            throw new Error(`Room blocked by overlapping reservation: ${retryResponse.status} - ${retryError}`);
+            console.log(`[RESERVATIONS] ℹ️ Reservation ${reservationId} will remain in Confirmed state`);
+            return; // Gracefully skip this check-in without throwing error
           }
 
+          // For other errors, log and throw
+          console.error(`[RESERVATIONS] ❌ Retry failed after inspection`);
+          console.error(`[RESERVATIONS] Retry Error:`, retryError);
           throw new Error(`Failed to ${action} reservation after inspection: ${retryResponse.status} - ${retryError}`);
         }
       } else {
