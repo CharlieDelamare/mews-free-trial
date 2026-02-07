@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Environment {
@@ -15,6 +16,7 @@ interface Environment {
 }
 
 export default function SandboxFillerPage() {
+  const router = useRouter();
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
 
@@ -41,11 +43,6 @@ export default function SandboxFillerPage() {
     reservationCount: 20
   });
   const [sandboxFillerLoading, setDemoFillerLoading] = useState(false);
-  const [sandboxFillerResult, setDemoFillerResult] = useState<{
-    success?: boolean;
-    message?: string;
-    error?: string;
-  } | null>(null);
 
   useEffect(() => {
     fetchEnvironments();
@@ -74,10 +71,9 @@ export default function SandboxFillerPage() {
   const handleSandboxFillerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setDemoFillerLoading(true);
-    setDemoFillerResult(null);
 
     try {
-      const response = await fetch('/api/demo-filler', {
+      await fetch('/api/demo-filler', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -88,15 +84,11 @@ export default function SandboxFillerPage() {
         })
       });
 
-      const data = await response.json();
-      setDemoFillerResult(data);
+      // Redirect to logs page regardless of response
+      router.push('/logs');
     } catch (error) {
-      setDemoFillerResult({
-        success: false,
-        error: 'Network error: Could not connect to server'
-      });
-    } finally {
-      setDemoFillerLoading(false);
+      // Still redirect to logs even on network error
+      router.push('/logs');
     }
   };
 
@@ -208,29 +200,6 @@ export default function SandboxFillerPage() {
           >
             {sandboxFillerLoading ? 'Creating Reservations...' : 'Create Reservations'}
           </button>
-
-          {/* Success Message */}
-          {sandboxFillerResult?.success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
-              <p className="font-semibold">✅ Reservation creation started!</p>
-              <p className="text-sm mt-1">{sandboxFillerResult.message}</p>
-              <p className="text-sm mt-1">
-                Check the{' '}
-                <Link href="/logs" className="underline font-semibold">
-                  Sandbox Logs
-                </Link>{' '}
-                for progress.
-              </p>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {sandboxFillerResult?.error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-              <p className="font-semibold">❌ Creation failed</p>
-              <p className="text-sm mt-1">{sandboxFillerResult.error}</p>
-            </div>
-          )}
 
           <p className="text-xs text-gray-500 text-center">
             All reservations will be created in Confirmed state with random check-in dates and stay lengths (1-4 nights)

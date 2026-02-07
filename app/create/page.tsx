@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { languageOptions, countryOptions } from '@/lib/codes';
 
 export default function SandboxCreationPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     requestorEmail: '',
     firstName: '',
@@ -18,24 +20,6 @@ export default function SandboxCreationPage() {
     salesforceAccountId: ''
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{
-    success?: boolean;
-    message?: string;
-    loginUrl?: string;
-    loginEmail?: string;
-    defaultPassword?: string;
-    error?: string;
-    status?: string;
-    propertyName?: string;
-    existingEnvironment?: {
-      propertyName: string;
-      customerEmail: string;
-      status: string;
-      createdAt: Date;
-      enterpriseId?: string;
-    };
-    suggestion?: string;
-  } | null>(null);
 
   // Check if requestor is Charlie (gets auto-populated test data and special treatment for duration and Salesforce ID)
   const isCharlie = formData.requestorEmail === 'charlie.delamare@gmail.com' ||
@@ -67,28 +51,26 @@ export default function SandboxCreationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setResult(null);
 
     // Only validate Salesforce Account ID for non-Charlie users
     if (!isCharlie && !formData.salesforceAccountId.startsWith('001')) {
-      setResult({ success: false, error: 'The Salesforce Account ID is incorrect' });
+      alert('The Salesforce Account ID is incorrect');
       setLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/create-trial', {
+      await fetch('/api/create-trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      const data = await response.json();
-      setResult(data);
+      // Redirect to logs page regardless of response
+      router.push('/logs');
     } catch {
-      setResult({ success: false, error: 'Network error' });
-    } finally {
-      setLoading(false);
+      // Still redirect to logs even on network error
+      router.push('/logs');
     }
   };
 
@@ -100,34 +82,7 @@ export default function SandboxCreationPage() {
           <p className="text-gray-600">Create a demo sandbox environment</p>
         </div>
 
-        {result?.success && result?.status === 'building' ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-blue-800 mb-4">
-              🏗️ Sandbox Environment is Being Created!
-            </h2>
-            <p className="text-blue-700 mb-4">
-              Your sandbox environment for <strong>{result.propertyName}</strong> is being set up.
-              This usually takes a few minutes, but you'll receive a Slack DM when it is finished.
-            </p>
-            <p className="text-blue-600 mb-4">
-              You can view the status and login details in the{' '}
-              <Link href="/logs" className="underline font-semibold hover:text-blue-800">
-                Sandbox Logs
-              </Link>.
-            </p>
-          </div>
-        ) : result?.success ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-green-800 mb-4">Sandbox Created Successfully!</h2>
-            <div className="space-y-2 text-green-700">
-              <p><strong>Login URL:</strong> <a href={result.loginUrl} className="underline">{result.loginUrl}</a></p>
-              <p><strong>Email:</strong> {result.loginEmail}</p>
-              <p><strong>Password:</strong> {result.defaultPassword}</p>
-            </div>
-            <p className="mt-4 text-sm text-green-600">Check your email for additional details.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
             {/* Requestor Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Your Email (Requestor) *</label>
@@ -291,48 +246,6 @@ export default function SandboxCreationPage() {
               />
             </div>
 
-            {result?.existingEnvironment && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <h3 className="text-sm font-medium text-yellow-800">
-                      Sandbox Already Exists
-                    </h3>
-                    <div className="mt-2 text-sm text-yellow-700">
-                      <p className="mb-2">{result.error}</p>
-                      <div className="bg-white rounded border border-yellow-300 p-3 space-y-1">
-                        <p><strong>Property:</strong> {result.existingEnvironment.propertyName}</p>
-                        <p><strong>Customer Email:</strong> {result.existingEnvironment.customerEmail}</p>
-                        <p><strong>Status:</strong> <span className="capitalize">{result.existingEnvironment.status}</span></p>
-                        <p><strong>Created:</strong> {new Date(result.existingEnvironment.createdAt).toLocaleString()}</p>
-                        {result.existingEnvironment.enterpriseId && (
-                          <p><strong>Enterprise ID:</strong> {result.existingEnvironment.enterpriseId}</p>
-                        )}
-                      </div>
-                      <p className="mt-3">{result.suggestion}</p>
-                      <a
-                        href="/logs"
-                        className="inline-block mt-2 text-yellow-800 underline hover:text-yellow-900 font-semibold"
-                      >
-                        View Sandbox Logs →
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {result?.error && !result?.existingEnvironment && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-                {result.error}
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={loading}
@@ -345,7 +258,6 @@ export default function SandboxCreationPage() {
               Sandbox environments are valid for {formData.durationDays} days. Login details will be sent to the customer email.
             </p>
           </form>
-        )}
       </div>
     </main>
   );
