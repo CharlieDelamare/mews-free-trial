@@ -92,6 +92,14 @@ export default function LogsPage() {
   useEffect(() => {
     // Initial fetch
     fetchLogs();
+
+    // Set up polling interval (10 seconds)
+    const intervalId = setInterval(() => {
+      fetchLogsInBackground();
+    }, 10000);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchLogs = async () => {
@@ -110,6 +118,20 @@ export default function LogsPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLogsInBackground = async () => {
+    try {
+      const response = await fetch('/api/logs');
+      const data = await response.json();
+
+      if (data.success) {
+        setLogs(data.logs);
+      }
+    } catch (err) {
+      // Silent failure - log to console but don't disrupt UI
+      console.error('Background log fetch failed:', err);
     }
   };
 
