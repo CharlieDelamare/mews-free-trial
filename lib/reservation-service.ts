@@ -242,12 +242,21 @@ export async function createReservationsForEnvironment(
           byState[state] = (byState[state] || 0) + 1;
         }
 
+        // Format failures for logging (only include essential info)
+        const formattedFailures = failures.map((f: any) => ({
+          error: f.error,
+          skipped: f.skipped || false,
+          checkInUtc: f.checkInUtc?.toISOString?.() || f.checkInUtc,
+          checkOutUtc: f.checkOutUtc?.toISOString?.() || f.checkOutUtc
+        }));
+
         await updateEnvironmentReservationStats(logId, {
           status: 'completed',
           total: createdReservations.length + failures.length,
           success: createdReservations.length,
           failed: failures.length,
-          byState
+          byState,
+          failures: formattedFailures
         });
       } catch (error) {
         console.error('[RESERVATIONS] Failed to update unified log stats:', error);
@@ -974,6 +983,25 @@ async function createReservationGroups(
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+
+        // Handle "no availability" errors gracefully - this is expected and not a critical failure
+        if (response.status === 403 &&
+            errorData.Message &&
+            errorData.Message.toLowerCase().includes('no availability')) {
+          console.log(`[RESERVATIONS] ℹ️ Group ${i} skipped: No availability for selected dates (expected for some date ranges)`);
+          console.log(`[RESERVATIONS] ℹ️ Continuing with remaining groups...`);
+          // Mark these reservations as skipped, not failed
+          group.forEach(r => {
+            failures.push({
+              ...r,
+              error: 'No availability for selected dates',
+              skipped: true
+            });
+          });
+          continue; // Skip to next group without throwing
+        }
+
+        // For other errors, log and throw
         console.error(`[RESERVATIONS] Reservation API error for group ${i}:`, {
           status: response.status,
           statusText: response.statusText,

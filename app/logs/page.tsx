@@ -17,6 +17,12 @@ interface ReservationStats {
   success: number;
   failed: number;
   byState?: Record<string, number>;
+  failures?: Array<{
+    error: string;
+    skipped?: boolean;
+    checkInUtc?: string;
+    checkOutUtc?: string;
+  }>;
 }
 
 interface EnvironmentSetupStats {
@@ -345,6 +351,35 @@ export default function LogsPage() {
                                       <span className="font-mono">{count}</span>
                                     </div>
                                   ))}
+                              </div>
+                            )}
+
+                            {/* Failure Details */}
+                            {log.operationDetails.reservations?.failures && log.operationDetails.reservations.failures.length > 0 && (
+                              <div className="mt-3 pt-2 border-t border-gray-200">
+                                <details className="text-xs">
+                                  <summary className="cursor-pointer text-orange-600 font-medium hover:text-orange-700">
+                                    ⚠️ {log.operationDetails.reservations.failures.length} reservation{log.operationDetails.reservations.failures.length !== 1 ? 's' : ''} {' '}
+                                    {log.operationDetails.reservations.failures.every(f => f.skipped) ? 'skipped' : 'failed'}
+                                  </summary>
+                                  <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
+                                    {log.operationDetails.reservations.failures.map((failure, idx) => (
+                                      <div key={idx} className="bg-orange-50 rounded p-2 text-gray-700">
+                                        <div className="font-medium text-orange-800">
+                                          {failure.skipped ? '⏭️ Skipped' : '❌ Failed'}
+                                        </div>
+                                        <div className="mt-0.5">{failure.error}</div>
+                                        {(failure.checkInUtc || failure.checkOutUtc) && (
+                                          <div className="mt-1 text-gray-500 text-[10px]">
+                                            {failure.checkInUtc && <span>Check-in: {new Date(failure.checkInUtc).toLocaleDateString()}</span>}
+                                            {failure.checkInUtc && failure.checkOutUtc && <span> • </span>}
+                                            {failure.checkOutUtc && <span>Check-out: {new Date(failure.checkOutUtc).toLocaleDateString()}</span>}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
                               </div>
                             )}
 

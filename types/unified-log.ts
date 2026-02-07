@@ -21,6 +21,12 @@ export interface ReservationSetupStats {
   success: number;
   failed: number;
   byState?: Record<string, number>;
+  failures?: Array<{
+    error: string;
+    skipped?: boolean;
+    checkInUtc?: string;
+    checkOutUtc?: string;
+  }>;
 }
 
 /** Combined setup statistics for environment logs */

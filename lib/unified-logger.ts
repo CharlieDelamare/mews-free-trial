@@ -171,6 +171,12 @@ export async function updateEnvironmentReservationStats(
     success: number;
     failed: number;
     byState?: Record<string, number>;
+    failures?: Array<{
+      error: string;
+      skipped?: boolean;
+      checkInUtc?: string;
+      checkOutUtc?: string;
+    }>;
   }
 ): Promise<void> {
   try {
