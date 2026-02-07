@@ -16,7 +16,7 @@ export function Navbar() {
         <div className="grid grid-cols-3 h-16">
           {/* Left: Brand */}
           <div className="flex items-center">
-            <Link href="/create" className="text-xl font-bold text-gray-900">
+            <Link href="/create" className="text-sm sm:text-base md:text-xl font-bold text-gray-900 truncate">
               Mews Sandbox Manager
             </Link>
           </div>
@@ -25,7 +25,7 @@ export function Navbar() {
           <div className="flex items-center space-x-1 justify-self-center">
             <Link
               href="/create"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-2 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActive('/create')
                   ? 'text-blue-600 bg-blue-50'
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
@@ -35,7 +35,7 @@ export function Navbar() {
             </Link>
             <Link
               href="/reset"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-2 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActive('/reset')
                   ? 'text-blue-600 bg-blue-50'
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
@@ -45,7 +45,7 @@ export function Navbar() {
             </Link>
             <Link
               href="/fill"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-2 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 isActive('/fill')
                   ? 'text-blue-600 bg-blue-50'
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
