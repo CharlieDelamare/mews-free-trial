@@ -115,7 +115,7 @@ export default function SandboxFillerPage() {
               Select Sandbox *
             </label>
             {environmentsLoading ? (
-              <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+              <div className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
                 Loading sandboxes...
               </div>
             ) : (
@@ -124,7 +124,7 @@ export default function SandboxFillerPage() {
                 value={sandboxFillerData.selectedEnvironment}
                 onChange={(e) => setDemoFillerData(prev => ({ ...prev, selectedEnvironment: e.target.value }))}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">-- Select a sandbox --</option>
                 {environments.map((env) => (
@@ -156,7 +156,8 @@ export default function SandboxFillerPage() {
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, startDate: e.target.value }))}
               min={new Date().toISOString().split('T')[0]}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+              style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
             />
           </div>
 
@@ -172,7 +173,8 @@ export default function SandboxFillerPage() {
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, endDate: e.target.value }))}
               min={sandboxFillerData.startDate || new Date().toISOString().split('T')[0]}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+              style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
             />
           </div>
 
@@ -189,7 +191,7 @@ export default function SandboxFillerPage() {
               required
               min="1"
               max="500"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500 mt-1">
               Enter a number between 1 and 500
