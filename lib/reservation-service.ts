@@ -563,6 +563,16 @@ async function getCustomerByEmail(email: string, accessToken: string): Promise<s
  * Create a single customer
  */
 async function createSingleCustomer(customer: SampleCustomer, accessToken: string): Promise<string> {
+  // Log payload for customers with Classifications/Notes
+  if (customer.Classifications || customer.Notes) {
+    console.log(`[CUSTOMERS] 📤 Sending customer ${customer.Email} (reservation flow):`, {
+      Classifications: customer.Classifications,
+      Notes: customer.Notes?.substring(0, 100),
+      hasClassifications: !!customer.Classifications,
+      hasNotes: !!customer.Notes
+    });
+  }
+
   const response = await fetchWithRateLimit(
     `${MEWS_API_URL}/api/connector/v1/customers/add`,
     accessToken,
@@ -581,6 +591,8 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
         NationalityCode: customer.NationalityCode,
         Sex: customer.Sex,
         Title: customer.Title,
+        Classifications: customer.Classifications,
+        Notes: customer.Notes,
         ...(customer.CompanyIdentifier && { CompanyIdentifier: customer.CompanyIdentifier })
       })
     },
@@ -625,6 +637,16 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
       idType: typeof data.Id
     });
     throw new Error(`Customer API returned invalid ID: ${data.Id}`);
+  }
+
+  // Log response for customers with Classifications/Notes
+  if (customer.Classifications || customer.Notes) {
+    console.log(`[CUSTOMERS] ✅ Created customer ${customer.Email} (reservation flow):`, {
+      customerId: data.Id,
+      requestedClassifications: customer.Classifications,
+      requestedNotes: customer.Notes?.substring(0, 50),
+      responseData: data
+    });
   }
 
   return data.Id;
