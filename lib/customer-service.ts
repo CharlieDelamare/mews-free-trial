@@ -24,6 +24,19 @@ interface CustomerResult {
   success: boolean;
   customerId?: string;
   error?: string;
+  // Diagnostic fields for debugging Classifications/Notes
+  requestPayload?: {
+    Classifications?: string[];
+    Notes?: string;
+    FirstName: string;
+    LastName: string;
+    Email: string;
+    Phone?: string;
+    NationalityCode?: string;
+    PreferredLanguageCode?: string;
+  };
+  responseData?: any;
+  timestamp?: string;
 }
 
 /**
@@ -110,6 +123,19 @@ export async function createSampleCustomers(
       success: successCount,
       failed: failureCount,
       duration: `${durationSeconds}s`
+    });
+
+    // Summary logging for Classifications
+    const customersWithClassifications = results.filter(r =>
+      customers.find(c => c.Email === r.email)?.Classifications
+    );
+    const classificationsSucceeded = customersWithClassifications.filter(r => r.success).length;
+
+    console.log(`[CUSTOMERS] 📊 Classifications Summary:`, {
+      totalWithClassifications: customersWithClassifications.length,
+      succeeded: classificationsSucceeded,
+      failed: customersWithClassifications.length - classificationsSucceeded,
+      sampleEmails: customersWithClassifications.slice(0, 5).map(r => r.email)
     });
 
     // Update log with final results (for backwards compatibility)
@@ -270,11 +296,13 @@ async function createSingleCustomer(
 
     // Log payload for customers with Classifications/Notes to verify what we're sending
     if (customer.Classifications || customer.Notes) {
-      console.log(`[CUSTOMERS] 📤 Sending payload for ${customer.Email}:`, {
+      console.log(`[CUSTOMERS] 📤 Sending customer ${customer.Email} (new env flow):`, {
+        email: customer.Email,
         Classifications: requestBody.Classifications,
         Notes: requestBody.Notes?.substring(0, 100),
         hasClassifications: !!requestBody.Classifications,
-        hasNotes: !!requestBody.Notes
+        hasNotes: !!requestBody.Notes,
+        timestamp: new Date().toISOString()
       });
     }
 
@@ -294,17 +322,32 @@ async function createSingleCustomer(
     if (response.ok && data.Id) {
       // Success - Log response for customers with Classifications/Notes
       if (customer.Classifications || customer.Notes) {
-        console.log(`[CUSTOMERS] ✅ Response for ${customer.Email}:`, {
+        console.log(`[CUSTOMERS] ✅ Created customer ${customer.Email} (new env flow):`, {
           customerId: data.Id,
-          apiResponse: data,
-          sentClassifications: customer.Classifications,
-          sentNotes: customer.Notes?.substring(0, 50)
+          email: customer.Email,
+          requestedClassifications: customer.Classifications,
+          requestedNotes: customer.Notes?.substring(0, 50),
+          fullResponse: data,
+          timestamp: new Date().toISOString()
         });
       }
       return {
         email: customer.Email,
         success: true,
-        customerId: data.Id
+        customerId: data.Id,
+        // Store diagnostic data for Classification debugging
+        requestPayload: customer.Classifications || customer.Notes ? {
+          Classifications: customer.Classifications,
+          Notes: customer.Notes,
+          FirstName: customer.FirstName,
+          LastName: customer.LastName,
+          Email: customer.Email,
+          Phone: customer.Phone,
+          NationalityCode: customer.NationalityCode,
+          PreferredLanguageCode: customer.PreferredLanguageCode
+        } : undefined,
+        responseData: customer.Classifications || customer.Notes ? data : undefined,
+        timestamp: new Date().toISOString()
       };
     } else {
       // API returned error
