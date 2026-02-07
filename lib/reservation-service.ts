@@ -974,6 +974,25 @@ async function createReservationGroups(
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+
+        // Handle "no availability" errors gracefully - this is expected and not a critical failure
+        if (response.status === 403 &&
+            errorData.Message &&
+            errorData.Message.toLowerCase().includes('no availability')) {
+          console.log(`[RESERVATIONS] ℹ️ Group ${i} skipped: No availability for selected dates (expected for some date ranges)`);
+          console.log(`[RESERVATIONS] ℹ️ Continuing with remaining groups...`);
+          // Mark these reservations as skipped, not failed
+          group.forEach(r => {
+            failures.push({
+              ...r,
+              error: 'No availability for selected dates',
+              skipped: true
+            });
+          });
+          continue; // Skip to next group without throwing
+        }
+
+        // For other errors, log and throw
         console.error(`[RESERVATIONS] Reservation API error for group ${i}:`, {
           status: response.status,
           statusText: response.statusText,
