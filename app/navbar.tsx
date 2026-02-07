@@ -34,7 +34,7 @@ export function Navbar() {
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
             >
-              Create Sandbox
+              Create
             </Link>
             <Link
               href="/reset"
@@ -44,7 +44,7 @@ export function Navbar() {
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
             >
-              Reset Sandbox
+              Reset
             </Link>
             <Link
               href="/demo-filler"
@@ -54,7 +54,7 @@ export function Navbar() {
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
             >
-              Sandbox Filler
+              Fill
             </Link>
           </div>
 
