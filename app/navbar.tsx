@@ -7,9 +7,6 @@ export function Navbar() {
   const pathname = usePathname();
 
   const isActive = (path: string) => {
-    if (path === '/') {
-      return pathname === '/';
-    }
     return pathname.startsWith(path);
   };
 
@@ -19,7 +16,7 @@ export function Navbar() {
         <div className="grid grid-cols-3 h-16">
           {/* Left: Brand */}
           <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold text-gray-900">
+            <Link href="/create" className="text-xl font-bold text-gray-900">
               Mews Sandbox Manager
             </Link>
           </div>
@@ -27,9 +24,9 @@ export function Navbar() {
           {/* Center: Navigation Links */}
           <div className="flex items-center space-x-1 justify-self-center">
             <Link
-              href="/"
+              href="/create"
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/')
+                isActive('/create')
                   ? 'text-blue-600 bg-blue-50'
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
@@ -47,9 +44,9 @@ export function Navbar() {
               Reset
             </Link>
             <Link
-              href="/demo-filler"
+              href="/fill"
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/demo-filler')
+                isActive('/fill')
                   ? 'text-blue-600 bg-blue-50'
                   : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
               }`}
