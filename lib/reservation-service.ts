@@ -242,12 +242,21 @@ export async function createReservationsForEnvironment(
           byState[state] = (byState[state] || 0) + 1;
         }
 
+        // Format failures for logging (only include essential info)
+        const formattedFailures = failures.map((f: any) => ({
+          error: f.error,
+          skipped: f.skipped || false,
+          checkInUtc: f.checkInUtc?.toISOString?.() || f.checkInUtc,
+          checkOutUtc: f.checkOutUtc?.toISOString?.() || f.checkOutUtc
+        }));
+
         await updateEnvironmentReservationStats(logId, {
           status: 'completed',
           total: createdReservations.length + failures.length,
           success: createdReservations.length,
           failed: failures.length,
-          byState
+          byState,
+          failures: formattedFailures
         });
       } catch (error) {
         console.error('[RESERVATIONS] Failed to update unified log stats:', error);
