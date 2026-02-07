@@ -86,8 +86,8 @@ export default function LogsPage() {
   const [logs, setLogs] = useState<UnifiedLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   useEffect(() => {
     // Initial fetch
@@ -110,7 +110,6 @@ export default function LogsPage() {
 
       if (data.success) {
         setLogs(data.logs);
-        setLastUpdated(new Date());
       } else {
         setError('Failed to load logs');
       }
@@ -129,7 +128,6 @@ export default function LogsPage() {
 
       if (data.success) {
         setLogs(data.logs);
-        setLastUpdated(new Date());
       }
     } catch (err) {
       // Silent failure - log to console but don't disrupt UI
@@ -137,12 +135,15 @@ export default function LogsPage() {
     }
   };
 
-  const getTimeAgo = (date: Date) => {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  // Pagination logic
+  const totalPages = Math.ceil(logs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentLogs = logs.slice(startIndex, endIndex);
 
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const formatDate = (timestamp: string) => {
@@ -182,32 +183,10 @@ export default function LogsPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-800">
               Logs
             </h1>
-
-            <div className="flex items-center gap-3">
-              {lastUpdated && (
-                <span className="text-xs text-gray-500">
-                  Last updated: {getTimeAgo(lastUpdated)}
-                </span>
-              )}
-              <button
-                onClick={async () => {
-                  setIsRefreshing(true);
-                  await fetchLogs();
-                  setIsRefreshing(false);
-                }}
-                disabled={isRefreshing}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-              </button>
-            </div>
           </div>
 
           {loading && (
@@ -237,11 +216,7 @@ export default function LogsPage() {
 
           {!loading && !error && logs.length > 0 && (
             <div className="space-y-3">
-              <div className="mb-3 text-xs text-gray-600">
-                Total sandboxes: {logs.length}
-              </div>
-
-              {logs.map((log) => {
+              {currentLogs.map((log) => {
                 const statusStyles = {
                   building: {
                     card: 'bg-blue-50 border-blue-200',
@@ -522,6 +497,63 @@ export default function LogsPage() {
                 </div>
                 );
               })}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    Showing {startIndex + 1}-{Math.min(endIndex, logs.length)} of {logs.length} sandboxes
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Show first page, last page, current page, and pages around current
+                        const showPage = page === 1 ||
+                                        page === totalPages ||
+                                        (page >= currentPage - 1 && page <= currentPage + 1);
+                        const showEllipsis = (page === currentPage - 2 && currentPage > 3) ||
+                                            (page === currentPage + 2 && currentPage < totalPages - 2);
+
+                        if (showEllipsis) {
+                          return <span key={page} className="px-2 text-gray-500">...</span>;
+                        }
+
+                        if (!showPage) {
+                          return null;
+                        }
+
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => goToPage(page)}
+                            className={`min-w-[36px] px-3 py-1.5 text-sm font-medium rounded-lg ${
+                              currentPage === page
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
