@@ -18,10 +18,10 @@ export async function getBills(
 ): Promise<{ bills: Bill[]; error?: string }> {
   try {
     // Calculate a wide time range to get all bills
-    // Start: 1 year ago, End: now
+    // Start: 3 months ago (max allowed by Mews API is 3M1D), End: now
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setFullYear(startDate.getFullYear() - 1);
+    startDate.setMonth(startDate.getMonth() - 3);
 
     const response = await fetch(`${MEWS_API_URL}/api/connector/v1/bills/getAll`, {
       method: 'POST',
