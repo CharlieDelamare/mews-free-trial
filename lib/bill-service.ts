@@ -17,6 +17,12 @@ export async function getBills(
   states?: string[]
 ): Promise<{ bills: Bill[]; error?: string }> {
   try {
+    // Calculate a wide time range to get all bills
+    // Start: 3 months ago (max allowed by Mews API is 3M1D), End: now
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 3);
+
     const response = await fetch(`${MEWS_API_URL}/api/connector/v1/bills/getAll`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -24,6 +30,10 @@ export async function getBills(
         ClientToken: MEWS_CLIENT_TOKEN,
         AccessToken: accessToken,
         Client: 'Mews Sandbox Manager',
+        UpdatedUtc: {
+          StartUtc: startDate.toISOString(),
+          EndUtc: endDate.toISOString()
+        },
         ...(states && { States: states }),
         Limitation: { Count: 1000 }
       })
