@@ -9,6 +9,7 @@ const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
 
 export interface TimezoneConfig {
   timezone: string;
+  currency?: string;
   nowUtc?: string;
   error?: string;
 }
@@ -42,18 +43,21 @@ export async function fetchTimezoneFromConfiguration(
 
     const data = await response.json();
     const timezone = data.Enterprise?.TimeZoneIdentifier;
+    const currency = data.Enterprise?.DefaultCurrencyCode;
 
     if (!timezone) {
       console.warn('[TIMEZONE-SERVICE] TimeZoneIdentifier not found at Enterprise.TimeZoneIdentifier, using UTC');
       return {
         timezone: 'UTC',
+        currency,
         nowUtc: data.NowUtc
       };
     }
 
-    console.log(`[TIMEZONE-SERVICE] Successfully fetched timezone: ${timezone}`);
+    console.log(`[TIMEZONE-SERVICE] Successfully fetched timezone: ${timezone}, currency: ${currency || 'N/A'}`);
     return {
       timezone,
+      currency,
       nowUtc: data.NowUtc
     };
 
