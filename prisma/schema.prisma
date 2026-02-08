@@ -25,6 +25,7 @@ model AccessToken {
   isEnabled       Boolean  @default(true)
   action          String
 
+  @@unique([enterpriseId, integrationId, accessToken], name: "unique_enterprise_integration_token")
   @@index([enterpriseId])
   @@index([integrationId])
 }
@@ -94,6 +95,23 @@ model ReservationCreationLog {
   @@index([operationType])
 }
 
+model TaskCreationLog {
+  id              Int       @id @default(autoincrement())
+  enterpriseId    String
+  accessTokenId   Int
+  totalTasks      Int
+  successCount    Int
+  failureCount    Int
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  status          String    // 'processing' | 'completed' | 'failed'
+  errorSummary    String?   @db.Text
+  taskResults     Json?
+
+  @@index([enterpriseId])
+  @@index([status])
+}
+
 model ResetOperationLog {
   id                Int       @id @default(autoincrement())
   enterpriseId      String
@@ -154,4 +172,6 @@ model UnifiedLog {
   @@index([enterpriseId])
   @@index([status])
   @@index([logType, timestamp])
+  @@index([enterpriseId, logType])
+  @@index([logType, salesforceAccountId])
 }

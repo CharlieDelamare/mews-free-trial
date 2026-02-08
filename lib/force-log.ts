@@ -39,6 +39,7 @@ export const log = {
   reservations: (msg: string, data?: any) => forceLog('[RESERVATIONS]', msg, data),
   demoFiller: (msg: string, data?: any) => forceLog('[DEMO-FILLER]', msg, data),
   resetService: (msg: string, data?: any) => forceLog('[RESET-SERVICE]', msg, data),
+  tasks: (msg: string, data?: any) => forceLog('[TASKS]', msg, data),
 };
 
 export const logError = {
@@ -46,4 +47,5 @@ export const logError = {
   reservations: (msg: string, error?: any) => forceError('[RESERVATIONS]', msg, error),
   demoFiller: (msg: string, error?: any) => forceError('[DEMO-FILLER]', msg, error),
   resetService: (msg: string, error?: any) => forceError('[RESET-SERVICE]', msg, error),
+  tasks: (msg: string, error?: any) => forceError('[TASKS]', msg, error),
 };

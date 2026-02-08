@@ -203,6 +203,41 @@ export async function updateEnvironmentReservationStats(
 }
 
 /**
+ * Update task setup stats in an environment log's operationDetails
+ */
+export async function updateEnvironmentTaskStats(
+  logId: string,
+  stats: {
+    status: 'processing' | 'completed' | 'failed';
+    total: number;
+    success: number;
+    failed: number;
+  }
+): Promise<void> {
+  try {
+    // Get current operationDetails
+    const log = await prisma.unifiedLog.findUnique({
+      where: { id: logId },
+      select: { operationDetails: true },
+    });
+
+    const currentDetails = (log?.operationDetails as EnvironmentSetupStats) || {};
+    const updatedDetails: EnvironmentSetupStats = {
+      ...currentDetails,
+      tasks: stats,
+    };
+
+    await prisma.unifiedLog.update({
+      where: { id: logId },
+      data: { operationDetails: updatedDetails },
+    });
+  } catch (error) {
+    console.error('[UNIFIED-LOGGER] Failed to update task stats:', logId, (error as Error).message);
+    throw new Error(`Database error: Failed to update task stats - ${(error as Error).message}`);
+  }
+}
+
+/**
  * Update reset operation details
  */
 export async function updateResetDetails(

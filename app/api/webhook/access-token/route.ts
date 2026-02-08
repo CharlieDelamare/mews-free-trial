@@ -5,12 +5,12 @@ import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
 import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
 import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
+import { getMewsClientToken } from '@/lib/config';
 
 // Disable caching for GET endpoint - webhook debug data needs to be fresh
 export const dynamic = 'force-dynamic';
 
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
+const MEWS_CLIENT_TOKEN = getMewsClientToken();
 
 interface MewsWebhookPayload {
   Action: string;
@@ -183,6 +183,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Idempotency check: skip duplicate webhooks
+    const existingToken = await prisma.accessToken.findFirst({
+      where: {
+        enterpriseId: createdPayload.Data.Enterprise.Id,
+        integrationId: createdPayload.Data.Integration?.Id ?? null,
+        accessToken: createdPayload.Data.AccessToken,
+      }
+    });
+
+    if (existingToken) {
+      console.log('[WEBHOOK] Duplicate webhook detected, skipping:', {
+        enterpriseId: createdPayload.Data.Enterprise.Id,
+        tokenId: existingToken.id
+      });
+      return NextResponse.json({
+        success: true,
+        message: 'Duplicate webhook - already processed',
+        tokenId: existingToken.id
+      });
+    }
+
     // Create new token entry in database
     const newToken = await prisma.accessToken.create({
       data: {
@@ -250,6 +271,20 @@ export async function POST(request: NextRequest) {
             newToken.id,
             { operationType: 'automatic', logId: log.id }
           );
+
+          // Create onboarding tasks
+          try {
+            const { createOnboardingTasks } = await import('@/lib/task-service');
+            const taskResult = await createOnboardingTasks(
+              newToken.accessToken,
+              newToken.enterpriseId,
+              newToken.id,
+              { logId: log.id }
+            );
+            console.log(`[WEBHOOK-SETUP] Tasks created: ${taskResult.successCount}/${taskResult.totalTasks}`);
+          } catch (taskError) {
+            console.error('[WEBHOOK-SETUP] Task creation failed (non-blocking):', (taskError as Error).message);
+          }
 
           // Send Zapier notification
           await sendZapierNotification('environment_ready', {
