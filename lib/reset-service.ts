@@ -10,6 +10,7 @@ import { closeBillsForEnvironment } from './bill-service';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { startOfDay, addDays } from 'date-fns';
 import { createResetLog, updateUnifiedLog } from './unified-logger';
+import { fetchTimezoneFromConfiguration } from './timezone-service';
 import type { ResetResult, ResetOperationDetails, ResetStep } from '@/types/reset';
 
 // Hardcoded Mews client token for demo environment
@@ -21,46 +22,6 @@ interface Reservation {
   [key: string]: any;
 }
 
-/**
- * Fetch configuration from Mews API (timezone only)
- */
-async function getConfiguration(accessToken: string): Promise<{
-  timezone: string;
-  nowUtc: string;
-  error?: string;
-}> {
-  try {
-    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/configuration/get`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Free Trial App'
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Failed to fetch configuration: ${response.status} - ${errorData.Message || response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    return {
-      timezone: data.Enterprise?.TimeZoneIdentifier || 'UTC',
-      nowUtc: data.NowUtc || new Date().toISOString()
-    };
-  } catch (error) {
-    console.error('[RESET-SERVICE] Error fetching configuration:', error);
-    return {
-      timezone: 'UTC',
-      nowUtc: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error fetching configuration'
-    };
-  }
-}
 
 /**
  * Get all reservations with pagination support
@@ -219,21 +180,26 @@ export async function resetEnvironment(
 
   try {
     // ========================================
-    // STEP 1: Get Configuration
+    // STEP 1: Get Configuration & Timezone
     // ========================================
-    console.log(`[RESET-SERVICE] Step 1/7: Fetching configuration...`);
-    const config = await getConfiguration(accessToken);
+    console.log(`[RESET-SERVICE] Step 1/7: Fetching configuration and timezone...`);
+    const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken);
 
     if (config.error) {
-      throw new Error(`Configuration fetch failed: ${config.error}`);
+      console.warn(`[RESET-SERVICE] Timezone fetch warning: ${config.error}, using fallback`);
     }
 
     details.configuration = {
       timezone: config.timezone,
-      nowUtc: config.nowUtc
+      nowUtc: config.nowUtc || new Date().toISOString()
     };
 
-    await updateUnifiedLog(log.id, { currentStep: 1, operationDetails: details });
+    // Store timezone in UnifiedLog.timezone column for reservation service
+    await updateUnifiedLog(log.id, {
+      currentStep: 1,
+      timezone: config.timezone,  // Store in column, not just operationDetails
+      operationDetails: details
+    });
 
     console.log(`[RESET-SERVICE] ✓ Configuration fetched (timezone: ${config.timezone})`);
 

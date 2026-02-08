@@ -4,6 +4,7 @@ import { findEnvironmentLogByEnterpriseId, updateEnvironmentLog } from '@/lib/lo
 import { fetchReservations, cancelReservation } from '@/lib/reservations';
 import { sendZapierNotification } from '@/lib/zapier';
 import { createSampleCustomers } from '@/lib/customer-service';
+import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
 
 // Hardcoded configuration for Mews demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -119,6 +120,11 @@ export async function POST(request: NextRequest) {
       serviceName: configData.Service?.Name
     });
 
+    // Fetch timezone for this enterprise
+    console.log('[ADD-ENVIRONMENT] Fetching timezone...');
+    const timezoneConfig = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken);
+    console.log(`[ADD-ENVIRONMENT] Timezone: ${timezoneConfig.timezone}`);
+
     // Check if this access token already exists
     const existingToken = await prisma.accessToken.findFirst({
       where: {
@@ -233,10 +239,14 @@ export async function POST(request: NextRequest) {
         // Continue - non-blocking
       }
 
-      // Update log status to completed
+      // Update log status to completed and store timezone
       try {
-        await updateEnvironmentLog(configData.Enterprise.Id, { status: 'completed' });
+        await updateEnvironmentLog(configData.Enterprise.Id, {
+          status: 'completed',
+          timezone: timezoneConfig.timezone
+        });
         console.log('[ADD-ENVIRONMENT] ✅ Log status updated to completed');
+        console.log(`[ADD-ENVIRONMENT] ✅ Timezone stored: ${timezoneConfig.timezone}`);
       } catch (error) {
         console.error('[ADD-ENVIRONMENT] ⚠️  Failed to update log:', error);
       }

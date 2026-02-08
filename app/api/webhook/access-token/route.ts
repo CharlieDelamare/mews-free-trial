@@ -4,6 +4,7 @@ import { findEnvironmentLogByPropertyName, updateUnifiedLog } from '@/lib/unifie
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
 import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
+import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
 
 // Disable caching for GET endpoint - webhook debug data needs to be fresh
 export const dynamic = 'force-dynamic';
@@ -234,7 +235,8 @@ export async function POST(request: NextRequest) {
       (async () => {
         try {
           // Fetch timezone from configuration API
-          const timezone = await fetchTimezoneFromConfiguration(newToken.accessToken);
+          const timezoneResult = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, newToken.accessToken);
+          const timezone = timezoneResult.timezone;
           await updateUnifiedLog(log.id, { timezone });
 
           // Fetch Mews data and update Best Price rate
@@ -327,42 +329,6 @@ export async function POST(request: NextRequest) {
       { error: 'Internal server error processing webhook' },
       { status: 500 }
     );
-  }
-}
-
-/**
- * Fetch timezone from Mews configuration API
- */
-async function fetchTimezoneFromConfiguration(accessToken: string): Promise<string> {
-  try {
-    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/configuration/get`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager'
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Configuration API failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const timezone = data.Enterprise?.TimeZoneIdentifier;
-
-    if (!timezone) {
-      console.warn('[WEBHOOK] TimeZoneIdentifier not found at Data.Enterprise.TimeZoneIdentifier, using UTC');
-      return 'UTC';
-    }
-
-    return timezone;
-
-  } catch (error) {
-    console.error('[WEBHOOK] Failed to fetch timezone:', error);
-    console.warn('[WEBHOOK] Falling back to UTC timezone');
-    return 'UTC';
   }
 }
 
