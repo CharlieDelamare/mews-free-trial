@@ -233,11 +233,11 @@ async function createSingleTask(
 
     const data = await response.json();
 
-    if (response.ok && data.Id) {
+    if (response.ok && data.TaskId) {
       return {
         name: task.Name,
         success: true,
-        taskId: data.Id,
+        taskId: data.TaskId,
       };
     } else {
       logError.tasks(`Failed to create "${task.Name}"`, data);
