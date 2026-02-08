@@ -304,13 +304,10 @@ async function createSingleCustomer(
     const data = await response.json();
 
     if (response.ok && data.Id) {
-      // Success - Log ALL successful customer creations
+      // Success - Log ALL successful customer creations with full response
       log.customers(`Created customer ${customer.Email}`, {
         customerId: data.Id,
-        email: customer.Email,
-        name: `${customer.FirstName} ${customer.LastName}`,
-        hadClassifications: !!customer.Classifications,
-        hadNotes: !!customer.Notes
+        response: data
       });
       return {
         email: customer.Email,
