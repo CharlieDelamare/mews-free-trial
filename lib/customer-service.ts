@@ -85,7 +85,7 @@ export async function createSampleCustomers(
   });
 
   // Create log entry with status 'processing' (for backwards compatibility)
-  const log = await prisma.customerCreationLog.create({
+  const customerLog = await prisma.customerCreationLog.create({
     data: {
       enterpriseId,
       accessTokenId,
@@ -145,7 +145,7 @@ export async function createSampleCustomers(
 
     // Update log with final results (for backwards compatibility)
     const updatedLog = await prisma.customerCreationLog.update({
-      where: { id: log.id },
+      where: { id: customerLog.id },
       data: {
         successCount,
         failureCount,
@@ -189,7 +189,7 @@ export async function createSampleCustomers(
 
     // Update log with failure status (for backwards compatibility)
     await prisma.customerCreationLog.update({
-      where: { id: log.id },
+      where: { id: customerLog.id },
       data: {
         completedAt: new Date(),
         status: 'failed',
