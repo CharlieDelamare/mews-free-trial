@@ -43,7 +43,12 @@ export async function fetchTimezoneFromConfiguration(
 
     const data = await response.json();
     const timezone = data.Enterprise?.TimeZoneIdentifier;
-    const currency = data.Enterprise?.DefaultCurrencyCode;
+
+    // Find the default currency from the Currencies array
+    const defaultCurrency = data.Enterprise?.Currencies?.find(
+      (c: { IsDefault: boolean; Currency: string }) => c.IsDefault
+    );
+    const currency = defaultCurrency?.Currency;
 
     if (!timezone) {
       console.warn('[TIMEZONE-SERVICE] TimeZoneIdentifier not found at Enterprise.TimeZoneIdentifier, using UTC');
