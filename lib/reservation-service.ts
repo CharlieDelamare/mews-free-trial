@@ -660,15 +660,21 @@ async function getCustomerByEmail(email: string, accessToken: string): Promise<s
  * Create a single customer
  */
 async function createSingleCustomer(customer: SampleCustomer, accessToken: string): Promise<string> {
-  // Log payload for customers with Classifications/Notes
-  if (customer.Classifications || customer.Notes) {
-    console.log(`[CUSTOMERS] 📤 Sending customer ${customer.Email} (reservation flow):`, {
-      Classifications: customer.Classifications,
-      Notes: customer.Notes?.substring(0, 100),
-      hasClassifications: !!customer.Classifications,
-      hasNotes: !!customer.Notes
-    });
-  }
+  const requestBody = {
+    ClientToken: MEWS_CLIENT_TOKEN,
+    AccessToken: accessToken,
+    Client: 'Free Trial Generator',
+    FirstName: customer.FirstName,
+    LastName: customer.LastName,
+    Email: customer.Email,
+    Phone: customer.Phone,
+    BirthDate: customer.BirthDate,
+    NationalityCode: customer.NationalityCode,
+    Sex: customer.Sex,
+    Title: customer.Title,
+    Classifications: customer.Classifications,
+    Notes: customer.Notes
+  };
 
   const response = await fetchWithRateLimit(
     `${MEWS_API_URL}/api/connector/v1/customers/add`,
@@ -676,22 +682,7 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Free Trial Generator',
-        FirstName: customer.FirstName,
-        LastName: customer.LastName,
-        Email: customer.Email,
-        Phone: customer.Phone,
-        BirthDate: customer.BirthDate,
-        NationalityCode: customer.NationalityCode,
-        Sex: customer.Sex,
-        Title: customer.Title,
-        Classifications: customer.Classifications,
-        Notes: customer.Notes,
-        ...(customer.CompanyIdentifier && { CompanyIdentifier: customer.CompanyIdentifier })
-      })
+      body: JSON.stringify(requestBody)
     },
     'customers/add'
   );
@@ -736,15 +727,11 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
     throw new Error(`Customer API returned invalid ID: ${data.Id}`);
   }
 
-  // Log response for customers with Classifications/Notes
-  if (customer.Classifications || customer.Notes) {
-    console.log(`[CUSTOMERS] ✅ Created customer ${customer.Email} (reservation flow):`, {
-      customerId: data.Id,
-      requestedClassifications: customer.Classifications,
-      requestedNotes: customer.Notes?.substring(0, 50),
-      responseData: data
-    });
-  }
+  // Log request and response together
+  log.customers(`Created customer ${customer.Email} (reservation flow)`, {
+    request: requestBody,
+    response: data
+  });
 
   return data.Id;
 }
