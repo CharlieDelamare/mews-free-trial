@@ -84,7 +84,7 @@ export async function createReservationsForEnvironment(
   });
 
   // Create log entry (for backwards compatibility)
-  const log = await prisma.reservationCreationLog.create({
+  const reservationLog = await prisma.reservationCreationLog.create({
     data: {
       enterpriseId,
       accessTokenId,
@@ -150,7 +150,7 @@ export async function createReservationsForEnvironment(
 
     // Update log with total
     await prisma.reservationCreationLog.update({
-      where: { id: log.id },
+      where: { id: reservationLog.id },
       data: { totalReservations }
     });
 
@@ -230,7 +230,7 @@ export async function createReservationsForEnvironment(
     });
 
     await prisma.reservationCreationLog.update({
-      where: { id: log.id },
+      where: { id: reservationLog.id },
       data: {
         successCount: createdReservations.length,
         failureCount: failures.length,
@@ -283,7 +283,7 @@ export async function createReservationsForEnvironment(
     console.error(`[RESERVATIONS] ❌ Failed:`, error);
 
     await prisma.reservationCreationLog.update({
-      where: { id: log.id },
+      where: { id: reservationLog.id },
       data: {
         status: 'failed',
         errorSummary: (error as Error).message,
@@ -468,7 +468,7 @@ async function createCustomersOnDemand(
   const customerIds: string[] = [];
 
   // Create customer creation log
-  const log = await prisma.customerCreationLog.create({
+  const inlineCustomerLog = await prisma.customerCreationLog.create({
     data: {
       enterpriseId,
       accessTokenId,
@@ -509,7 +509,7 @@ async function createCustomersOnDemand(
 
     // Update customer log
     await prisma.customerCreationLog.update({
-      where: { id: log.id },
+      where: { id: inlineCustomerLog.id },
       data: {
         successCount: customerIds.length,
         failureCount: count - customerIds.length,
@@ -522,7 +522,7 @@ async function createCustomersOnDemand(
 
   } catch (error) {
     await prisma.customerCreationLog.update({
-      where: { id: log.id },
+      where: { id: inlineCustomerLog.id },
       data: {
         status: 'failed',
         errorSummary: (error as Error).message,
