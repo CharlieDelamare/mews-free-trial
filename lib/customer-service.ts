@@ -285,14 +285,9 @@ async function createSingleCustomer(
       Notes: customer.Notes
     };
 
-    // Log ALL customer creation attempts
+    // Log ALL customer creation attempts with full payload
     log.customers(`Sending customer ${customer.Email}`, {
-      email: customer.Email,
-      name: `${customer.FirstName} ${customer.LastName}`,
-      hasClassifications: !!customer.Classifications,
-      hasNotes: !!customer.Notes,
-      classificationsCount: customer.Classifications?.length || 0,
-      noteLength: customer.Notes?.length || 0
+      payload: requestBody
     });
 
     const response = await fetchWithRateLimit(
