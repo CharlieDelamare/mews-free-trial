@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Environment {
@@ -15,15 +16,11 @@ interface Environment {
 }
 
 export default function ResetSandboxPage() {
+  const router = useRouter();
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState('');
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [resetResult, setResetResult] = useState<{
-    success?: boolean;
-    message?: string;
-    error?: string;
-  } | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
@@ -58,24 +55,19 @@ export default function ResetSandboxPage() {
   const handleResetConfirm = async () => {
     setShowConfirmDialog(false);
     setResetting(true);
-    setResetResult(null);
 
     try {
-      const response = await fetch('/api/reset-environment', {
+      await fetch('/api/reset-environment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enterpriseId: selectedEnvironment })
       });
 
-      const data = await response.json();
-      setResetResult(data);
+      // Redirect to logs page regardless of response
+      router.push('/logs');
     } catch (error) {
-      setResetResult({
-        success: false,
-        error: 'Network error: Could not connect to server'
-      });
-    } finally {
-      setResetting(false);
+      // Still redirect to logs even on network error
+      router.push('/logs');
     }
   };
 
@@ -134,29 +126,6 @@ export default function ResetSandboxPage() {
           >
             {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
           </button>
-
-          {/* Success Message */}
-          {resetResult?.success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
-              <p className="font-semibold">✅ Reset operation started!</p>
-              <p className="text-sm mt-1">
-                The sandbox is being reset. This may take a few minutes.
-                Check the{' '}
-                <Link href="/logs" className="underline font-semibold">
-                  Sandbox Logs
-                </Link>{' '}
-                for progress.
-              </p>
-            </div>
-          )}
-
-          {/* Error Message */}
-          {resetResult?.error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-              <p className="font-semibold">❌ Reset failed</p>
-              <p className="text-sm mt-1">{resetResult.error}</p>
-            </div>
-          )}
 
           <p className="text-xs text-gray-500 text-center">
             Resetting will cancel reservations, close bills, and create fresh sample data for the next 7 days
