@@ -675,8 +675,7 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
         Sex: customer.Sex,
         Title: customer.Title,
         Classifications: customer.Classifications,
-        Notes: customer.Notes,
-        ...(customer.CompanyIdentifier && { CompanyIdentifier: customer.CompanyIdentifier })
+        Notes: customer.Notes
       })
     },
     'customers/add'

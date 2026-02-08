@@ -17,9 +17,6 @@ export interface SampleCustomer {
   Title?: 'Mister' | 'Miss' | 'Misses';  // Valid Mews API values only
   NationalityCode?: string;  // ISO 3166-1 alpha-2: "GB", "US", "DE"
   PreferredLanguageCode?: string; // From lib/codes.ts: "en-GB", "fr-FR"
-  CompanyIdentifier?: {
-    Name: string;
-  };
   Classifications?: string[]; // Guest classifications (e.g., "Returning", "VeryImportant", "FriendOrFamily")
   Notes?: string;             // Free text notes about the guest
 }
@@ -879,9 +876,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB',
-    CompanyIdentifier: {
-      Name: 'TechCorp International'
-    },
     Classifications: ['VeryImportant', 'Returning'],
     Notes: 'C-level executive who books 10+ nights monthly. Prefers executive floor rooms with meeting space. Requires 24/7 business center access. Loyal corporate account.'
   },
@@ -895,9 +889,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US',
-    CompanyIdentifier: {
-      Name: 'Global Ventures Inc'
-    },
     Classifications: ['Important', 'Returning'],
     Notes: 'VP of Operations with frequent stays. Holds client meetings in hotel conference rooms. Prefers rooms near business facilities. Professional and courteous.'
   },
@@ -911,9 +902,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR',
-    CompanyIdentifier: {
-      Name: 'Paris Consulting Group'
-    },
     Classifications: ['VeryImportant'],
     Notes: 'Senior partner who brings high-value client meetings to property. Requires premium suites when entertaining. Excellent tipper and ambassador for the property.'
   },
@@ -927,9 +915,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Misses',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE',
-    CompanyIdentifier: {
-      Name: 'Deutsch Banking Solutions'
-    },
     Classifications: ['Important', 'Problematic'],
     Notes: 'Banking executive with high standards. Expects prompt service and attention to detail. Can be demanding but fair. Best to assign senior staff for check-in.'
   },
@@ -943,9 +928,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT',
-    CompanyIdentifier: {
-      Name: 'ItalDesign SpA'
-    },
     Classifications: ['Returning'],
     Notes: 'Design director who stays during trade shows. Books months in advance. Appreciates modern aesthetics. Sometimes extends stay last minute for project work.'
   },
@@ -959,9 +941,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES',
-    CompanyIdentifier: {
-      Name: 'IberTech Solutions'
-    },
     Classifications: ['Important', 'Cashlist'],
     Notes: 'Tech sales manager who closes deals over property meals. Prefers to settle accounts in cash for expense reports. Brings valuable corporate clients to restaurant.'
   },
@@ -975,9 +954,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL',
-    CompanyIdentifier: {
-      Name: 'Warsaw Corporation'
-    },
     Classifications: ['Returning', 'Important'],
     Notes: 'Regional manager with weekly stays. Books same room number 405 when available. Needs reliable wake-up calls for early meetings. Punctual and organized.'
   },
@@ -991,9 +967,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE',
-    CompanyIdentifier: {
-      Name: 'Nordic Business Group'
-    },
     Classifications: ['VeryImportant', 'Returning'],
     Notes: 'Board member who books executive suites for multi-day strategy sessions. Requires conference room access and catering services. High-value corporate account.'
   },
@@ -1007,9 +980,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT',
-    CompanyIdentifier: {
-      Name: 'Lisbon Tech Solutions'
-    }
   },
   {
     FirstName: 'Eva',
@@ -1021,9 +991,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ',
-    CompanyIdentifier: {
-      Name: 'Prague Ventures Ltd'
-    }
   },
   {
     FirstName: 'Andrew',
@@ -1035,9 +1002,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB',
-    CompanyIdentifier: {
-      Name: 'London Finance Partners'
-    },
     Classifications: ['VeryImportant', 'Important'],
     Notes: 'Managing partner of major financial firm. Extremely discreet service required. Often accompanied by business associates. Premium service expectations.'
   },
@@ -1051,9 +1015,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US',
-    CompanyIdentifier: {
-      Name: 'Silicon Valley Innovations'
-    },
     Classifications: ['Important', 'Returning'],
     Notes: 'Startup founder attending investor meetings. Books last minute but stays frequently. Values fast WiFi above all else. Night owl who works until 2 AM.'
   },
@@ -1067,9 +1028,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR',
-    CompanyIdentifier: {
-      Name: 'Lyon Enterprises'
-    }
   },
   {
     FirstName: 'Claudia',
@@ -1081,9 +1039,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE',
-    CompanyIdentifier: {
-      Name: 'Munich Systems GmbH'
-    },
     Classifications: ['Returning', 'PreviousComplaint'],
     Notes: 'IT consultant with monthly visits. Previous complaint about slow internet was resolved with upgraded service. Now satisfied and loyal guest. Requires technical support occasionally.'
   },
@@ -1097,9 +1052,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT',
-    CompanyIdentifier: {
-      Name: 'Milano Holdings'
-    },
     Classifications: ['Important', 'Media'],
     Notes: 'Investment banker featured in financial publications. Values privacy and discretion. Often works on confidential deals from room. Professional and low-key presence.'
   },
@@ -1113,9 +1065,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES',
-    CompanyIdentifier: {
-      Name: 'Barcelona Consulting'
-    }
   },
   {
     FirstName: 'Piotr',
@@ -1127,9 +1076,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL',
-    CompanyIdentifier: {
-      Name: 'Kraków iTech'
-    },
     Classifications: ['Returning'],
     Notes: 'Software developer who stays during training sessions. Prefers quiet floors for concentration. Early check-in requested when possible. Appreciates technical amenities.'
   },
@@ -1143,9 +1089,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE',
-    CompanyIdentifier: {
-      Name: 'Stockholm Analytics AB'
-    }
   },
   {
     FirstName: 'Miguel',
@@ -1157,9 +1100,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT',
-    CompanyIdentifier: {
-      Name: 'Porto Business Group'
-    }
   },
   {
     FirstName: 'Tereza',
@@ -1171,9 +1111,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ',
-    CompanyIdentifier: {
-      Name: 'Brno Corporation'
-    }
   },
   {
     FirstName: 'George',
@@ -1185,9 +1122,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'GB',
     PreferredLanguageCode: 'en-GB',
-    CompanyIdentifier: {
-      Name: 'Oxford Solutions Ltd'
-    }
   },
   {
     FirstName: 'Lisa',
@@ -1199,9 +1133,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'US',
     PreferredLanguageCode: 'en-US',
-    CompanyIdentifier: {
-      Name: 'Seattle Tech Industries'
-    }
   },
   {
     FirstName: 'Antoine',
@@ -1213,9 +1144,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'FR',
     PreferredLanguageCode: 'fr-FR',
-    CompanyIdentifier: {
-      Name: 'Marseille Business Group'
-    }
   },
   {
     FirstName: 'Petra',
@@ -1227,9 +1155,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'DE',
     PreferredLanguageCode: 'de-DE',
-    CompanyIdentifier: {
-      Name: 'Hamburg Logistics'
-    }
   },
   {
     FirstName: 'Luca',
@@ -1241,9 +1166,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'IT',
     PreferredLanguageCode: 'it-IT',
-    CompanyIdentifier: {
-      Name: 'Napoli Industries Srl'
-    }
   },
   {
     FirstName: 'Isabel',
@@ -1255,9 +1177,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'ES',
     PreferredLanguageCode: 'es-ES',
-    CompanyIdentifier: {
-      Name: 'Sevilla Trade Partners'
-    }
   },
   {
     FirstName: 'Marcin',
@@ -1269,9 +1188,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'PL',
     PreferredLanguageCode: 'pl-PL',
-    CompanyIdentifier: {
-      Name: 'Gdańsk Shipping Co'
-    }
   },
   {
     FirstName: 'Sofia',
@@ -1283,9 +1199,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'SE',
     PreferredLanguageCode: 'sv-SE',
-    CompanyIdentifier: {
-      Name: 'Göteborg Exports'
-    }
   },
   {
     FirstName: 'Ricardo',
@@ -1297,9 +1210,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'PT',
     PreferredLanguageCode: 'pt-PT',
-    CompanyIdentifier: {
-      Name: 'Coimbra Consultants'
-    }
   },
   {
     FirstName: 'Veronika',
@@ -1311,9 +1221,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'CZ',
     PreferredLanguageCode: 'cs-CZ',
-    CompanyIdentifier: {
-      Name: 'Ostrava Investment Group'
-    }
   },
 
   // Additional Personal Travelers (101-135)
@@ -1754,9 +1661,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'DK',
     PreferredLanguageCode: 'da-DK',
-    CompanyIdentifier: {
-      Name: 'Nordic Solutions ApS'
-    },
     Classifications: ['Returning', 'Important'],
     Notes: 'Danish logistics manager with monthly stays. Books same room 510 when available. Needs early breakfast for 7 AM meetings. Professional and efficient.'
   },
@@ -1770,9 +1674,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Misses',
     NationalityCode: 'RU',
     PreferredLanguageCode: 'ru-RU',
-    CompanyIdentifier: {
-      Name: 'Russian Energy Corp'
-    },
     Classifications: ['VeryImportant'],
     Notes: 'Senior executive managing European operations. Requires executive suite and business center access. Often hosts client dinners. High-value corporate account.'
   },
@@ -1786,9 +1687,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'JP',
     PreferredLanguageCode: 'ja-JP',
-    CompanyIdentifier: {
-      Name: 'Tokyo Technology Inc'
-    }
   },
   {
     FirstName: 'Sophia',
@@ -1800,9 +1698,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'NL',
     PreferredLanguageCode: 'nl-NL',
-    CompanyIdentifier: {
-      Name: 'Dutch Banking Group'
-    },
     Classifications: ['Important', 'Returning'],
     Notes: 'Financial analyst who stays during quarterly audits. Requires quiet workspace. Values reliable WiFi above all. Often extends stays for project completion.'
   },
@@ -1816,9 +1711,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'AE',
     PreferredLanguageCode: 'ar-AE',
-    CompanyIdentifier: {
-      Name: 'Dubai Ventures LLC'
-    }
   },
   {
     FirstName: 'Niamh',
@@ -1830,9 +1722,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'IE',
     PreferredLanguageCode: 'en-IE',
-    CompanyIdentifier: {
-      Name: 'Dublin Consultancy'
-    },
     Classifications: ['Returning'],
     Notes: 'Irish consultant working on European projects. Books multiple times per quarter. Prefers rooms with work desks. Often takes conference calls from room.'
   },
@@ -1846,9 +1735,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'RU',
     PreferredLanguageCode: 'ru-RU',
-    CompanyIdentifier: {
-      Name: 'Moscow Business Partners'
-    }
   },
   {
     FirstName: 'Li',
@@ -1860,9 +1746,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'CN',
     PreferredLanguageCode: 'zh-CN',
-    CompanyIdentifier: {
-      Name: 'Beijing Tech Solutions'
-    },
     Classifications: ['Important'],
     Notes: 'Chinese tech company representative establishing European partnerships. Professional and detail-oriented. Appreciates cultural sensitivity. Books extended stays for negotiations.'
   },
@@ -1876,9 +1759,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'IN',
     PreferredLanguageCode: 'en-IN',
-    CompanyIdentifier: {
-      Name: 'Mumbai Software Ltd'
-    }
   },
   {
     FirstName: 'Kristina',
@@ -1890,9 +1770,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'HR',
     PreferredLanguageCode: 'hr-HR',
-    CompanyIdentifier: {
-      Name: 'Zagreb Corporation'
-    },
     Classifications: ['Returning', 'PreviousComplaint'],
     Notes: 'Croatian business development manager. Previous complaint about conference room booking was resolved professionally. Now satisfied regular guest. Appreciates proactive communication.'
   },
@@ -1906,9 +1783,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'JP',
     PreferredLanguageCode: 'ja-JP',
-    CompanyIdentifier: {
-      Name: 'Osaka Industries'
-    }
   },
   {
     FirstName: 'Eleni',
@@ -1920,9 +1794,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'GR',
     PreferredLanguageCode: 'el-GR',
-    CompanyIdentifier: {
-      Name: 'Athens Consulting Group'
-    },
     Classifications: ['Important'],
     Notes: 'Greek strategy consultant working with European clients. Holds client meetings in hotel conference rooms. Professional and organized. Books multiple rooms for team visits.'
   },
@@ -1936,9 +1807,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'AT',
     PreferredLanguageCode: 'de-AT',
-    CompanyIdentifier: {
-      Name: 'Vienna Finance AG'
-    }
   },
   {
     FirstName: 'Soo-Jin',
@@ -1950,9 +1818,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Miss',
     NationalityCode: 'KR',
     PreferredLanguageCode: 'ko-KR',
-    CompanyIdentifier: {
-      Name: 'Seoul Corporation'
-    },
     Classifications: ['Returning'],
     Notes: 'South Korean business executive attending trade shows. Books months in advance. Appreciates efficient service. Often requests late check-out for evening flights.'
   },
@@ -1966,9 +1831,6 @@ export const sampleCustomers: SampleCustomer[] = [
     Title: 'Mister',
     NationalityCode: 'IS',
     PreferredLanguageCode: 'is-IS',
-    CompanyIdentifier: {
-      Name: 'Reykjavik Ventures'
-    }
   }
 ];
 
@@ -2107,17 +1969,6 @@ function generateCustomerVariation(baseCustomer: SampleCustomer, index: number):
     newBirthDate = baseDate.toISOString().split('T')[0];
   }
 
-  // Vary company name if it exists
-  let newCompanyIdentifier: { Name: string } | undefined;
-  if (baseCustomer.CompanyIdentifier) {
-    const companyVariants = ['Group', 'International', 'Solutions', 'Consulting', 'Partners', 'Enterprises', 'Industries', 'Corporation', 'Limited', 'Holdings'];
-    const variantIndex = index % companyVariants.length;
-    const baseName = baseCustomer.CompanyIdentifier.Name.split(' ')[0]; // Take first word
-    newCompanyIdentifier = {
-      Name: `${baseName} ${companyVariants[variantIndex]}`
-    };
-  }
-
   return {
     FirstName: newFirstName,
     LastName: newLastName,
@@ -2128,7 +1979,6 @@ function generateCustomerVariation(baseCustomer: SampleCustomer, index: number):
     Title: baseCustomer.Title,
     NationalityCode: baseCustomer.NationalityCode,
     PreferredLanguageCode: baseCustomer.PreferredLanguageCode,
-    CompanyIdentifier: newCompanyIdentifier,
     Classifications: baseCustomer.Classifications, // Keep the same classifications
     Notes: baseCustomer.Notes // Keep the same notes pattern
   };

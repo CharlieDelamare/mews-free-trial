@@ -99,8 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         FirstName: firstName,
         LastName: lastName,
         Email: email,
-        Phone: phone || undefined,
-        CompanyIdentifier: companyName ? { Name: companyName } : undefined
+        Phone: phone || undefined
       })
     });
 

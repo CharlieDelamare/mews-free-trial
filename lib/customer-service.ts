@@ -25,19 +25,6 @@ interface CustomerResult {
   success: boolean;
   customerId?: string;
   error?: string;
-  // Diagnostic fields for debugging Classifications/Notes
-  requestPayload?: {
-    Classifications?: string[];
-    Notes?: string;
-    FirstName: string;
-    LastName: string;
-    Email: string;
-    Phone?: string;
-    NationalityCode?: string;
-    PreferredLanguageCode?: string;
-  };
-  responseData?: any;
-  timestamp?: string;
 }
 
 /**
@@ -294,22 +281,19 @@ async function createSingleCustomer(
       Title: customer.Title,
       NationalityCode: customer.NationalityCode,
       PreferredLanguageCode: customer.PreferredLanguageCode,
-      CompanyIdentifier: customer.CompanyIdentifier,
       Classifications: customer.Classifications,
       Notes: customer.Notes
     };
 
-    // Log payload for customers with Classifications/Notes to verify what we're sending
-    if (customer.Classifications || customer.Notes) {
-      console.log(`[CUSTOMERS] 📤 Sending customer ${customer.Email} (new env flow):`, {
-        email: customer.Email,
-        Classifications: requestBody.Classifications,
-        Notes: requestBody.Notes?.substring(0, 100),
-        hasClassifications: !!requestBody.Classifications,
-        hasNotes: !!requestBody.Notes,
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Log ALL customer creation attempts
+    log.customers(`Sending customer ${customer.Email}`, {
+      email: customer.Email,
+      name: `${customer.FirstName} ${customer.LastName}`,
+      hasClassifications: !!customer.Classifications,
+      hasNotes: !!customer.Notes,
+      classificationsCount: customer.Classifications?.length || 0,
+      noteLength: customer.Notes?.length || 0
+    });
 
     const response = await fetchWithRateLimit(
       `${MEWS_API_URL}/api/connector/v1/customers/add`,
@@ -325,38 +309,22 @@ async function createSingleCustomer(
     const data = await response.json();
 
     if (response.ok && data.Id) {
-      // Success - Log response for customers with Classifications/Notes
-      if (customer.Classifications || customer.Notes) {
-        console.log(`[CUSTOMERS] ✅ Created customer ${customer.Email} (new env flow):`, {
-          customerId: data.Id,
-          email: customer.Email,
-          requestedClassifications: customer.Classifications,
-          requestedNotes: customer.Notes?.substring(0, 50),
-          fullResponse: data,
-          timestamp: new Date().toISOString()
-        });
-      }
+      // Success - Log ALL successful customer creations
+      log.customers(`Created customer ${customer.Email}`, {
+        customerId: data.Id,
+        email: customer.Email,
+        name: `${customer.FirstName} ${customer.LastName}`,
+        hadClassifications: !!customer.Classifications,
+        hadNotes: !!customer.Notes
+      });
       return {
         email: customer.Email,
         success: true,
-        customerId: data.Id,
-        // Store diagnostic data for Classification debugging
-        requestPayload: customer.Classifications || customer.Notes ? {
-          Classifications: customer.Classifications,
-          Notes: customer.Notes,
-          FirstName: customer.FirstName,
-          LastName: customer.LastName,
-          Email: customer.Email,
-          Phone: customer.Phone,
-          NationalityCode: customer.NationalityCode,
-          PreferredLanguageCode: customer.PreferredLanguageCode
-        } : undefined,
-        responseData: customer.Classifications || customer.Notes ? data : undefined,
-        timestamp: new Date().toISOString()
+        customerId: data.Id
       };
     } else {
       // API returned error
-      console.error(`[CUSTOMERS] Failed to create ${customer.Email}:`, data);
+      logError.customers(`Failed to create ${customer.Email}`, data);
       return {
         email: customer.Email,
         success: false,
@@ -366,7 +334,7 @@ async function createSingleCustomer(
 
   } catch (error) {
     // Network error or other exception
-    console.error(`[CUSTOMERS] Exception creating ${customer.Email}:`, error);
+    logError.customers(`Exception creating ${customer.Email}`, error);
     return {
       email: customer.Email,
       success: false,

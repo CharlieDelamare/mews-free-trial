@@ -74,7 +74,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
@@ -89,7 +88,7 @@ describe('customer-service', () => {
         data: {
           enterpriseId: 'test-enterprise',
           accessTokenId: 123,
-          totalCustomers: 100,
+          totalCustomers: 1,
           successCount: 0,
           failureCount: 0,
           status: 'processing',
@@ -110,7 +109,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
@@ -143,7 +141,6 @@ describe('customer-service', () => {
         Title: 'Mister',
         NationalityCode: 'GB',
         PreferredLanguageCode: 'en-GB',
-        CompanyIdentifier: null,
       }));
 
       mockGetSampleCustomers.mockReturnValue(customers);
@@ -179,7 +176,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
         {
           FirstName: 'Failure',
@@ -191,7 +187,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
@@ -229,7 +224,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
@@ -254,7 +248,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
@@ -282,7 +275,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
@@ -330,7 +322,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
@@ -366,7 +357,6 @@ describe('customer-service', () => {
         Title: 'Mister',
         NationalityCode: 'GB',
         PreferredLanguageCode: 'en-GB',
-        CompanyIdentifier: null,
       }));
 
       mockGetSampleCustomers.mockReturnValue(customers);
@@ -397,7 +387,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: 'ACME Corp',
         },
       ]);
 
@@ -422,7 +411,7 @@ describe('customer-service', () => {
       expect(payload).toMatchObject({
         ClientToken: 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0',
         AccessToken: 'test-token',
-        Client: 'Mews Free Trial App - Sample Data',
+        Client: 'Mews Sandbox Manager - Sample Data',
         FirstName: 'John',
         LastName: 'Doe',
         Email: 'john@example.com',
@@ -432,7 +421,6 @@ describe('customer-service', () => {
         Title: 'Mister',
         NationalityCode: 'GB',
         PreferredLanguageCode: 'en-GB',
-        CompanyIdentifier: 'ACME Corp',
       });
     });
 
@@ -448,7 +436,6 @@ describe('customer-service', () => {
           Title: 'Mister',
           NationalityCode: 'GB',
           PreferredLanguageCode: 'en-GB',
-          CompanyIdentifier: null,
         },
       ]);
 
