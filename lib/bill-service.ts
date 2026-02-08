@@ -125,7 +125,8 @@ export async function addExternalPayment(
   accessToken: string,
   accountId: string,
   amount: number,
-  currency: string
+  currency: string,
+  billId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const payload = {
@@ -133,6 +134,7 @@ export async function addExternalPayment(
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager',
       AccountId: accountId,
+      ...(billId && { BillId: billId }),
       Amount: {
         Currency: currency,
         GrossValue: amount
@@ -290,7 +292,8 @@ export async function closeBillsForEnvironment(
           accessToken,
           bill.AccountId,
           total,
-          currency
+          currency,
+          bill.Id
         );
 
         if (!paymentSuccess) {
