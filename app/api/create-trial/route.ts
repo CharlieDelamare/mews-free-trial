@@ -118,8 +118,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Duplicate prevention: Check if Salesforce Account ID already has an environment
     // Skip check for Charlie users (internal testing) and if no Salesforce ID provided
     if (!isCharlie && salesforceAccountId) {
-      console.log('[CREATE-TRIAL] Checking for existing environment with Salesforce Account ID:', salesforceAccountId);
-
       try {
         const existingEnv = await prisma.unifiedLog.findFirst({
           where: {
@@ -141,8 +139,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         });
 
         if (existingEnv) {
-          console.log('[CREATE-TRIAL] Found existing environment:', existingEnv.id);
-
           return NextResponse.json(
             {
               success: false,
@@ -160,7 +156,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           );
         }
 
-        console.log('[CREATE-TRIAL] No existing environment found, proceeding with creation');
       } catch (duplicateCheckError) {
         console.error('[CREATE-TRIAL] Error checking for duplicates:', duplicateCheckError);
         // Fail open: don't block creation if duplicate check fails
@@ -269,7 +264,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         salesforceAccountId,
         // timezone will be updated later from webhook via configuration/get API
       });
-      console.log('[CREATE-TRIAL] Log created with building status:', log.id);
     } catch (dbError) {
       console.error('[CREATE-TRIAL] Failed to save environment log:', (dbError as Error).message);
 
@@ -331,8 +325,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Note: The Mews API may not reliably return an enterpriseId in the response.
     // The webhook will backfill the correct enterpriseId when it arrives.
-    console.log('[CREATE-TRIAL] ✅ Trial creation initiated successfully');
-
     // Return immediately - Slack notification will be sent when access token webhook is received
     return NextResponse.json({
       success: true,

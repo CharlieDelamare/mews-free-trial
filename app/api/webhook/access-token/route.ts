@@ -101,7 +101,7 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
       }
     });
 
-    console.log(`[WEBHOOK] ✅ Disabled ${updateResult.count} token(s) for integration:`, integrationId);
+    console.log(`[WEBHOOK] Disabled ${updateResult.count} token(s) for integration:`, integrationId);
 
     return NextResponse.json({
       success: true,
@@ -112,7 +112,7 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
     });
 
   } catch (error) {
-    console.error('[WEBHOOK] ❌ Error handling IntegrationDeleted:', error);
+    console.error('[WEBHOOK] Error handling IntegrationDeleted:', error);
 
     return NextResponse.json(
       {
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     if (payload.Action === 'IntegrationDeleted') {
       // Validate IntegrationDeleted payload
       if (!payload.Data?.Integration?.Id) {
-        console.error('[WEBHOOK] ❌ Validation failed: Missing Integration.Id');
+        console.error('[WEBHOOK] Validation failed: Missing Integration.Id');
         return NextResponse.json(
           { error: 'Missing Integration.Id in IntegrationDeleted payload' },
           { status: 400 }
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
 
     // Validate for IntegrationCreated
     if (payload.Action !== 'IntegrationCreated') {
-      console.warn('[WEBHOOK] ⚠️  Unknown action type:', payload.Action);
+      console.warn('[WEBHOOK] Unknown action type:', payload.Action);
       return NextResponse.json(
         { error: `Unsupported webhook action: ${payload.Action}` },
         { status: 400 }
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     // Validate payload structure
     if (!createdPayload.Data || !createdPayload.Data.AccessToken) {
-      console.error('[WEBHOOK] ❌ Validation failed: Missing AccessToken');
+      console.error('[WEBHOOK] Validation failed: Missing AccessToken');
       return NextResponse.json(
         { error: 'Missing AccessToken in webhook payload' },
         { status: 400 }
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!createdPayload.Data.Enterprise || !createdPayload.Data.Enterprise.Id) {
-      console.error('[WEBHOOK] ❌ Validation failed: Missing Enterprise data');
+      console.error('[WEBHOOK] Validation failed: Missing Enterprise data');
       return NextResponse.json(
         { error: 'Missing Enterprise data in webhook payload' },
         { status: 400 }
@@ -199,20 +199,12 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    console.log('[WEBHOOK] ✅ Access token saved to database:', {
-      id: newToken.id,
-      action: newToken.action,
-      enterpriseId: newToken.enterpriseId,
-      enterpriseName: newToken.enterpriseName,
-      receivedAt: newToken.receivedAt.toISOString()
-    });
-
     // Find and update the corresponding EnvironmentLog
     // Match by property name (PRIMARY method) since Enterprise.Name in webhook equals our propertyName
     const enterpriseName = payload.Data?.Enterprise?.Name;
 
     if (!enterpriseName) {
-      console.error('[WEBHOOK] ❌ Missing Enterprise.Name in webhook payload');
+      console.error('[WEBHOOK] Missing Enterprise.Name in webhook payload');
       return NextResponse.json(
         { success: false, message: 'Missing enterprise name in webhook' },
         { status: 400 }
@@ -222,8 +214,6 @@ export async function POST(request: NextRequest) {
     const log = await findEnvironmentLogByPropertyName(enterpriseName);
 
     if (log) {
-      console.log('[WEBHOOK] ✅ Matched environment log:', log.id);
-
       // Backfill enterpriseId and update status to processing
       await updateUnifiedLog(log.id, {
         enterpriseId: newToken.enterpriseId,
@@ -231,7 +221,6 @@ export async function POST(request: NextRequest) {
       });
 
       // Start full environment setup in the background (fire-and-forget)
-      console.log('[WEBHOOK] Starting background setup for:', newToken.enterpriseId);
       (async () => {
         try {
           // Fetch timezone from configuration API
@@ -262,13 +251,6 @@ export async function POST(request: NextRequest) {
             { operationType: 'automatic', logId: log.id }
           );
 
-          console.log('[WEBHOOK-SETUP] ✅ Setup complete:', {
-            enterpriseId: newToken.enterpriseId,
-            customers: result.totalCustomers,
-            reservations: result.totalReservations,
-            duration: `${result.durationSeconds}s`
-          });
-
           // Send Zapier notification
           await sendZapierNotification('environment_ready', {
             status: 'success',
@@ -291,7 +273,7 @@ export async function POST(request: NextRequest) {
           await updateUnifiedLog(log.id, { status: 'completed', completedAt: new Date() });
 
         } catch (error) {
-          console.error('[WEBHOOK-SETUP] ❌ Setup failed:', {
+          console.error('[WEBHOOK-SETUP] Setup failed:', {
             enterpriseId: newToken.enterpriseId,
             error: (error as Error).message
           });
@@ -299,7 +281,7 @@ export async function POST(request: NextRequest) {
       })();
     } else {
       // No matching log found - this token doesn't match any pending environment
-      console.error('[WEBHOOK] ❌ No matching log found:', {
+      console.error('[WEBHOOK] No matching log found:', {
         propertyName: enterpriseName,
         enterpriseId: newToken.enterpriseId
       });
