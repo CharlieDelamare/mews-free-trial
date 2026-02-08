@@ -175,20 +175,20 @@ export async function closeBill(
   billId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const payload = {
+      ClientToken: MEWS_CLIENT_TOKEN,
+      AccessToken: accessToken,
+      Client: 'Mews Sandbox Manager',
+      BillId: billId,
+      Type: 'Receipt'
+    };
+
+    console.log('[BILL-SERVICE] Closing bill with payload:', JSON.stringify(payload, null, 2));
+
     const response = await fetch(`${MEWS_API_URL}/api/connector/v1/bills/close`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager',
-        BillId: billId,
-        Type: 'Receipt',
-        Options: {
-          DisplayCustomer: { Value: true },
-          DisplayTaxation: { Value: true }
-        }
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
