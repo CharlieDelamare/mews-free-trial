@@ -41,7 +41,7 @@ export default function SandboxFillerPage() {
     selectedEnvironment: '',
     startDate: getTodayDate(),
     endDate: getTodayPlusThreeDays(),
-    reservationCount: 20
+    reservationCount: 20 as number | string
   });
   const [sandboxFillerLoading, setDemoFillerLoading] = useState(false);
 
@@ -89,7 +89,7 @@ export default function SandboxFillerPage() {
           enterpriseId: sandboxFillerData.selectedEnvironment,
           startDate: sandboxFillerData.startDate,
           endDate: sandboxFillerData.endDate,
-          reservationCount: sandboxFillerData.reservationCount
+          reservationCount: Number(sandboxFillerData.reservationCount) || 20
         })
       });
 
@@ -191,7 +191,7 @@ export default function SandboxFillerPage() {
               type="number"
               name="reservationCount"
               value={sandboxFillerData.reservationCount}
-              onChange={(e) => setDemoFillerData(prev => ({ ...prev, reservationCount: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => setDemoFillerData(prev => ({ ...prev, reservationCount: e.target.value === '' ? '' : parseInt(e.target.value) || 0 }))}
               required
               min="1"
               max="500"
