@@ -4,9 +4,22 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { languageOptions, countryOptions } from '@/lib/codes';
+import { useToast } from '@/components/Toast';
+
+const DEFAULT_ADMIN_EMAILS = ['charlie.delamare@gmail.com', 'charlie.delamare@mews.com'];
+
+function isAdminEmail(email: string): boolean {
+  if (!email) return false;
+  const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
+  const adminEmails = envEmails
+    ? envEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+    : DEFAULT_ADMIN_EMAILS;
+  return adminEmails.includes(email.trim().toLowerCase());
+}
 
 export default function SandboxCreationPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     requestorEmail: '',
     firstName: '',
@@ -21,9 +34,8 @@ export default function SandboxCreationPage() {
   });
   const [loading, setLoading] = useState(false);
 
-  // Check if requestor is Charlie (gets auto-populated test data and special treatment for duration and Salesforce ID)
-  const isCharlie = formData.requestorEmail === 'charlie.delamare@gmail.com' ||
-                    formData.requestorEmail === 'charlie.delamare@mews.com';
+  // Check if requestor is an admin (gets auto-populated test data and special treatment for duration and Salesforce ID)
+  const isAdmin = isAdminEmail(formData.requestorEmail);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -35,13 +47,15 @@ export default function SandboxCreationPage() {
         [name]: processedValue
       };
 
-      // Auto-set duration to 1 day and populate test data for Charlie's emails
-      if (name === 'requestorEmail' &&
-          (value === 'charlie.delamare@gmail.com' || value === 'charlie.delamare@mews.com')) {
+      // Auto-set duration to 1 day and populate test data for admin emails
+      if (name === 'requestorEmail' && isAdminEmail(value)) {
         updated.durationDays = 1;
-        updated.firstName = 'Charlie';
-        updated.lastName = 'Delamare';
-        updated.customerEmail = 'charlie@charlie.com';
+        // Auto-populate test data from email address
+        const emailName = value.split('@')[0];
+        const parts = emailName.split('.');
+        updated.firstName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : 'Admin';
+        updated.lastName = parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : 'User';
+        updated.customerEmail = `${parts[0] || 'admin'}@test.com`;
       }
 
       return updated;
@@ -52,9 +66,9 @@ export default function SandboxCreationPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Only validate Salesforce Account ID for non-Charlie users
-    if (!isCharlie && !formData.salesforceAccountId.startsWith('001')) {
-      alert('The Salesforce Account ID is incorrect');
+    // Only validate Salesforce Account ID for non-admin users
+    if (!isAdmin && !formData.salesforceAccountId.startsWith('001')) {
+      showToast('The Salesforce Account ID is incorrect', 'error');
       setLoading(false);
       return;
     }
@@ -102,7 +116,7 @@ export default function SandboxCreationPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Customer First Name *
-                  {isCharlie && <span className="text-xs text-gray-500 ml-2">(Auto-populated for testing)</span>}
+                  {isAdmin && <span className="text-xs text-gray-500 ml-2">(Auto-populated for admin)</span>}
                 </label>
                 <input
                   type="text"
@@ -116,7 +130,7 @@ export default function SandboxCreationPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Customer Last Name *
-                  {isCharlie && <span className="text-xs text-gray-500 ml-2">(Auto-populated for testing)</span>}
+                  {isAdmin && <span className="text-xs text-gray-500 ml-2">(Auto-populated for admin)</span>}
                 </label>
                 <input
                   type="text"
@@ -133,7 +147,7 @@ export default function SandboxCreationPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Customer Email (for login) *
-                {isCharlie && <span className="text-xs text-gray-500 ml-2">(Auto-populated for testing)</span>}
+                {isAdmin && <span className="text-xs text-gray-500 ml-2">(Auto-populated for admin)</span>}
               </label>
               <input
                 type="email"
@@ -214,14 +228,14 @@ export default function SandboxCreationPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Sandbox Duration *
-                {isCharlie && <span className="text-xs text-gray-500 ml-2">(Fixed at 1 day for internal use)</span>}
+                {isAdmin && <span className="text-xs text-gray-500 ml-2">(Fixed at 1 day for admin)</span>}
               </label>
               <select
                 name="durationDays"
                 value={formData.durationDays}
                 onChange={handleChange}
                 required
-                disabled={isCharlie}
+                disabled={isAdmin}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value={7}>7 days</option>
@@ -233,14 +247,14 @@ export default function SandboxCreationPage() {
             {/* Salesforce Account ID */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Salesforce Account ID {!isCharlie && '*'}
+                Salesforce Account ID {!isAdmin && '*'}
               </label>
               <input
                 type="text"
                 name="salesforceAccountId"
                 value={formData.salesforceAccountId}
                 onChange={handleChange}
-                required={!isCharlie}
+                required={!isAdmin}
                 placeholder="001..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />

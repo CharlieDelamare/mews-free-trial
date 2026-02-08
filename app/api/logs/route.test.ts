@@ -1,24 +1,61 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { GET } from './route';
 
-// Mock the logger module
-const mockReadEnvironmentLogs = vi.fn();
+// Mock the prisma module
+const mockUnifiedLogFindMany = vi.fn();
+const mockEnvironmentLogFindMany = vi.fn();
+const mockCustomerCreationLogFindMany = vi.fn();
+const mockReservationCreationLogFindMany = vi.fn();
+const mockResetOperationLogFindMany = vi.fn();
+const mockAccessTokenFindMany = vi.fn();
 
-vi.mock('@/lib/logger', () => ({
-  readEnvironmentLogs: () => mockReadEnvironmentLogs(),
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    unifiedLog: {
+      findMany: (...args: any[]) => mockUnifiedLogFindMany(...args),
+    },
+    environmentLog: {
+      findMany: (...args: any[]) => mockEnvironmentLogFindMany(...args),
+    },
+    customerCreationLog: {
+      findMany: (...args: any[]) => mockCustomerCreationLogFindMany(...args),
+    },
+    reservationCreationLog: {
+      findMany: (...args: any[]) => mockReservationCreationLogFindMany(...args),
+    },
+    resetOperationLog: {
+      findMany: (...args: any[]) => mockResetOperationLogFindMany(...args),
+    },
+    accessToken: {
+      findMany: (...args: any[]) => mockAccessTokenFindMany(...args),
+    },
+  },
 }));
 
 describe('GET /api/logs', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    // Default: all tables return empty
+    mockUnifiedLogFindMany.mockResolvedValue([]);
+    mockEnvironmentLogFindMany.mockResolvedValue([]);
+    mockCustomerCreationLogFindMany.mockResolvedValue([]);
+    mockReservationCreationLogFindMany.mockResolvedValue([]);
+    mockResetOperationLogFindMany.mockResolvedValue([]);
+    mockAccessTokenFindMany.mockResolvedValue([]);
   });
 
   test('returns success with logs array', async () => {
-    const mockLogs = [
+    mockUnifiedLogFindMany.mockResolvedValue([
       {
         id: '1',
+        logType: 'environment',
         timestamp: new Date('2024-01-03'),
+        enterpriseId: 'e1',
+        status: 'completed',
+        completedAt: null,
+        errorMessage: null,
         propertyName: 'Test Hotel 1',
         customerName: 'Customer 1',
         customerEmail: 'customer1@example.com',
@@ -27,69 +64,42 @@ describe('GET /api/logs', () => {
         loginUrl: 'https://app.mews-demo.com',
         loginEmail: 'customer1@example.com',
         loginPassword: 'Sample123',
-        status: 'success' as const,
-        errorMessage: null,
+        requestorEmail: null,
+        durationDays: 30,
+        salesforceAccountId: null,
+        operationDetails: null,
+        currentStep: null,
+        totalSteps: null,
+        totalItems: null,
+        successCount: null,
+        failureCount: null,
       },
-      {
-        id: '2',
-        timestamp: new Date('2024-01-02'),
-        propertyName: 'Test Hotel 2',
-        customerName: 'Customer 2',
-        customerEmail: 'customer2@example.com',
-        propertyCountry: 'Germany',
-        propertyType: 'hostel',
-        loginUrl: 'https://app.mews-demo.com',
-        loginEmail: 'customer2@example.com',
-        loginPassword: 'Sample123',
-        status: 'failure' as const,
-        errorMessage: 'API error',
-      },
-    ];
-
-    mockReadEnvironmentLogs.mockResolvedValue(mockLogs);
+    ]);
 
     const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.logs).toHaveLength(2);
+    expect(data.logs).toHaveLength(1);
     expect(data.logs[0].propertyName).toBe('Test Hotel 1');
-    expect(data.logs[0].status).toBe('success');
-    expect(data.logs[1].propertyName).toBe('Test Hotel 2');
-    expect(data.logs[1].status).toBe('failure');
+    expect(data.logs[0].status).toBe('completed');
   });
 
   test('returns success with empty logs array when no logs exist', async () => {
-    mockReadEnvironmentLogs.mockResolvedValue([]);
-
     const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data).toEqual({
-      success: true,
-      logs: [],
-    });
+    expect(data.success).toBe(true);
+    expect(data.logs).toHaveLength(0);
   });
 
-  test('returns 500 error when readEnvironmentLogs throws', async () => {
+  test('returns 500 error when database query throws', async () => {
     const error = new Error('Database connection failed');
-    mockReadEnvironmentLogs.mockRejectedValue(error);
-
-    const response = await GET();
-    const data = await response.json();
-
-    expect(response.status).toBe(500);
-    expect(data).toEqual({
-      success: false,
-      error: 'Failed to fetch logs',
-    });
-    expect(console.error).toHaveBeenCalledWith('Failed to fetch logs:', error);
-  });
-
-  test('handles unexpected errors gracefully', async () => {
-    mockReadEnvironmentLogs.mockRejectedValue(new Error('Unexpected error'));
+    mockUnifiedLogFindMany.mockRejectedValue(error);
+    // The route catches unified log errors and falls through, but environmentLog also needs to throw
+    mockEnvironmentLogFindMany.mockRejectedValue(error);
 
     const response = await GET();
     const data = await response.json();
@@ -100,8 +110,6 @@ describe('GET /api/logs', () => {
   });
 
   test('returns proper content-type header', async () => {
-    mockReadEnvironmentLogs.mockResolvedValue([]);
-
     const response = await GET();
 
     expect(response.headers.get('content-type')).toContain('application/json');

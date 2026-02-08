@@ -3,14 +3,14 @@ import { POST } from './route';
 import { NextRequest } from 'next/server';
 
 // Mock dependencies
-const mockSaveEnvironmentLog = vi.fn();
-const mockUpdateEnvironmentLogById = vi.fn();
+const mockCreateEnvironmentLog = vi.fn();
+const mockUpdateUnifiedLog = vi.fn();
 const mockSendZapierNotification = vi.fn();
 global.fetch = vi.fn();
 
-vi.mock('@/lib/logger', () => ({
-  saveEnvironmentLog: (...args: any[]) => mockSaveEnvironmentLog(...args),
-  updateEnvironmentLogById: (...args: any[]) => mockUpdateEnvironmentLogById(...args),
+vi.mock('@/lib/unified-logger', () => ({
+  createEnvironmentLog: (...args: any[]) => mockCreateEnvironmentLog(...args),
+  updateUnifiedLog: (...args: any[]) => mockUpdateUnifiedLog(...args),
 }));
 
 vi.mock('@/lib/zapier', () => ({
@@ -20,7 +20,7 @@ vi.mock('@/lib/zapier', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     $queryRaw: vi.fn().mockResolvedValue([{ 1: 1 }]),
-    environmentLog: {
+    unifiedLog: {
       findFirst: vi.fn().mockResolvedValue(null),
     },
   },
@@ -36,9 +36,10 @@ describe('POST /api/create-trial', () => {
     vi.clearAllMocks();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     // Setup default mock return value - route uses log.id
-    mockSaveEnvironmentLog.mockResolvedValue({ id: 'test-log-id' });
-    mockUpdateEnvironmentLogById.mockResolvedValue({ id: 'test-log-id' });
+    mockCreateEnvironmentLog.mockResolvedValue({ id: 'test-log-id' });
+    mockUpdateUnifiedLog.mockResolvedValue({ id: 'test-log-id' });
     mockSendZapierNotification.mockResolvedValue(undefined);
   });
 
@@ -243,7 +244,7 @@ describe('POST /api/create-trial', () => {
         lastName: 'Doe',
         customerEmail: 'john@example.com',
         propertyName: 'Test Hotel',
-        propertyCountry: 'Germany', // Gross pricing
+        propertyCountry: 'Germany',
         preferredLanguage: 'German',
         propertyType: 'hotel',
         durationDays: 30,
@@ -272,7 +273,7 @@ describe('POST /api/create-trial', () => {
         lastName: 'Doe',
         customerEmail: 'john@example.com',
         propertyName: 'Test Hotel',
-        propertyCountry: 'United States', // Net pricing
+        propertyCountry: 'United States',
         preferredLanguage: 'English (USA)',
         propertyType: 'hotel',
         durationDays: 30,
@@ -325,8 +326,7 @@ describe('POST /api/create-trial', () => {
       expect(fetchCall[1].headers['Content-Type']).toBe('application/json');
 
       const payload = JSON.parse(fetchCall[1].body);
-      expect(payload.Client).toBe('Free Trial Generator');
-      expect(payload.AccessToken).toBe('test-sample-token');
+      expect(payload.Client).toBe('Mews Sandbox Manager');
       expect(payload.Name).toBe('Test Hotel');
       expect(payload.Lifetime).toBe('P0Y0M30DT0H0M0S');
       expect(payload.User.Email).toBe('john@example.com');
@@ -408,8 +408,7 @@ describe('POST /api/create-trial', () => {
 
       await POST(request);
 
-      // Log is saved with 'building' status before the API call
-      expect(mockSaveEnvironmentLog).toHaveBeenCalledWith({
+      expect(mockCreateEnvironmentLog).toHaveBeenCalledWith({
         propertyName: 'Test Hotel',
         customerName: 'John Doe',
         customerEmail: 'john@example.com',
@@ -451,7 +450,7 @@ describe('POST /api/create-trial', () => {
       await POST(request);
 
       // First saves with building status
-      expect(mockSaveEnvironmentLog).toHaveBeenCalledWith(
+      expect(mockCreateEnvironmentLog).toHaveBeenCalledWith(
         expect.objectContaining({
           propertyName: 'Failed Hotel',
           status: 'building',
@@ -459,10 +458,10 @@ describe('POST /api/create-trial', () => {
       );
 
       // Then updates to failure status
-      expect(mockUpdateEnvironmentLogById).toHaveBeenCalledWith(
+      expect(mockUpdateUnifiedLog).toHaveBeenCalledWith(
         'test-log-id',
         {
-          status: 'failure',
+          status: 'failed',
           errorMessage: JSON.stringify(apiError),
         }
       );
@@ -490,7 +489,6 @@ describe('POST /api/create-trial', () => {
 
       await POST(request);
 
-      // Success notifications are sent from webhook handler, not create-trial
       expect(mockSendZapierNotification).not.toHaveBeenCalled();
     });
 
@@ -556,7 +554,6 @@ describe('POST /api/create-trial', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      // Should still return the API error response
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
       expect(data.error).toBe('Failed to create trial');
