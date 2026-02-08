@@ -2,7 +2,7 @@
  * Centralized configuration for Mews API access
  *
  * Reads MEWS_CLIENT_TOKEN from environment variables.
- * Throws at startup if the token is missing to fail fast.
+ * Falls back to the hardcoded demo token if not set.
  */
 
 const FALLBACK_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
