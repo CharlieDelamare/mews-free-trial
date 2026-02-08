@@ -9,6 +9,7 @@
 import { prisma } from './prisma';
 import { getSampleCustomers, SampleCustomer } from './sample-customers';
 import { updateEnvironmentCustomerStats } from './unified-logger';
+import { log, logError } from './force-log';
 import { fetchWithRateLimit } from './mews-rate-limiter';
 
 // Hardcoded configuration for Mews demo environment
@@ -78,7 +79,10 @@ export async function createSampleCustomers(
   // Get sample customers (defaults to 300)
   const customers = getSampleCustomers();
 
-  console.log(`[CUSTOMERS] Starting creation of ${customers.length} customers for:`, enterpriseId);
+  log.customers('Starting customer creation', {
+    count: customers.length,
+    enterpriseId
+  });
 
   // Create log entry with status 'processing' (for backwards compatibility)
   const log = await prisma.customerCreationLog.create({
@@ -119,9 +123,10 @@ export async function createSampleCustomers(
     const duration = Date.now() - startTime;
     const durationSeconds = (duration / 1000).toFixed(2);
 
-    console.log(`[CUSTOMERS] ✅ Complete:`, {
+    log.customers('Customer creation complete', {
       success: successCount,
       failed: failureCount,
+      total: customers.length,
       duration: `${durationSeconds}s`
     });
 
@@ -180,7 +185,7 @@ export async function createSampleCustomers(
     };
 
   } catch (error) {
-    console.error('[CUSTOMERS] ❌ Fatal error during customer creation:', error);
+    logError.customers('Fatal error during customer creation', error);
 
     // Update log with failure status (for backwards compatibility)
     await prisma.customerCreationLog.update({
