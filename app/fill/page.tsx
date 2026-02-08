@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -19,6 +19,7 @@ export default function SandboxFillerPage() {
   const router = useRouter();
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
+  const submittingRef = useRef(false);
 
   // Helper function to format date as YYYY-MM-DD
   const formatDate = (date: Date): string => {
@@ -70,6 +71,14 @@ export default function SandboxFillerPage() {
 
   const handleSandboxFillerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent duplicate submissions
+    if (submittingRef.current) {
+      console.log('[SANDBOX-FILLER] Duplicate submission prevented');
+      return;
+    }
+
+    submittingRef.current = true;
     setDemoFillerLoading(true);
 
     try {
@@ -89,6 +98,9 @@ export default function SandboxFillerPage() {
     } catch (error) {
       // Still redirect to logs even on network error
       router.push('/logs');
+    } finally {
+      // Reset the ref in case user navigates back
+      submittingRef.current = false;
     }
   };
 
