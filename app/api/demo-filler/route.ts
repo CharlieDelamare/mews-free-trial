@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { resolveAccessToken } from '@/lib/reservations';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { createDemoFillerLog, updateUnifiedLog } from '@/lib/unified-logger';
+import { log, logError } from '@/lib/force-log';
 
 interface DemoFillerRequest {
   enterpriseId: string;
@@ -41,6 +42,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
   try {
     const body: DemoFillerRequest = await request.json();
     const { enterpriseId, startDate, endDate, reservationCount } = body;
+
+    // Log API endpoint entry
+    log.demoFiller('API endpoint called', {
+      enterpriseId,
+      startDate,
+      endDate,
+      reservationCount
+    });
 
     // Validate required fields
     if (!enterpriseId) {
@@ -137,7 +146,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
     }
 
     // Resolve access token
-    console.log('[DEMO-FILLER] Resolving access token...');
+    log.demoFiller('Resolving access token', { enterpriseId });
     const { token, error: tokenError } = await resolveAccessToken(enterpriseId);
 
     if (tokenError || !token) {
@@ -152,7 +161,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
     }
 
     // Get access token record from database
-    console.log('[DEMO-FILLER] Looking up access token record...');
+    log.demoFiller('Looking up access token record', {});
     const tokenRecord = await prisma.accessToken.findFirst({
       where: { accessToken: token, isEnabled: true },
       orderBy: { receivedAt: 'desc' }
@@ -187,15 +196,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
     }
 
     // Trigger reservation creation (fire-and-forget)
-    console.log(
-      `[DEMO-FILLER] 🎯 Starting demo filler for enterprise: ${tokenRecord.enterpriseId}`,
-      {
-        startDate,
-        endDate,
-        reservationCount,
-        days: daysDiff
-      }
-    );
+    log.demoFiller('Starting fire-and-forget operation', {
+      enterpriseId: tokenRecord.enterpriseId,
+      startDate,
+      endDate,
+      reservationCount,
+      days: daysDiff
+    });
 
     // Run reservation creation in background without awaiting
     // skipStateTransitions keeps all reservations in Confirmed state
@@ -206,15 +213,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
       operationType: 'demo_filler'
     })
       .then(result => {
-        console.log(
-          `[DEMO-FILLER] ✅ Completed for ${tokenRecord.enterpriseId}:`,
-          {
-            totalReservations: result.totalReservations,
-            successCount: result.successCount,
-            failureCount: result.failureCount,
-            durationSeconds: result.durationSeconds
-          }
-        );
+        log.demoFiller('Operation completed', {
+          enterpriseId: tokenRecord.enterpriseId,
+          totalReservations: result.totalReservations,
+          successCount: result.successCount,
+          failureCount: result.failureCount,
+          durationSeconds: result.durationSeconds
+        });
 
         // Update log entry to completed
         if (logId) {
@@ -228,10 +233,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
         }
       })
       .catch(error => {
-        console.error(
-          `[DEMO-FILLER] ❌ Failed for ${tokenRecord.enterpriseId}:`,
-          error
-        );
+        logError.demoFiller(`Failed for ${tokenRecord.enterpriseId}`, error);
 
         // Update log entry to failure
         if (logId) {

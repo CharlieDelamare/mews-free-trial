@@ -12,6 +12,7 @@ import { updateEnvironmentReservationStats, createDemoFillerLog, updateUnifiedLo
 import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
 import { fetchWithRateLimit } from './mews-rate-limiter';
+import { log, logError } from './force-log';
 
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
@@ -76,10 +77,14 @@ export async function createReservationsForEnvironment(
   const logId = options?.logId;
   const operationType = options?.operationType || 'automatic';
 
-  console.log(`[RESERVATIONS] Starting reservation creation for enterprise ${enterpriseId}`);
+  log.reservations('Starting reservation creation', {
+    enterpriseId,
+    accessTokenId,
+    options
+  });
 
   // Create log entry (for backwards compatibility)
-  const log = await prisma.reservationCreationLog.create({
+  const reservationLog = await prisma.reservationCreationLog.create({
     data: {
       enterpriseId,
       accessTokenId,
@@ -145,7 +150,7 @@ export async function createReservationsForEnvironment(
 
     // Update log with total
     await prisma.reservationCreationLog.update({
-      where: { id: log.id },
+      where: { id: reservationLog.id },
       data: { totalReservations }
     });
 
@@ -162,7 +167,10 @@ export async function createReservationsForEnvironment(
       throw new Error('Failed to create any customers. Cannot proceed with reservation creation.');
     }
 
-    console.log(`[RESERVATIONS] ✅ Created ${customerIds.length} customers (requested ${totalReservations})`);
+    log.reservations('Created customers', {
+      count: customerIds.length,
+      requested: totalReservations
+    });
     if (customerIds.length < totalReservations) {
       console.log(`[RESERVATIONS] ⚠️ Warning: Only ${customerIds.length} customers created, but ${totalReservations} reservations requested. Customers will be reused.`);
     }
@@ -214,7 +222,7 @@ export async function createReservationsForEnvironment(
     const duration = Date.now() - startTime;
     const durationSeconds = (duration / 1000).toFixed(2);
 
-    console.log(`[RESERVATIONS] ✅ Complete:`, {
+    log.reservations('Reservation creation complete', {
       created: createdReservations.length,
       failed: failures.length,
       customers: customerIds.length,
@@ -222,7 +230,7 @@ export async function createReservationsForEnvironment(
     });
 
     await prisma.reservationCreationLog.update({
-      where: { id: log.id },
+      where: { id: reservationLog.id },
       data: {
         successCount: createdReservations.length,
         failureCount: failures.length,
@@ -275,7 +283,7 @@ export async function createReservationsForEnvironment(
     console.error(`[RESERVATIONS] ❌ Failed:`, error);
 
     await prisma.reservationCreationLog.update({
-      where: { id: log.id },
+      where: { id: reservationLog.id },
       data: {
         status: 'failed',
         errorSummary: (error as Error).message,
@@ -460,7 +468,7 @@ async function createCustomersOnDemand(
   const customerIds: string[] = [];
 
   // Create customer creation log
-  const log = await prisma.customerCreationLog.create({
+  const inlineCustomerLog = await prisma.customerCreationLog.create({
     data: {
       enterpriseId,
       accessTokenId,
@@ -473,7 +481,10 @@ async function createCustomersOnDemand(
   });
 
   try {
-    console.log(`[CUSTOMERS] Starting creation of ${count} customers...`);
+    log.customers('Starting customer creation (inline)', {
+    count,
+    source: 'reservation-service'
+  });
 
     // Process in batches
     for (let i = 0; i < customers.length; i += CUSTOMER_CONCURRENCY) {
@@ -498,7 +509,7 @@ async function createCustomersOnDemand(
 
     // Update customer log
     await prisma.customerCreationLog.update({
-      where: { id: log.id },
+      where: { id: inlineCustomerLog.id },
       data: {
         successCount: customerIds.length,
         failureCount: count - customerIds.length,
@@ -511,7 +522,7 @@ async function createCustomersOnDemand(
 
   } catch (error) {
     await prisma.customerCreationLog.update({
-      where: { id: log.id },
+      where: { id: inlineCustomerLog.id },
       data: {
         status: 'failed',
         errorSummary: (error as Error).message,
