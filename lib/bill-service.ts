@@ -4,6 +4,7 @@
  */
 
 import type { Bill, OrderItem, BillCloseResult, CloseBillsResult } from '@/types/reset';
+import { fetchTimezoneFromConfiguration } from './timezone-service';
 
 // Hardcoded Mews client token for demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -118,36 +119,33 @@ export function calculateBillTotal(orderItems: OrderItem[]): {
 }
 
 /**
- * Add external payment to a bill
+ * Add external payment to an account
  */
 export async function addExternalPayment(
   accessToken: string,
-  billId: string,
   accountId: string,
   amount: number,
   currency: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const payload = {
+      ClientToken: MEWS_CLIENT_TOKEN,
+      AccessToken: accessToken,
+      Client: 'Mews Sandbox Manager',
+      AccountId: accountId,
+      Amount: {
+        Currency: currency,
+        GrossValue: amount
+      },
+      Type: 'Cash'
+    };
+
+    console.log('[BILL-SERVICE] Adding payment with payload:', JSON.stringify(payload, null, 2));
+
     const response = await fetch(`${MEWS_API_URL}/api/connector/v1/payments/addExternal`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager',
-        Payments: [
-          {
-            AccountId: accountId,
-            BillId: billId,
-            Amount: {
-              Currency: currency,
-              GrossValue: amount
-            },
-            Type: 'Cash',
-            Notes: 'Sandbox reset - auto payment'
-          }
-        ]
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.ok) {
@@ -212,17 +210,34 @@ export async function closeBill(
  * Main orchestrator: Close all open bills for an environment
  *
  * Process:
- * 1. Fetch all open bills
- * 2. For each bill:
+ * 1. Fetch configuration to get currency
+ * 2. Fetch all open bills
+ * 3. For each bill:
  *    a. Get order items
  *    b. Calculate total
- *    c. If total != 0: Post payment (positive or negative)
+ *    c. If total != 0: Post payment to account (positive or negative)
  *    d. Close bill (always, even if total = 0)
  */
 export async function closeBillsForEnvironment(
   accessToken: string
 ): Promise<CloseBillsResult> {
   console.log('[BILL-SERVICE] Starting bill closure process');
+
+  // Fetch configuration to get currency
+  const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken);
+  const currency = config.currency;
+
+  if (!currency) {
+    console.error('[BILL-SERVICE] Failed to get currency from configuration');
+    return {
+      totalBills: 0,
+      successCount: 0,
+      failureCount: 0,
+      details: []
+    };
+  }
+
+  console.log(`[BILL-SERVICE] Using currency: ${currency}`);
 
   // Fetch all open bills
   const { bills, error: fetchError } = await getBills(accessToken, ['Open']);
@@ -262,25 +277,17 @@ export async function closeBillsForEnvironment(
         continue;
       }
 
-      // Step 2: Calculate total and extract currency
-      const { total, currency } = calculateBillTotal(items);
+      // Step 2: Calculate total
+      const { total } = calculateBillTotal(items);
       result.totalAmount = total;
-      result.currency = currency || undefined;
+      result.currency = currency;
 
-      console.log(`[BILL-SERVICE] Bill ${bill.Id}: Total ${total} ${currency || 'N/A'}`);
+      console.log(`[BILL-SERVICE] Bill ${bill.Id}: Total ${total} ${currency}`);
 
       // Step 3: Post payment if needed (total != 0)
       if (total !== 0) {
-        if (!currency) {
-          result.error = 'Cannot post payment: no currency found in order items';
-          results.push(result);
-          failureCount++;
-          continue;
-        }
-
         const { success: paymentSuccess, error: paymentError } = await addExternalPayment(
           accessToken,
-          bill.Id,
           bill.AccountId,
           total,
           currency
@@ -294,7 +301,7 @@ export async function closeBillsForEnvironment(
         }
 
         result.paymentPosted = true;
-        console.log(`[BILL-SERVICE] Posted payment for bill ${bill.Id}: ${total} ${currency}`);
+        console.log(`[BILL-SERVICE] Posted payment for account ${bill.AccountId}: ${total} ${currency}`);
       } else {
         console.log(`[BILL-SERVICE] Skipping payment for bill ${bill.Id} (zero balance)`);
         result.paymentPosted = false;
