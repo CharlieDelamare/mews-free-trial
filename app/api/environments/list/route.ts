@@ -20,8 +20,9 @@ export async function GET() {
       orderBy: { receivedAt: 'desc' }
     });
 
-    // Fetch all environment logs
-    const environmentLogs = await prisma.environmentLog.findMany({
+    // Fetch all environment logs from UnifiedLog table
+    const environmentLogs = await prisma.unifiedLog.findMany({
+      where: { logType: 'environment' },
       orderBy: { timestamp: 'desc' }
     });
 
