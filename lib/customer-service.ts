@@ -117,19 +117,6 @@ export async function createSampleCustomers(
       duration: `${durationSeconds}s`
     });
 
-    // Summary logging for Classifications
-    const customersWithClassifications = results.filter(r =>
-      customers.find(c => c.Email === r.email)?.Classifications
-    );
-    const classificationsSucceeded = customersWithClassifications.filter(r => r.success).length;
-
-    console.log(`[CUSTOMERS] 📊 Classifications Summary:`, {
-      totalWithClassifications: customersWithClassifications.length,
-      succeeded: classificationsSucceeded,
-      failed: customersWithClassifications.length - classificationsSucceeded,
-      sampleEmails: customersWithClassifications.slice(0, 5).map(r => r.email)
-    });
-
     // Update log with final results (for backwards compatibility)
     const updatedLog = await prisma.customerCreationLog.update({
       where: { id: customerLog.id },
@@ -299,11 +286,6 @@ async function createSingleCustomer(
     const data = await response.json();
 
     if (response.ok && data.Id) {
-      // Log request and response together
-      log.customers(`Created customer ${customer.Email}`, {
-        request: requestBody,
-        response: data
-      });
       return {
         email: customer.Email,
         success: true,
