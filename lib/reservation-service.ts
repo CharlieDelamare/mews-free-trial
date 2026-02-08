@@ -169,7 +169,12 @@ export async function createReservationsForEnvironment(
       ? Math.ceil((options.dateRange.end.getTime() - options.dateRange.start.getTime()) / (1000 * 60 * 60 * 24))
       : envData.durationDays;
 
-    const categoryTargets = calculateCategoryTargets(filteredCategories, effectiveDuration, options?.reservationCount);
+    const categoryTargets = calculateCategoryTargets(
+      filteredCategories,
+      effectiveDuration,
+      options?.reservationCount,
+      !!options?.dateRange
+    );
     const totalReservations = categoryTargets.reduce((sum, ct) => sum + ct.targetReservations, 0);
 
     console.log(`[RESERVATIONS] Per-category targets ${options?.reservationCount ? `for ${options.reservationCount} reservations` : 'for 80% occupancy'}:`);
@@ -449,11 +454,18 @@ function filterResourceCategories(
 
 /**
  * Calculate per-category reservation targets for 80% occupancy or custom count
+ *
+ * @param categories - Resource categories to calculate for
+ * @param durationDays - Number of days to calculate across
+ * @param customReservationCount - Optional: Use exact count instead of 80% occupancy
+ * @param hasCustomDateRange - Optional: If true, use exact durationDays without adding past days (for reset/fill flows)
+ * @returns Array of category targets with reservation counts
  */
 function calculateCategoryTargets(
   categories: MewsData['resourceCategories'],
   durationDays: number,
-  customReservationCount?: number
+  customReservationCount?: number,
+  hasCustomDateRange?: boolean
 ): CategoryTarget[] {
   // If custom count provided, distribute proportionally using Largest Remainder Method
   // This ensures the sum exactly equals the requested count (no over-allocation)
@@ -498,7 +510,9 @@ function calculateCategoryTargets(
   }
 
   // Otherwise, use existing 80% occupancy calculation
-  const totalDays = durationDays + 2; // Include 2 past days
+  // For automatic flow: add 2 past days for history (e.g., 30 → 32 days)
+  // For reset/fill with dateRange: use exact duration (e.g., 7 → 7 days)
+  const totalDays = hasCustomDateRange ? durationDays : durationDays + 2;
   const averageStayLength = 2.1; // From stay distribution: 50%*1 + 30%*2 + 15%*3 + 5%*4 = 1.75
   const targetOccupancy = 0.8; // 80% occupancy
 
