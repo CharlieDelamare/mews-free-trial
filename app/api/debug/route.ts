@@ -17,7 +17,17 @@ export async function GET(request: NextRequest) {
     console.log('[DEBUG] Debug endpoint called');
     console.log('[DEBUG] Parameters:', { enterpriseId, limit });
 
-    // Get recent environment logs
+    // Get recent environment logs from UnifiedLog
+    const unifiedEnvironmentLogs = await prisma.unifiedLog.findMany({
+      where: {
+        logType: 'environment',
+        ...(enterpriseId ? { enterpriseId } : {})
+      },
+      orderBy: { timestamp: 'desc' },
+      take: limit
+    });
+
+    // Get recent environment logs from legacy EnvironmentLog
     const environmentLogs = await prisma.environmentLog.findMany({
       where: enterpriseId ? { enterpriseId } : undefined,
       orderBy: { timestamp: 'desc' },
@@ -82,7 +92,8 @@ export async function GET(request: NextRequest) {
     }
 
     const summary = {
-      totalEnvironmentLogs: await prisma.environmentLog.count(),
+      totalUnifiedLogs: await prisma.unifiedLog.count({ where: { logType: 'environment' } }),
+      totalLegacyEnvironmentLogs: await prisma.environmentLog.count(),
       totalAccessTokens: await prisma.accessToken.count(),
       logsWithoutEnterpriseId,
       logStatusCounts: logStatusCounts.reduce((acc, item) => {
@@ -95,7 +106,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       summary,
-      recentEnvironmentLogs: environmentLogs.map(log => ({
+      recentUnifiedEnvironmentLogs: unifiedEnvironmentLogs.map(log => ({
+        id: log.id,
+        propertyName: log.propertyName,
+        customerEmail: log.customerEmail,
+        enterpriseId: log.enterpriseId,
+        status: log.status,
+        timestamp: log.timestamp,
+        requestorEmail: log.requestorEmail
+      })),
+      recentLegacyEnvironmentLogs: environmentLogs.map(log => ({
         id: log.id,
         propertyName: log.propertyName,
         customerEmail: log.customerEmail,

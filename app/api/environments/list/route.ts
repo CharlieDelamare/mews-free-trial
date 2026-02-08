@@ -20,8 +20,9 @@ export async function GET() {
       orderBy: { receivedAt: 'desc' }
     });
 
-    // Fetch all environment logs
-    const environmentLogs = await prisma.environmentLog.findMany({
+    // Fetch all environment logs from UnifiedLog table
+    const environmentLogs = await prisma.unifiedLog.findMany({
+      where: { logType: 'environment' },
       orderBy: { timestamp: 'desc' }
     });
 
@@ -40,10 +41,10 @@ export async function GET() {
       return {
         enterpriseId: token.enterpriseId,
         enterpriseName: token.enterpriseName,
-        propertyName: log?.propertyName,
+        propertyName: log?.propertyName ?? undefined,
         type: log ? 'trial' : 'manual',
-        status: log?.status,
-        customerEmail: log?.customerEmail,
+        status: log?.status ?? undefined,
+        customerEmail: log?.customerEmail ?? undefined,
         createdAt: token.receivedAt,
         accessTokenId: token.id
       };
