@@ -29,10 +29,19 @@ export interface ReservationSetupStats {
   }>;
 }
 
+/** Statistics for task creation embedded in environment logs */
+export interface TaskSetupStats {
+  status: 'processing' | 'completed' | 'failed';
+  total: number;
+  success: number;
+  failed: number;
+}
+
 /** Combined setup statistics for environment logs */
 export interface EnvironmentSetupStats {
   customers?: CustomerSetupStats;
   reservations?: ReservationSetupStats;
+  tasks?: TaskSetupStats;
   [key: string]: any; // Index signature for Prisma Json compatibility
 }
 
