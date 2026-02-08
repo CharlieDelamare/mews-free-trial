@@ -56,6 +56,39 @@ interface CategoryTarget {
 }
 
 /**
+ * Fetch timezone from Mews configuration API
+ */
+async function fetchTimezoneFromMews(accessToken: string): Promise<string> {
+  console.log('[RESERVATIONS] Fetching timezone from Mews API...');
+
+  const response = await fetchWithRateLimit(
+    `${MEWS_API_URL}/api/connector/v1/configuration/get`,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: MEWS_CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Mews Sandbox Manager'
+      })
+    },
+    'configuration/get'
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch timezone from Mews API: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  const timezone = data.Enterprise?.TimeZoneIdentifier || 'UTC';
+
+  console.log(`[RESERVATIONS] ✅ Fetched timezone from Mews API: ${timezone}`);
+  return timezone;
+}
+
+/**
  * Main entry point: Create reservations for an environment
  */
 export async function createReservationsForEnvironment(
@@ -113,13 +146,17 @@ export async function createReservationsForEnvironment(
 
   try {
     // Fetch environment data
-    const envData = await fetchEnvironmentData(enterpriseId);
+    const envData = await fetchEnvironmentData(
+      enterpriseId,
+      accessToken,
+      !!options?.dateRange
+    );
 
     // Fetch Mews data
     const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
 
     // Step 3: Filter resource categories based on what was actually created
-    const filteredCategories = filterResourceCategories(mewsData.resourceCategories, envData);
+    const filteredCategories = filterResourceCategories(mewsData.resourceCategories);
     console.log(`[RESERVATIONS] Filtered resource categories: ${filteredCategories.length}`);
 
     if (filteredCategories.length === 0) {
@@ -312,8 +349,13 @@ export async function createReservationsForEnvironment(
 /**
  * Fetch environment data from database
  * Tries unified log first, falls back to old environment log for backwards compatibility
+ * If no environment log exists but hasDateRange is true, fetches timezone from Mews API
  */
-async function fetchEnvironmentData(enterpriseId: string): Promise<EnvironmentData> {
+async function fetchEnvironmentData(
+  enterpriseId: string,
+  accessToken: string,
+  hasDateRange: boolean
+): Promise<EnvironmentData> {
   // Try unified log first
   const unifiedLog = await prisma.unifiedLog.findFirst({
     where: { enterpriseId, logType: 'environment' },
@@ -343,32 +385,53 @@ async function fetchEnvironmentData(enterpriseId: string): Promise<EnvironmentDa
     orderBy: { timestamp: 'desc' }
   });
 
-  if (!envLog) {
-    throw new Error(`Environment log not found for enterprise: ${enterpriseId}`);
+  if (envLog) {
+    if (!envLog.timezone) {
+      throw new Error(`Timezone not set for enterprise: ${enterpriseId}`);
+    }
+
+    return {
+      roomCount: envLog.roomCount || 0,
+      dormCount: envLog.dormCount || 0,
+      apartmentCount: envLog.apartmentCount || 0,
+      bedCount: envLog.bedCount || 0,
+      durationDays: envLog.durationDays || 7,
+      timezone: envLog.timezone,
+      propertyType: envLog.propertyType as 'hotel' | 'hostel' | 'apartments',
+      createdAt: envLog.timestamp
+    };
   }
 
-  if (!envLog.timezone) {
-    throw new Error(`Timezone not set for enterprise: ${enterpriseId}`);
+  // No environment log found
+  if (hasDateRange) {
+    // When dateRange is provided, we only need timezone (duration/createdAt not used)
+    console.log(`[RESERVATIONS] No environment log found for enterprise ${enterpriseId}, but dateRange provided - fetching timezone from Mews API`);
+
+    const timezone = await fetchTimezoneFromMews(accessToken);
+
+    // Return minimal EnvironmentData with fetched timezone
+    // Other fields are dummy values since they won't be used when dateRange is provided
+    return {
+      roomCount: 0,
+      dormCount: 0,
+      apartmentCount: 0,
+      bedCount: 0,
+      durationDays: 30, // Dummy value - not used when dateRange provided
+      timezone,
+      propertyType: 'hotel', // Dummy value - only used for logging
+      createdAt: new Date() // Dummy value - not used when dateRange provided
+    };
   }
 
-  return {
-    roomCount: envLog.roomCount || 0,
-    dormCount: envLog.dormCount || 0,
-    apartmentCount: envLog.apartmentCount || 0,
-    bedCount: envLog.bedCount || 0,
-    durationDays: envLog.durationDays || 7,
-    timezone: envLog.timezone,
-    propertyType: envLog.propertyType as 'hotel' | 'hostel' | 'apartments',
-    createdAt: envLog.timestamp
-  };
+  // No environment log and no dateRange - this is an error
+  throw new Error(`Environment log not found for enterprise: ${enterpriseId}`);
 }
 
 /**
  * Filter resource categories - exclude Dorm type, allow all others
  */
 function filterResourceCategories(
-  categories: MewsData['resourceCategories'],
-  envData: EnvironmentData
+  categories: MewsData['resourceCategories']
 ): MewsData['resourceCategories'] {
   // Exclude Dorm type, allow all others
   const excludedTypes = ['Dorm'];
