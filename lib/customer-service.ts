@@ -285,11 +285,6 @@ async function createSingleCustomer(
       Notes: customer.Notes
     };
 
-    // Log ALL customer creation attempts with full payload
-    log.customers(`Sending customer ${customer.Email}`, {
-      payload: requestBody
-    });
-
     const response = await fetchWithRateLimit(
       `${MEWS_API_URL}/api/connector/v1/customers/add`,
       accessToken,
@@ -304,9 +299,9 @@ async function createSingleCustomer(
     const data = await response.json();
 
     if (response.ok && data.Id) {
-      // Success - Log ALL successful customer creations with full response
+      // Log request and response together
       log.customers(`Created customer ${customer.Email}`, {
-        customerId: data.Id,
+        request: requestBody,
         response: data
       });
       return {

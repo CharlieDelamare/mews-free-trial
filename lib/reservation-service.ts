@@ -662,11 +662,6 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
     Notes: customer.Notes
   };
 
-  // Log ALL customer creation attempts with full payload
-  log.customers(`Sending customer ${customer.Email} (reservation flow)`, {
-    payload: requestBody
-  });
-
   const response = await fetchWithRateLimit(
     `${MEWS_API_URL}/api/connector/v1/customers/add`,
     accessToken,
@@ -718,9 +713,9 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
     throw new Error(`Customer API returned invalid ID: ${data.Id}`);
   }
 
-  // Log ALL successful customer creations
+  // Log request and response together
   log.customers(`Created customer ${customer.Email} (reservation flow)`, {
-    customerId: data.Id,
+    request: requestBody,
     response: data
   });
 
