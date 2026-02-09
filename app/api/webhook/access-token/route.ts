@@ -316,22 +316,12 @@ export async function POST(request: NextRequest) {
       })();
     } else {
       // No matching log found - this token doesn't match any pending environment
-      console.error('[WEBHOOK] No matching log found:', {
+      // Store the token but don't send notifications
+      console.log('[WEBHOOK] No matching log found, token stored for future use:', {
         propertyName: enterpriseName,
-        enterpriseId: newToken.enterpriseId
+        enterpriseId: newToken.enterpriseId,
+        tokenId: newToken.id
       });
-
-      // Send notification for unmatched token
-      try {
-        await sendZapierNotification('access_token_no_match', {
-          enterpriseId: newToken.enterpriseId,
-          enterpriseName: newToken.enterpriseName,
-          receivedAt: newToken.receivedAt.toISOString(),
-          tokenId: newToken.id
-        });
-      } catch (error) {
-        console.error('[WEBHOOK] Failed to send notification for unmatched token:', (error as Error).message);
-      }
     }
 
     return NextResponse.json({
