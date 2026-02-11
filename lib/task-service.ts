@@ -12,6 +12,7 @@ import { updateEnvironmentTaskStats } from './unified-logger';
 import { log, logError } from './force-log';
 import { fetchWithRateLimit } from './mews-rate-limiter';
 import { getMewsClientToken, getMewsApiUrl } from './config';
+import { resolveLanguage } from './translations/language-utils';
 
 const MEWS_CLIENT_TOKEN = getMewsClientToken();
 const MEWS_API_URL = getMewsApiUrl();
@@ -54,12 +55,13 @@ export async function createOnboardingTasks(
   accessToken: string,
   enterpriseId: string,
   accessTokenId: number,
-  options?: { logId?: string }
+  options?: { logId?: string; languageCode?: string }
 ): Promise<TaskCreationResult> {
   const startTime = Date.now();
   const logId = options?.logId;
 
-  const tasks = getOnboardingTasks();
+  const language = resolveLanguage(options?.languageCode);
+  const tasks = getOnboardingTasks(language);
 
   log.tasks('Starting onboarding task creation', {
     count: tasks.length,

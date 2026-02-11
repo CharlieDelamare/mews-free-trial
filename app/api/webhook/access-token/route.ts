@@ -244,9 +244,10 @@ export async function POST(request: NextRequest) {
       // Start full environment setup in the background (fire-and-forget)
       (async () => {
         try {
-          // Fetch timezone from configuration API
+          // Fetch timezone and language from configuration API
           const timezoneResult = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, newToken.accessToken);
           const timezone = timezoneResult.timezone;
+          const languageCode = timezoneResult.defaultLanguageCode;
           await updateUnifiedLog(log.id, { timezone });
 
           // Fetch Mews data and update Best Price rate
@@ -269,7 +270,7 @@ export async function POST(request: NextRequest) {
             newToken.accessToken,
             newToken.enterpriseId,
             newToken.id,
-            { operationType: 'automatic', logId: log.id }
+            { operationType: 'automatic', logId: log.id, languageCode }
           );
 
           // Create onboarding tasks
@@ -279,7 +280,7 @@ export async function POST(request: NextRequest) {
               newToken.accessToken,
               newToken.enterpriseId,
               newToken.id,
-              { logId: log.id }
+              { logId: log.id, languageCode }
             );
             console.log(`[WEBHOOK-SETUP] Tasks created: ${taskResult.successCount}/${taskResult.totalTasks}`);
           } catch (taskError) {

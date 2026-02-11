@@ -3,7 +3,11 @@
  *
  * These 8 tasks are automatically created in each new trial sandbox to help
  * prospects learn the core Mews workflows (reservations, check-in/out, billing, etc.).
+ * Supports multilingual content based on property language (en, es, fr, nl, de).
  */
+
+import type { SupportedLanguage } from './translations/language-utils';
+import { getTranslatedOnboardingTasks } from './translations/onboarding-tasks';
 
 export interface OnboardingTask {
   Name: string;
@@ -12,8 +16,13 @@ export interface OnboardingTask {
 
 /**
  * Returns the list of 8 onboarding tasks with markdown descriptions and help article links.
+ * If a supported non-English language is provided, returns translated tasks.
  */
-export function getOnboardingTasks(): OnboardingTask[] {
+export function getOnboardingTasks(language?: SupportedLanguage): OnboardingTask[] {
+  if (language && language !== 'en') {
+    const translated = getTranslatedOnboardingTasks(language);
+    if (translated) return translated;
+  }
   return [
     {
       Name: 'Task 1: Create a New Reservation',
