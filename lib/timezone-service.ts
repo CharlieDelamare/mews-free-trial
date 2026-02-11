@@ -11,6 +11,7 @@ export interface TimezoneConfig {
   timezone: string;
   currency?: string;
   nowUtc?: string;
+  defaultLanguageCode?: string;
   error?: string;
 }
 
@@ -43,6 +44,7 @@ export async function fetchTimezoneFromConfiguration(
 
     const data = await response.json();
     const timezone = data.Enterprise?.TimeZoneIdentifier;
+    const defaultLanguageCode = data.Enterprise?.DefaultLanguageCode;
 
     // Find the default currency from the Currencies array
     const defaultCurrency = data.Enterprise?.Currencies?.find(
@@ -55,14 +57,16 @@ export async function fetchTimezoneFromConfiguration(
       return {
         timezone: 'UTC',
         currency,
+        defaultLanguageCode,
         nowUtc: data.NowUtc
       };
     }
 
-    console.log(`[TIMEZONE-SERVICE] Successfully fetched timezone: ${timezone}, currency: ${currency || 'N/A'}`);
+    console.log(`[TIMEZONE-SERVICE] Successfully fetched timezone: ${timezone}, currency: ${currency || 'N/A'}, language: ${defaultLanguageCode || 'N/A'}`);
     return {
       timezone,
       currency,
+      defaultLanguageCode,
       nowUtc: data.NowUtc
     };
 

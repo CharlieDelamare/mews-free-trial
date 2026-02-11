@@ -120,10 +120,11 @@ export async function POST(request: NextRequest) {
       serviceName: configData.Service?.Name
     });
 
-    // Fetch timezone for this enterprise
+    // Fetch timezone and language for this enterprise
     console.log('[ADD-ENVIRONMENT] Fetching timezone...');
     const timezoneConfig = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken);
-    console.log(`[ADD-ENVIRONMENT] Timezone: ${timezoneConfig.timezone}`);
+    const languageCode = timezoneConfig.defaultLanguageCode;
+    console.log(`[ADD-ENVIRONMENT] Timezone: ${timezoneConfig.timezone}, Language: ${languageCode || 'N/A'}`);
 
     // Check if this access token already exists
     const existingToken = await prisma.accessToken.findFirst({
@@ -256,7 +257,7 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Create 100 sample customers in the background
     console.log('[ADD-ENVIRONMENT] Starting sample customer creation for enterprise:', configData.Enterprise.Id);
-    createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id)
+    createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id, { languageCode })
       .then(result => {
         console.log('[ADD-ENVIRONMENT] ✅ Customer creation completed:', {
           enterpriseId: configData.Enterprise.Id,

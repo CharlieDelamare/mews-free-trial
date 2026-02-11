@@ -13,6 +13,8 @@ import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
 import { fetchWithRateLimit } from './mews-rate-limiter';
 import { log, logError } from './force-log';
+import { resolveLanguage, type SupportedLanguage } from './translations/language-utils';
+import { translateNote } from './translations/customer-notes';
 
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
@@ -104,6 +106,7 @@ export async function createReservationsForEnvironment(
     skipStateTransitions?: boolean;
     operationType?: 'automatic' | 'demo_filler';
     logId?: string; // Unified log ID for updating operationDetails
+    languageCode?: string; // Property language for translating customer notes
   }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
@@ -197,11 +200,13 @@ export async function createReservationsForEnvironment(
     });
 
     // Step 6: Create customers on-demand
+    const language = resolveLanguage(options?.languageCode);
     const customerIds = await createCustomersOnDemand(
       accessToken,
       totalReservations,
       enterpriseId,
-      accessTokenId
+      accessTokenId,
+      language
     );
 
     // Validate that we have customers before proceeding
@@ -539,7 +544,8 @@ async function createCustomersOnDemand(
   accessToken: string,
   count: number,
   enterpriseId: string,
-  accessTokenId: number
+  accessTokenId: number,
+  language: SupportedLanguage = 'en'
 ): Promise<string[]> {
   const customers = getSampleCustomers().slice(0, count);
   const customerIds: string[] = [];
@@ -566,7 +572,7 @@ async function createCustomersOnDemand(
     // Process in batches
     for (let i = 0; i < customers.length; i += CUSTOMER_CONCURRENCY) {
       const batch = customers.slice(i, i + CUSTOMER_CONCURRENCY);
-      const promises = batch.map(customer => createSingleCustomer(customer, accessToken));
+      const promises = batch.map(customer => createSingleCustomer(customer, accessToken, language));
       const results = await Promise.allSettled(promises);
 
       results.forEach((result, idx) => {
@@ -659,7 +665,7 @@ async function getCustomerByEmail(email: string, accessToken: string): Promise<s
 /**
  * Create a single customer
  */
-async function createSingleCustomer(customer: SampleCustomer, accessToken: string): Promise<string> {
+async function createSingleCustomer(customer: SampleCustomer, accessToken: string, language: SupportedLanguage = 'en'): Promise<string> {
   const requestBody = {
     ClientToken: MEWS_CLIENT_TOKEN,
     AccessToken: accessToken,
@@ -673,7 +679,7 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
     Sex: customer.Sex,
     Title: customer.Title,
     Classifications: customer.Classifications,
-    Notes: customer.Notes
+    Notes: customer.Notes ? translateNote(customer.Notes, language) : undefined
   };
 
   const response = await fetchWithRateLimit(

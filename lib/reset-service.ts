@@ -184,6 +184,7 @@ export async function resetEnvironment(
     // ========================================
     console.log(`[RESET-SERVICE] Step 1/7: Fetching configuration and timezone...`);
     const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken);
+    const languageCode = config.defaultLanguageCode;
 
     if (config.error) {
       console.warn(`[RESET-SERVICE] Timezone fetch warning: ${config.error}, using fallback`);
@@ -323,7 +324,8 @@ export async function resetEnvironment(
         dateRange: {
           start: todayUtc,
           end: endDateUtc
-        }
+        },
+        languageCode
       }
     );
 

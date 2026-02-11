@@ -11,6 +11,8 @@ import { getSampleCustomers, SampleCustomer } from './sample-customers';
 import { updateEnvironmentCustomerStats } from './unified-logger';
 import { log, logError } from './force-log';
 import { fetchWithRateLimit } from './mews-rate-limiter';
+import { resolveLanguage, type SupportedLanguage } from './translations/language-utils';
+import { translateNote } from './translations/customer-notes';
 
 // Hardcoded configuration for Mews demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -58,10 +60,11 @@ export async function createSampleCustomers(
   accessToken: string,
   enterpriseId: string,
   accessTokenId: number,
-  options?: { logId?: string }
+  options?: { logId?: string; languageCode?: string }
 ): Promise<CustomerCreationResult> {
   const startTime = Date.now();
   const logId = options?.logId;
+  const language = resolveLanguage(options?.languageCode);
 
   // Get sample customers (defaults to 300)
   const customers = getSampleCustomers();
@@ -101,7 +104,7 @@ export async function createSampleCustomers(
   try {
 
     // Process in batches with concurrency control
-    const results = await processBatch(customers, accessToken, CONCURRENCY);
+    const results = await processBatch(customers, accessToken, CONCURRENCY, language);
 
     // Calculate success/failure counts
     const successCount = results.filter(r => r.success).length;
@@ -203,7 +206,8 @@ export async function createSampleCustomers(
 async function processBatch(
   customers: SampleCustomer[],
   accessToken: string,
-  concurrency: number
+  concurrency: number,
+  language: SupportedLanguage = 'en'
 ): Promise<CustomerResult[]> {
   const results: CustomerResult[] = [];
 
@@ -212,7 +216,7 @@ async function processBatch(
     const chunk = customers.slice(i, i + concurrency);
 
     // Process this chunk in parallel
-    const promises = chunk.map(customer => createSingleCustomer(accessToken, customer));
+    const promises = chunk.map(customer => createSingleCustomer(accessToken, customer, language));
     const settledResults = await Promise.allSettled(promises);
 
     // Extract results from settled promises
@@ -252,7 +256,8 @@ async function processBatch(
  */
 async function createSingleCustomer(
   accessToken: string,
-  customer: SampleCustomer
+  customer: SampleCustomer,
+  language: SupportedLanguage = 'en'
 ): Promise<CustomerResult> {
   try {
     const requestBody = {
@@ -269,7 +274,7 @@ async function createSingleCustomer(
       NationalityCode: customer.NationalityCode,
       PreferredLanguageCode: customer.PreferredLanguageCode,
       Classifications: customer.Classifications,
-      Notes: customer.Notes
+      Notes: customer.Notes ? translateNote(customer.Notes, language) : undefined
     };
 
     const response = await fetchWithRateLimit(
