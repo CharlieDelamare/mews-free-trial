@@ -11,13 +11,11 @@ const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
 export interface MewsData {
   serviceId: string;
-  rates: {
-    nonRefundable: string;
-    bestPrice: string;
-    fullyFlexible: string;
-    corporateDeals: string;
-    otaDeals: string;
-  };
+  rates: Array<{
+    id: string;
+    name: string;
+    isPublic: boolean;
+  }>;
   resourceCategories: Array<{
     id: string;
     name: string;
@@ -48,6 +46,9 @@ interface MewsRate {
   Id: string;
   Name: string;
   Type: string;
+  IsPublic: boolean;
+  IsActive: boolean;
+  IsEnabled: boolean;
 }
 
 interface MewsResourceCategory {
@@ -148,8 +149,8 @@ export async function fetchMewsData(
     const categoryIds = resourceCategories.map((rc: MewsResourceCategory) => rc.Id);
     const assignments = await fetchResourceCategoryAssignments(clientToken, accessToken, categoryIds);
 
-    // Map rates by hardcoded names
-    const rateMap = mapRatesByName(rates);
+    // Map rates (all active/enabled rates, no name requirements)
+    const rateMap = mapRates(rates);
 
     // Fetch voucher assignments and voucher codes
     console.log('[MEWS-DATA] Fetching voucher assignments and voucher codes...');
@@ -222,14 +223,14 @@ export async function fetchMewsData(
 
     console.log('[MEWS-DATA] ✅ Mews data fetch complete');
     console.log(`[MEWS-DATA] - Service: ${serviceId}`);
-    console.log(`[MEWS-DATA] - Rates: ${Object.keys(rateMap).length}`);
+    console.log(`[MEWS-DATA] - Rates: ${rateMap.length}`);
     console.log(`[MEWS-DATA] - Resource categories: ${resourceCategoryList.length}`);
     console.log(`[MEWS-DATA] - Total resource assignments: ${activeAssignments.length}`);
     console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
     console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
     console.log('[MEWS-DATA] ✅ Fetch complete:', {
       serviceId,
-      rates: Object.keys(rateMap).length,
+      rates: rateMap.length,
       resourceCategories: resourceCategoryList.length,
       voucherMappings: vouchersByRate.size
     });
@@ -410,39 +411,36 @@ async function fetchResourceCategoryAssignments(
 }
 
 /**
- * Map rates by hardcoded names
+ * Map rates from API response, filtering to only active and enabled rates
  */
-function mapRatesByName(rates: MewsRate[]): MewsData['rates'] {
-  const rateNames = {
-    nonRefundable: 'Non refundable',
-    bestPrice: 'Best Price',
-    fullyFlexible: 'Fully Flexible',
-    corporateDeals: 'Corporate deals',
-    otaDeals: 'OTA deals'
-  };
+function mapRates(rates: MewsRate[]): MewsData['rates'] {
+  // Filter to only active and enabled rates
+  const activeRates = rates.filter((r: MewsRate) => r.IsActive && r.IsEnabled);
 
-  const rateMap: any = {};
-
-  for (const [key, name] of Object.entries(rateNames)) {
-    const rate = rates.find((r: MewsRate) => r.Name === name);
-    if (rate) {
-      rateMap[key] = rate.Id;
-    } else {
-      console.warn(`[MEWS-DATA] Rate "${name}" not found`);
-    }
+  if (activeRates.length === 0) {
+    console.error(`[MEWS-DATA] No active/enabled rates found`);
+    console.error(`[MEWS-DATA] All rates: ${rates.map((r: MewsRate) => `${r.Name} (Active=${r.IsActive}, Enabled=${r.IsEnabled})`).join(', ')}`);
+    throw new Error('No active/enabled rates found from Mews API');
   }
 
-  // Verify all required rates were found
-  if (Object.keys(rateMap).length < 5) {
-    const missing = Object.entries(rateNames)
-      .filter(([key]) => !rateMap[key])
-      .map(([, name]) => name);
-    console.error(`[MEWS-DATA] Missing rates: ${missing.join(', ')}`);
-    console.error(`[MEWS-DATA] Available rates: ${rates.map((r: MewsRate) => r.Name).join(', ')}`);
-    throw new Error(`Missing required rates: ${missing.join(', ')}`);
+  const mapped = activeRates.map((r: MewsRate) => ({
+    id: r.Id,
+    name: r.Name,
+    isPublic: r.IsPublic
+  }));
+
+  // Log filtered out rates
+  const inactiveCount = rates.length - activeRates.length;
+  if (inactiveCount > 0) {
+    console.log(`[MEWS-DATA] Filtered out ${inactiveCount} inactive/disabled rate(s)`);
   }
 
-  return rateMap as MewsData['rates'];
+  console.log(`[MEWS-DATA] Mapped ${mapped.length} active rate(s):`);
+  mapped.forEach(r => {
+    console.log(`[MEWS-DATA]   - ${r.name} (${r.isPublic ? 'Public' : 'Private'}): ${r.id}`);
+  });
+
+  return mapped;
 }
 
 /**

@@ -229,7 +229,8 @@ export async function createReservationsForEnvironment(
       mewsData.rates,
       envData,
       mewsData.ageCategories.adult,
-      options?.dateRange
+      options?.dateRange,
+      mewsData.vouchersByRate
     );
 
     // Group reservations for API calls
@@ -751,7 +752,8 @@ function generateReservationData(
   rates: MewsData['rates'],
   envData: EnvironmentData,
   adultAgeCategoryId: string,
-  dateRange?: { start: Date; end: Date }
+  dateRange?: { start: Date; end: Date },
+  vouchersByRate?: Map<string, string>
 ): ReservationData[] {
   const totalReservations = categoryTargets.reduce((sum, ct) => sum + ct.targetReservations, 0);
   console.log(`[RESERVATIONS] Generating ${totalReservations} reservation templates across ${categoryTargets.length} categories...`);
@@ -765,13 +767,23 @@ function generateReservationData(
 
   const today = startOfDay(new Date());
   const stateTracker = new ReservationStateTracker();
-  const rateDistribution = [
-    { rate: 'bestPrice', weight: 0.40 },
-    { rate: 'fullyFlexible', weight: 0.25 },
-    { rate: 'nonRefundable', weight: 0.20 },
-    { rate: 'corporateDeals', weight: 0.10 },
-    { rate: 'otaDeals', weight: 0.05 }
-  ];
+
+  // Compute usable rates: public rates + private rates that have a voucher
+  const usableRates = rates.filter(rate => {
+    if (rate.isPublic) return true;
+    if (vouchersByRate?.has(rate.id)) return true;
+    console.log(`[RESERVATIONS] Excluding private rate "${rate.name}" (no voucher available)`);
+    return false;
+  });
+
+  if (usableRates.length === 0) {
+    throw new Error('No usable rates available. All rates are private with no voucher codes.');
+  }
+
+  console.log(`[RESERVATIONS] Using ${usableRates.length}/${rates.length} rates for reservation distribution:`);
+  usableRates.forEach(r => {
+    console.log(`[RESERVATIONS]   - ${r.name} (${r.isPublic ? 'Public' : 'Private'})`);
+  });
 
   let globalIndex = 0;
 
@@ -807,8 +819,8 @@ function generateReservationData(
         envData.timezone
       );
 
-      // Assign rate based on distribution
-      const rateId = getRateIdByDistribution(globalIndex, totalReservations, rates, rateDistribution);
+      // Assign rate via round-robin across usable rates
+      const rateId = usableRates[globalIndex % usableRates.length].id;
 
       // Determine desired state using tracker to enforce limits
       const desiredState = stateTracker.determineState(checkInDate, checkOutDate, today);
@@ -874,27 +886,6 @@ function getStayLength(index: number, total: number): number {
   return 4; // 5%
 }
 
-/**
- * Get rate ID based on distribution
- */
-function getRateIdByDistribution(
-  index: number,
-  total: number,
-  rates: MewsData['rates'],
-  distribution: Array<{ rate: string; weight: number }>
-): string {
-  const ratio = index / total;
-  let cumulative = 0;
-
-  for (const { rate, weight } of distribution) {
-    cumulative += weight;
-    if (ratio < cumulative) {
-      return (rates as any)[rate];
-    }
-  }
-
-  return rates.bestPrice; // Fallback
-}
 
 /**
  * Configuration for reservation state limits

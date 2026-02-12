@@ -253,11 +253,12 @@ export async function POST(request: NextRequest) {
           // Fetch Mews data and update Best Price rate
           const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, newToken.accessToken);
 
-          if (mewsData.rates.bestPrice && timezone) {
+          const bestPriceRate = mewsData.rates.find(r => r.name === 'Best Price');
+          if (bestPriceRate && timezone) {
             await updateBestPriceRate(
               MEWS_CLIENT_TOKEN,
               newToken.accessToken,
-              mewsData.rates.bestPrice,
+              bestPriceRate.id,
               timezone
             );
           } else {
