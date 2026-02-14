@@ -129,7 +129,8 @@ export class MewsRateLimiter {
     const logContext = options?.logContext ?? 'unknown';
     const redactedToken = this.redactToken(accessToken);
 
-    // Wait for capacity (may queue if at limit)
+    // Wait for capacity and reserve a slot (tracking happens inside waitForCapacity
+    // to ensure the check-and-reserve is atomic within the synchronous call frame)
     await this.waitForCapacity(accessToken);
 
     let lastError: Error | null = null;
@@ -153,16 +154,11 @@ export class MewsRateLimiter {
           }
         }
 
-        // Track successful request
-        if (response.ok || response.status < 500) {
-          this.trackRequest(accessToken);
-
-          if (this.config.enableLogging && attempt > 0) {
-            console.log(
-              `[RATE-LIMITER] ✅ Request successful after ${attempt} ${attempt === 1 ? 'retry' : 'retries'} | ` +
-              `Context: ${logContext} | Token: ${redactedToken}`
-            );
-          }
+        if (this.config.enableLogging && attempt > 0 && (response.ok || response.status < 500)) {
+          console.log(
+            `[RATE-LIMITER] ✅ Request successful after ${attempt} ${attempt === 1 ? 'retry' : 'retries'} | ` +
+            `Context: ${logContext} | Token: ${redactedToken}`
+          );
         }
 
         // Return response (let caller handle response.ok checking)
@@ -221,6 +217,11 @@ export class MewsRateLimiter {
         break;
       }
     }
+
+    // Reserve capacity immediately after the check passes.
+    // This runs synchronously (no await between check and track), so concurrent
+    // callers in the same event loop tick see the updated count.
+    this.trackRequest(accessToken);
   }
 
   /**

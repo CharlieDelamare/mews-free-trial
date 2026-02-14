@@ -82,15 +82,15 @@ describe('MewsRateLimiter', () => {
         );
       }
 
-      // Execute first 8 requests
-      await vi.runAllTimersAsync();
+      // Flush microtasks to let the first 8 requests complete (without advancing
+      // timers, which would also release the 9th request's waitForCapacity delay)
+      await vi.advanceTimersByTimeAsync(0);
 
       // Should have made 8 requests, 9th waiting
       expect(global.fetch).toHaveBeenCalledTimes(8);
 
-      // Advance time to allow window to slide
-      vi.advanceTimersByTime(1100);
-      await vi.runAllTimersAsync();
+      // Advance time past the window so the 9th request's timer fires
+      await vi.advanceTimersByTimeAsync(1100);
 
       // Now 9th request should complete
       await Promise.all(promises);
@@ -220,6 +220,9 @@ describe('MewsRateLimiter', () => {
         () => fetch('https://api.test.com/endpoint'),
         { logContext: 'test-max-retries', maxRetries: 2 }
       );
+
+      // Prevent unhandled rejection warning (rejection is still tested below)
+      promise.catch(() => {});
 
       // Advance through all retries
       for (let i = 0; i < 5; i++) {
