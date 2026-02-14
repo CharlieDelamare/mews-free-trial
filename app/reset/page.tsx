@@ -106,7 +106,7 @@ export default function ResetSandboxPage() {
           <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
             {/* Sandbox Dropdown */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="selectedEnvironment" className="block text-sm font-medium text-gray-700 mb-1">
                 Select Sandbox *
               </label>
               {environmentsLoading ? (
@@ -115,6 +115,7 @@ export default function ResetSandboxPage() {
                 </div>
               ) : (
                 <select
+                  id="selectedEnvironment"
                   name="selectedEnvironment"
                   value={selectedEnvironment}
                   onChange={(e) => setSelectedEnvironment(e.target.value)}

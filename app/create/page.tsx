@@ -103,9 +103,10 @@ export default function SandboxCreationPage() {
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
             {/* Requestor Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Email (Requestor) *</label>
+              <label htmlFor="requestorEmail" className="block text-sm font-medium text-gray-700 mb-1">Your Email (Requestor) *</label>
               <input
                 type="email"
+                id="requestorEmail"
                 name="requestorEmail"
                 value={formData.requestorEmail}
                 onChange={handleChange}
@@ -118,12 +119,13 @@ export default function SandboxCreationPage() {
             {/* Customer Details */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
                   Customer First Name *
                   {isAdmin && <span className="text-xs text-gray-500 ml-2">(Auto-populated for admin)</span>}
                 </label>
                 <input
                   type="text"
+                  id="firstName"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
@@ -132,12 +134,13 @@ export default function SandboxCreationPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
                   Customer Last Name *
                   {isAdmin && <span className="text-xs text-gray-500 ml-2">(Auto-populated for admin)</span>}
                 </label>
                 <input
                   type="text"
+                  id="lastName"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
@@ -149,12 +152,13 @@ export default function SandboxCreationPage() {
 
             {/* Customer Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="customerEmail" className="block text-sm font-medium text-gray-700 mb-1">
                 Customer Email (for login) *
                 {isAdmin && <span className="text-xs text-gray-500 ml-2">(Auto-populated for admin)</span>}
               </label>
               <input
                 type="email"
+                id="customerEmail"
                 name="customerEmail"
                 value={formData.customerEmail}
                 onChange={handleChange}
@@ -168,8 +172,9 @@ export default function SandboxCreationPage() {
 
             {/* Preferred Language */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Language *</label>
+              <label htmlFor="preferredLanguage" className="block text-sm font-medium text-gray-700 mb-1">Preferred Language *</label>
               <select
+                id="preferredLanguage"
                 name="preferredLanguage"
                 value={formData.preferredLanguage}
                 onChange={handleChange}
@@ -185,9 +190,10 @@ export default function SandboxCreationPage() {
 
             {/* Property Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Property Name *</label>
+              <label htmlFor="propertyName" className="block text-sm font-medium text-gray-700 mb-1">Property Name *</label>
               <input
                 type="text"
+                id="propertyName"
                 name="propertyName"
                 value={formData.propertyName}
                 onChange={handleChange}
@@ -199,8 +205,9 @@ export default function SandboxCreationPage() {
 
             {/* Property Country */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Property Country *</label>
+              <label htmlFor="propertyCountry" className="block text-sm font-medium text-gray-700 mb-1">Property Country *</label>
               <select
+                id="propertyCountry"
                 name="propertyCountry"
                 value={formData.propertyCountry}
                 onChange={handleChange}
@@ -216,8 +223,9 @@ export default function SandboxCreationPage() {
 
             {/* Property Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Property Type *</label>
+              <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700 mb-1">Property Type *</label>
               <select
+                id="propertyType"
                 name="propertyType"
                 value={formData.propertyType}
                 onChange={handleChange}
@@ -233,11 +241,12 @@ export default function SandboxCreationPage() {
 
             {/* Sandbox Duration */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="durationDays" className="block text-sm font-medium text-gray-700 mb-1">
                 Sandbox Duration *
                 {isAdmin && <span className="text-xs text-gray-500 ml-2">(Fixed at 1 day for admin)</span>}
               </label>
               <select
+                id="durationDays"
                 name="durationDays"
                 value={formData.durationDays}
                 onChange={handleChange}
@@ -254,11 +263,12 @@ export default function SandboxCreationPage() {
 
             {/* Salesforce Account ID */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="salesforceAccountId" className="block text-sm font-medium text-gray-700 mb-1">
                 Salesforce Account ID {!isAdmin && '*'}
               </label>
               <input
                 type="text"
+                id="salesforceAccountId"
                 name="salesforceAccountId"
                 value={formData.salesforceAccountId}
                 onChange={handleChange}
