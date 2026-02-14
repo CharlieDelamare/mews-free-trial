@@ -39,6 +39,7 @@ export function useAdaptivePolling({
   const consecutiveErrorsRef = useRef(0);
   const enabledRef = useRef(enabled);
   const fetchFnRef = useRef(fetchFn);
+  const isHandlingVisibilityRef = useRef(false);
 
   // Keep refs in sync with latest props
   useEffect(() => {
@@ -133,13 +134,24 @@ export function useAdaptivePolling({
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    const handleVisibility = async () => {
+    const handleVisibility = () => {
+      // Prevent concurrent executions of the visibility handler
+      if (isHandlingVisibilityRef.current) return;
+      
       if (document.hidden) {
         clearScheduled();
       } else if (enabledRef.current) {
         // Tab became visible — fetch immediately to catch up, then resume schedule
-        await doFetch();
-        scheduleNext();
+        isHandlingVisibilityRef.current = true;
+        
+        (async () => {
+          try {
+            await doFetch();
+            scheduleNext();
+          } finally {
+            isHandlingVisibilityRef.current = false;
+          }
+        })();
       }
     };
 
