@@ -229,7 +229,11 @@ export async function GET() {
     // 5. Sort all logs by timestamp descending
     allLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    return NextResponse.json({ success: true, logs: allLogs });
+    // 6. Determine if any operations are still in progress
+    const ACTIVE_STATUSES = new Set(['building', 'processing', 'Updating']);
+    const hasActiveOperations = allLogs.some(log => ACTIVE_STATUSES.has(log.status));
+
+    return NextResponse.json({ success: true, logs: allLogs, hasActiveOperations });
   } catch (error) {
     console.error('Failed to fetch logs:', error);
     return NextResponse.json(
