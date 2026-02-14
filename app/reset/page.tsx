@@ -22,6 +22,10 @@ export default function ResetSandboxPage() {
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showManualAdd, setShowManualAdd] = useState(false);
+  const [manualToken, setManualToken] = useState('');
+  const [manualAddLoading, setManualAddLoading] = useState(false);
+  const [manualAddMessage, setManualAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const CHEVRON_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E")`;
   const selectStyle = { backgroundImage: CHEVRON_SVG } as const;
@@ -48,6 +52,32 @@ export default function ResetSandboxPage() {
       console.error('Failed to fetch environments:', error);
     } finally {
       setEnvironmentsLoading(false);
+    }
+  };
+
+  const handleManualAdd = async () => {
+    if (!manualToken.trim()) return;
+    setManualAddLoading(true);
+    setManualAddMessage(null);
+    try {
+      const response = await fetch('/api/store-environment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: manualToken.trim() })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setManualAddMessage({ type: 'success', text: `Added: ${data.data.enterpriseName}` });
+        setManualToken('');
+        setShowManualAdd(false);
+        await fetchEnvironments();
+      } else {
+        setManualAddMessage({ type: 'error', text: data.error || 'Failed to add environment' });
+      }
+    } catch (error) {
+      setManualAddMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setManualAddLoading(false);
     }
   };
 
@@ -117,6 +147,50 @@ export default function ResetSandboxPage() {
             <p className="text-xs text-gray-500 mt-2">
               If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
             </p>
+          </div>
+
+          {/* Manual Add Environment */}
+          <div className="border-t border-gray-200 pt-4">
+            <button
+              type="button"
+              onClick={() => { setShowManualAdd(!showManualAdd); setManualAddMessage(null); }}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {showManualAdd ? 'Cancel' : 'Manually add environment'}
+            </button>
+            {showManualAdd && (
+              <div className="mt-3 space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Access Token
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={manualToken}
+                    onChange={(e) => setManualToken(e.target.value)}
+                    placeholder="Paste access token here"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleManualAdd}
+                    disabled={!manualToken.trim() || manualAddLoading}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      !manualToken.trim() || manualAddLoading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {manualAddLoading ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {manualAddMessage && (
+              <p className={`text-sm mt-2 ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                {manualAddMessage.text}
+              </p>
+            )}
           </div>
 
           {/* Reset Button */}

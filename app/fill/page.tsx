@@ -37,6 +37,11 @@ export default function SandboxFillerPage() {
     return formatDate(date);
   };
 
+  const [showManualAdd, setShowManualAdd] = useState(false);
+  const [manualToken, setManualToken] = useState('');
+  const [manualAddLoading, setManualAddLoading] = useState(false);
+  const [manualAddMessage, setManualAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const [sandboxFillerData, setDemoFillerData] = useState({
     selectedEnvironment: '',
     startDate: getTodayDate(),
@@ -70,6 +75,32 @@ export default function SandboxFillerPage() {
       console.error('Failed to fetch environments:', error);
     } finally {
       setEnvironmentsLoading(false);
+    }
+  };
+
+  const handleManualAdd = async () => {
+    if (!manualToken.trim()) return;
+    setManualAddLoading(true);
+    setManualAddMessage(null);
+    try {
+      const response = await fetch('/api/store-environment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: manualToken.trim() })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setManualAddMessage({ type: 'success', text: `Added: ${data.data.enterpriseName}` });
+        setManualToken('');
+        setShowManualAdd(false);
+        await fetchEnvironments();
+      } else {
+        setManualAddMessage({ type: 'error', text: data.error || 'Failed to add environment' });
+      }
+    } catch (error) {
+      setManualAddMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setManualAddLoading(false);
     }
   };
 
@@ -151,6 +182,50 @@ export default function SandboxFillerPage() {
             <p className="text-xs text-gray-500 mt-2">
               If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
             </p>
+          </div>
+
+          {/* Manual Add Environment */}
+          <div className="border-t border-gray-200 pt-4">
+            <button
+              type="button"
+              onClick={() => { setShowManualAdd(!showManualAdd); setManualAddMessage(null); }}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {showManualAdd ? 'Cancel' : 'Manually add environment'}
+            </button>
+            {showManualAdd && (
+              <div className="mt-3 space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Access Token
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={manualToken}
+                    onChange={(e) => setManualToken(e.target.value)}
+                    placeholder="Paste access token here"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleManualAdd}
+                    disabled={!manualToken.trim() || manualAddLoading}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      !manualToken.trim() || manualAddLoading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {manualAddLoading ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
+              </div>
+            )}
+            {manualAddMessage && (
+              <p className={`text-sm mt-2 ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                {manualAddMessage.text}
+              </p>
+            )}
           </div>
 
           {/* Start Date */}
