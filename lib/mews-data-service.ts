@@ -33,7 +33,7 @@ export interface MewsData {
 interface MewsService {
   Id: string;
   Name: string;
-  Ordering?: number;
+  Ordering: number;
   Data: {
     Discriminator: 'Bookable' | 'Additional';
     Value?: {
