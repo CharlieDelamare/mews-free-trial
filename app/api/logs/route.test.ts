@@ -114,4 +114,115 @@ describe('GET /api/logs', () => {
 
     expect(response.headers.get('content-type')).toContain('application/json');
   });
+
+  test('returns hasActiveOperations: false when all logs are completed', async () => {
+    mockUnifiedLogFindMany.mockResolvedValue([
+      {
+        id: '1',
+        logType: 'environment',
+        timestamp: new Date('2024-01-03'),
+        enterpriseId: 'e1',
+        status: 'completed',
+        completedAt: null,
+        errorMessage: null,
+        propertyName: 'Test Hotel',
+        customerName: 'Customer 1',
+        customerEmail: 'c@example.com',
+        propertyCountry: 'United Kingdom',
+        propertyType: 'hotel',
+        loginUrl: 'https://app.mews-demo.com',
+        loginEmail: 'c@example.com',
+        loginPassword: 'Sample123',
+        requestorEmail: null,
+        durationDays: 30,
+        salesforceAccountId: null,
+        operationDetails: null,
+        currentStep: null,
+        totalSteps: null,
+        totalItems: null,
+        successCount: null,
+        failureCount: null,
+      },
+    ]);
+
+    const response = await GET();
+    const data = await response.json();
+    expect(data.hasActiveOperations).toBe(false);
+  });
+
+  test('returns hasActiveOperations: true when a log is building', async () => {
+    mockUnifiedLogFindMany.mockResolvedValue([
+      {
+        id: '1',
+        logType: 'environment',
+        timestamp: new Date('2024-01-03'),
+        enterpriseId: 'e1',
+        status: 'building',
+        completedAt: null,
+        errorMessage: null,
+        propertyName: 'Test Hotel',
+        customerName: 'Customer 1',
+        customerEmail: 'c@example.com',
+        propertyCountry: 'United Kingdom',
+        propertyType: 'hotel',
+        loginUrl: 'https://app.mews-demo.com',
+        loginEmail: 'c@example.com',
+        loginPassword: 'Sample123',
+        requestorEmail: null,
+        durationDays: 30,
+        salesforceAccountId: null,
+        operationDetails: null,
+        currentStep: null,
+        totalSteps: null,
+        totalItems: null,
+        successCount: null,
+        failureCount: null,
+      },
+    ]);
+
+    const response = await GET();
+    const data = await response.json();
+    expect(data.hasActiveOperations).toBe(true);
+  });
+
+  test('returns hasActiveOperations: true when a log is processing', async () => {
+    mockUnifiedLogFindMany.mockResolvedValue([
+      {
+        id: '1',
+        logType: 'environment',
+        timestamp: new Date('2024-01-03'),
+        enterpriseId: 'e1',
+        status: 'processing',
+        completedAt: null,
+        errorMessage: null,
+        propertyName: 'Test Hotel',
+        customerName: 'Customer 1',
+        customerEmail: 'c@example.com',
+        propertyCountry: 'United Kingdom',
+        propertyType: 'hotel',
+        loginUrl: 'https://app.mews-demo.com',
+        loginEmail: 'c@example.com',
+        loginPassword: 'Sample123',
+        requestorEmail: null,
+        durationDays: 30,
+        salesforceAccountId: null,
+        operationDetails: null,
+        currentStep: null,
+        totalSteps: null,
+        totalItems: null,
+        successCount: null,
+        failureCount: null,
+      },
+    ]);
+
+    const response = await GET();
+    const data = await response.json();
+    expect(data.hasActiveOperations).toBe(true);
+  });
+
+  test('returns hasActiveOperations: false when no logs exist', async () => {
+    const response = await GET();
+    const data = await response.json();
+    expect(data.hasActiveOperations).toBe(false);
+  });
 });

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { UnifiedLog, EnvironmentLog } from '@/types/logs';
 import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
 import { CopyButton } from '@/components/CopyButton';
 import { Pagination } from '@/components/Pagination';
+import { useAdaptivePolling } from '@/hooks/useAdaptivePolling';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -24,6 +25,15 @@ function formatDate(timestamp: string) {
   return new Date(timestamp).toLocaleString();
 }
 
+function formatRelativeTime(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (seconds < 10) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return date.toLocaleTimeString();
+}
+
 function buildLoginDetailsText(log: EnvironmentLog): string {
   return `Login URL: ${log.loginUrl}\nEmail: ${log.loginEmail}\nPassword: ${log.loginPassword}`;
 }
@@ -34,36 +44,40 @@ export default function LogsPage() {
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    fetchLogs();
-    const intervalId = setInterval(fetchLogsInBackground, 10000);
-    return () => clearInterval(intervalId);
+  const fetchLogsForPolling = useCallback(async () => {
+    const response = await fetch('/api/logs');
+    const data = await response.json();
+    if (data.success) {
+      setLogs(data.logs);
+      return { hasActiveOperations: data.hasActiveOperations ?? false };
+    }
+    throw new Error(data.error || 'Failed to fetch logs');
   }, []);
 
-  const fetchLogs = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/logs');
-      const data = await response.json();
-      if (data.success) setLogs(data.logs);
-      else setError('Failed to load logs');
-    } catch (err) {
-      setError('Error fetching logs');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { isPolling, lastFetchedAt, refresh } = useAdaptivePolling({
+    fetchFn: fetchLogsForPolling,
+    fastIntervalMs: 5000,
+    idleIntervalMs: 60000,
+    enabled: !loading,
+  });
 
-  const fetchLogsInBackground = async () => {
-    try {
-      const response = await fetch('/api/logs');
-      const data = await response.json();
-      if (data.success) setLogs(data.logs);
-    } catch (err) {
-      console.error('Background log fetch failed:', err);
-    }
-  };
+  useEffect(() => {
+    const initialFetch = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/logs');
+        const data = await response.json();
+        if (data.success) setLogs(data.logs);
+        else setError('Failed to load logs');
+      } catch (err) {
+        setError('Error fetching logs');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initialFetch();
+  }, []);
 
   const totalPages = Math.ceil(logs.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -84,8 +98,31 @@ export default function LogsPage() {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">Logs</h1>
+            <div className="flex items-center gap-3">
+              {isPolling && (
+                <span className="flex items-center gap-1.5 text-xs text-blue-600">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                  </span>
+                  Auto-updating
+                </span>
+              )}
+              {!isPolling && lastFetchedAt && (
+                <span className="text-xs text-gray-400">
+                  Updated {formatRelativeTime(lastFetchedAt)}
+                </span>
+              )}
+              <button
+                onClick={refresh}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Refresh logs"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
           {loading && (
