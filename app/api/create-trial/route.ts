@@ -241,6 +241,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       country: propertyCountry,
       durationDays
     });
+    console.log('[CREATE-TRIAL] Mews API request payload:', JSON.stringify(apiBody, null, 2));
 
     // Create log entry immediately with "building" status
     let log;
@@ -285,6 +286,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
     const result = await response.json();
+    console.log('[CREATE-TRIAL] Mews API response:', { status: response.status, body: JSON.stringify(result, null, 2) });
 
     if (!response.ok) {
       console.error('[CREATE-TRIAL] Mews API error:', result);
