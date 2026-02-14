@@ -74,17 +74,28 @@ export default function SandboxCreationPage() {
     }
 
     try {
-      await fetch('/api/create-trial', {
+      const response = await fetch('/api/create-trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      // Redirect to logs page regardless of response
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        let errorMessage = data.error || 'Failed to create sandbox';
+        if (response.status === 409 && data.suggestion) {
+          errorMessage = `${data.error}. ${data.suggestion}`;
+        }
+        showToast(errorMessage, 'error');
+        setLoading(false);
+        return;
+      }
+
       router.push('/logs');
     } catch {
-      // Still redirect to logs even on network error
-      router.push('/logs');
+      showToast('Network error: Unable to reach the server. Please try again.', 'error');
+      setLoading(false);
     }
   };
 
