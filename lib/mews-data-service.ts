@@ -33,6 +33,7 @@ export interface MewsData {
 interface MewsService {
   Id: string;
   Name: string;
+  Ordering: number;
   Data: {
     Discriminator: 'Bookable' | 'Additional';
     Value?: {
@@ -127,15 +128,20 @@ function extractName(names: Record<string, string> | undefined): string {
 export async function fetchMewsData(
   clientToken: string,
   accessToken: string,
-  options?: { logId?: string }
+  options?: { logId?: string; serviceId?: string }
 ): Promise<MewsData> {
   try {
     const services = await fetchServices(clientToken, accessToken, options?.logId);
     const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
+    let serviceId: string;
 
-    if (!bookableService) {
-      throw new Error('No bookable service found');
-    }
+    if (options?.serviceId) {
+      serviceId = options.serviceId;
+      console.log(`[MEWS-DATA] Using provided service ID: ${serviceId}`);
+    } else {
+      // Fetch services (already filtered by ServiceType: 'Bookable')
+      const services = await fetchServices(clientToken, accessToken, options?.logId);
+      const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
 
     return await fetchMewsDataForService(clientToken, accessToken, bookableService.Id, options?.logId);
   } catch (error) {
@@ -143,6 +149,54 @@ export async function fetchMewsData(
     throw new Error(`Mews data fetch failed: ${(error as Error).message}`);
   }
 }
+      if (!bookableService) {
+        throw new Error('No bookable service found');
+      }
+
+      serviceId = bookableService.Id;
+    }
+
+    // Step 2: Fetch rates, resource categories, and age categories in parallel
+    const [rates, resourceCategories, ageCategories] = await Promise.all([
+      fetchRates(clientToken, accessToken, serviceId, options?.logId),
+      fetchResourceCategories(clientToken, accessToken, serviceId, options?.logId),
+      fetchAgeCategories(clientToken, accessToken, serviceId, options?.logId)
+    ]);
+
+    // Step 3: Fetch resource category assignments (needs category IDs from previous step)
+    const categoryIds = resourceCategories.map((rc: MewsResourceCategory) => rc.Id);
+    const assignments = await fetchResourceCategoryAssignments(clientToken, accessToken, categoryIds, options?.logId);
+
+    // Map rates (all active/enabled rates, no name requirements)
+    const rateMap = mapRates(rates);
+
+    // Fetch voucher assignments and voucher codes
+    console.log('[MEWS-DATA] Fetching voucher assignments and voucher codes...');
+    const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId, options?.logId);
+    console.log(`[MEWS-DATA] Found ${voucherAssignments.length} voucher assignments`);
+
+    let vouchersByRate = new Map<string, string>();
+    if (voucherAssignments.length > 0) {
+      // Extract unique voucher IDs from assignments
+      const voucherIds = Array.from(
+        new Set(voucherAssignments.map((assignment: MewsVoucherAssignment) => assignment.VoucherId))
+      );
+      console.log(`[MEWS-DATA] Found ${voucherIds.length} unique voucher(s) with rate assignments`);
+
+      // Fetch voucher codes for these vouchers
+      const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds, options?.logId);
+      console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
+
+      // Map voucher codes to rates using assignments
+      vouchersByRate = mapVoucherCodesToRates(voucherAssignments, voucherCodes);
+      console.log(`[MEWS-DATA] Mapped ${vouchersByRate.size} rate(s) to voucher codes`);
+    } else {
+      console.log('[MEWS-DATA] No voucher assignments found, proceeding without voucher codes');
+    }
+
+    // Step 4: Count resources per category using assignments
+    console.log('[MEWS-DATA] Counting resources per category from assignments...');
+    console.log(`[MEWS-DATA] Total assignments: ${assignments.length}`);
 
 /**
  * Fetch Mews data for ALL bookable services in an enterprise.
@@ -773,4 +827,19 @@ export async function updateBestPriceRate(
     console.error('[RATE-UPDATE] Error stack:', (error as Error).stack);
     return false;
   }
+}
+
+/**
+ * Fetch bookable services for a given enterprise.
+ * Returns a simplified list of { id, name } for each bookable service.
+ */
+export async function fetchBookableServices(
+  clientToken: string,
+  accessToken: string
+): Promise<Array<{ id: string; name: string; ordering: number }>> {
+  const services = await fetchServices(clientToken, accessToken);
+  return services
+    .filter((s: MewsService) => s.Data.Discriminator === 'Bookable')
+    .map((s: MewsService) => ({ id: s.Id, name: s.Name, ordering: s.Ordering }))
+    .sort((a, b) => a.ordering - b.ordering || a.name.localeCompare(b.name));
 }
