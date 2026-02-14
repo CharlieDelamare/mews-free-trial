@@ -92,7 +92,8 @@ export default function SandboxCreationPage() {
         return;
       }
 
-      console.log('[CREATE] API response:', data);
+      // Temporary debug: show Mews response in alert (impossible to miss)
+      alert('Mews API Response:\n\n' + JSON.stringify(data.mewsResponse, null, 2));
       router.push('/logs');
     } catch {
       showToast('Network error: Unable to reach the server. Please try again.', 'error');
