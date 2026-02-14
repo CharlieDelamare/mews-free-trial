@@ -4,7 +4,7 @@
  */
 
 import { prisma } from './prisma';
-import { fetchMewsData } from './mews-data-service';
+import { fetchAllMewsData } from './mews-data-service';
 import { createReservationsForEnvironment } from './reservation-service';
 import { closeBillsForEnvironment } from './bill-service';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
@@ -224,52 +224,65 @@ export async function resetEnvironment(
     console.log(`[RESET-SERVICE] ✓ Configuration fetched (timezone: ${config.timezone})`);
 
     // ========================================
-    // STEP 2: Get Services
+    // STEP 2: Get ALL Services
     // ========================================
-    console.log(`[RESET-SERVICE] Step 2/7: Fetching services...`);
-    const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken, { logId: log.id });
+    console.log(`[RESET-SERVICE] Step 2/7: Fetching ALL bookable services...`);
+    const allMewsData = await fetchAllMewsData(MEWS_CLIENT_TOKEN, accessToken, { logId: log.id });
 
-    if (!mewsData.serviceId) {
-      throw new Error('No bookable service found');
+    if (allMewsData.length === 0) {
+      throw new Error('No bookable services found');
     }
 
     details.services = {
-      serviceId: mewsData.serviceId,
-      serviceName: 'Accommodation'
+      serviceId: allMewsData[0].serviceId,
+      serviceName: 'Accommodation',
+      serviceCount: allMewsData.length,
+      serviceIds: allMewsData.map(d => d.serviceId)
     };
 
     await updateUnifiedLog(log.id, { currentStep: 2, operationDetails: details });
 
-    console.log(`[RESET-SERVICE] ✓ Services fetched (serviceId: ${mewsData.serviceId})`);
+    console.log(`[RESET-SERVICE] ✓ Found ${allMewsData.length} bookable service(s):`);
+    allMewsData.forEach((d, i) => {
+      console.log(`[RESET-SERVICE]   Service ${i + 1}: ${d.serviceId} (${d.resourceCategories.length} categories, ${d.rates.length} rates)`);
+    });
 
     // ========================================
-    // STEP 3: Get Reservations
+    // STEP 3: Get Reservations (all services)
     // ========================================
-    console.log(`[RESET-SERVICE] Step 3/7: Fetching reservations...`);
-    const { reservations, error: reservationsError } = await getAllReservationsWithPagination(
-      accessToken,
-      mewsData.serviceId,
-      ['Confirmed', 'Optional'], // NOT 'Started'
-      log.id
-    );
+    console.log(`[RESET-SERVICE] Step 3/7: Fetching reservations for ${allMewsData.length} service(s)...`);
+    const allReservations: Reservation[] = [];
 
-    if (reservationsError) {
-      details.errors?.push(`Reservations fetch error: ${reservationsError}`);
+    for (const serviceData of allMewsData) {
+      const { reservations: serviceReservations, error: serviceError } =
+        await getAllReservationsWithPagination(
+          accessToken,
+          serviceData.serviceId,
+          ['Confirmed', 'Optional'], // NOT 'Started'
+          log.id
+        );
+
+      if (serviceError) {
+        details.errors?.push(`Service ${serviceData.serviceId}: ${serviceError}`);
+      }
+
+      allReservations.push(...serviceReservations);
+      console.log(`[RESET-SERVICE]   Service ${serviceData.serviceId}: ${serviceReservations.length} reservations`);
     }
 
-    details.reservationsFetched = reservations.length;
+    details.reservationsFetched = allReservations.length;
 
     await updateUnifiedLog(log.id, { currentStep: 3, operationDetails: details });
 
-    console.log(`[RESET-SERVICE] ✓ Found ${reservations.length} reservations to cancel`);
+    console.log(`[RESET-SERVICE] ✓ Found ${allReservations.length} total reservations to cancel across ${allMewsData.length} service(s)`);
 
     // ========================================
-    // STEP 4: Cancel Reservations
+    // STEP 4: Cancel Reservations (all services)
     // ========================================
-    console.log(`[RESET-SERVICE] Step 4/7: Canceling reservations...`);
+    console.log(`[RESET-SERVICE] Step 4/7: Canceling ${allReservations.length} reservations...`);
 
-    if (reservations.length > 0) {
-      const reservationIds = reservations.map(r => r.Id);
+    if (allReservations.length > 0) {
+      const reservationIds = allReservations.map(r => r.Id);
       const { successCount, failureCount } = await cancelReservationsInBatches(
         accessToken,
         reservationIds,
@@ -322,9 +335,9 @@ export async function resetEnvironment(
     );
 
     // ========================================
-    // STEP 7: Create New Reservations
+    // STEP 7: Create New Reservations (all services, 7-day window)
     // ========================================
-    console.log(`[RESET-SERVICE] Step 7/7: Creating new reservations (7-day window)...`);
+    console.log(`[RESET-SERVICE] Step 7/7: Creating reservations for ${allMewsData.length} service(s) (7-day window)...`);
 
     // Calculate date range: today to +7 days in enterprise timezone
     const timezone = config.timezone;
@@ -336,32 +349,58 @@ export async function resetEnvironment(
 
     console.log(`[RESET-SERVICE] Date range: ${todayUtc.toISOString()} to ${endDateUtc.toISOString()}`);
 
-    // Call reservation service with date range
-    const reservationResult = await createReservationsForEnvironment(
-      accessToken,
-      enterpriseId,
-      accessTokenId,
-      {
-        dateRange: {
-          start: todayUtc,
-          end: endDateUtc
-        },
-        languageCode,
-        logId: log.id
+    let sharedCustomerIds: string[] | undefined;
+    let totalReservationsCreated = 0;
+    let totalReservationsFailed = 0;
+
+    for (let i = 0; i < allMewsData.length; i++) {
+      const serviceData = allMewsData[i];
+      console.log(`[RESET-SERVICE] Creating reservations for service ${i + 1}/${allMewsData.length}: ${serviceData.serviceId}`);
+
+      try {
+        const reservationResult = await createReservationsForEnvironment(
+          accessToken,
+          enterpriseId,
+          accessTokenId,
+          {
+            dateRange: {
+              start: todayUtc,
+              end: endDateUtc
+            },
+            languageCode,
+            logId: log.id,
+            mewsData: serviceData,
+            customerIds: sharedCustomerIds,
+          }
+        );
+
+        totalReservationsCreated += reservationResult.successCount;
+        totalReservationsFailed += reservationResult.failureCount;
+
+        // After first service call, capture customer IDs for reuse
+        if (!sharedCustomerIds && reservationResult.customerIds && reservationResult.customerIds.length > 0) {
+          sharedCustomerIds = reservationResult.customerIds;
+          console.log(`[RESET-SERVICE] Captured ${sharedCustomerIds.length} customer IDs for reuse across services`);
+        }
+
+        console.log(`[RESET-SERVICE]   Service ${serviceData.serviceId}: ${reservationResult.successCount} created, ${reservationResult.failureCount} failed`);
+      } catch (error) {
+        console.error(`[RESET-SERVICE] Service ${serviceData.serviceId} reservation creation failed:`, error);
+        details.errors?.push(`Service ${serviceData.serviceId}: ${(error as Error).message}`);
       }
-    );
+    }
 
-    details.reservationsCreated = reservationResult.successCount;
-    details.reservationsCreateFailed = reservationResult.failureCount;
+    details.reservationsCreated = totalReservationsCreated;
+    details.reservationsCreateFailed = totalReservationsFailed;
 
-    if (reservationResult.failureCount > 0) {
-      details.errors?.push(`Failed to create ${reservationResult.failureCount} reservations`);
+    if (totalReservationsFailed > 0) {
+      details.errors?.push(`Failed to create ${totalReservationsFailed} reservations across all services`);
     }
 
     await updateUnifiedLog(log.id, { currentStep: 7, operationDetails: details });
 
     console.log(
-      `[RESET-SERVICE] ✓ Created ${reservationResult.successCount} reservations (${reservationResult.failureCount} failed)`
+      `[RESET-SERVICE] ✓ Created ${totalReservationsCreated} reservations across ${allMewsData.length} service(s) (${totalReservationsFailed} failed)`
     );
 
     // ========================================
