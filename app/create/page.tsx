@@ -92,6 +92,7 @@ export default function SandboxCreationPage() {
         return;
       }
 
+      console.log('[CREATE] API response:', data);
       router.push('/logs');
     } catch {
       showToast('Network error: Unable to reach the server. Please try again.', 'error');

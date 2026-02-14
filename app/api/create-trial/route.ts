@@ -341,6 +341,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Store Mews API response in DB for debugging (console.log doesn't work on Vercel Fluid)
+    try {
+      await updateUnifiedLog(log.id, {
+        operationDetails: { mewsApiResponse: result }
+      });
+    } catch {
+      // Non-critical - don't fail the request
+    }
+
     // Note: The Mews API may not reliably return an enterpriseId in the response.
     // The webhook will backfill the correct enterpriseId when it arrives.
     // Return immediately - Slack notification will be sent when access token webhook is received
@@ -348,7 +357,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       success: true,
       message: 'Trial environment is being created. You will receive the login details shortly.',
       propertyName,
-      status: 'building'
+      status: 'building',
+      mewsResponse: result
     });
 
   } catch (error) {
