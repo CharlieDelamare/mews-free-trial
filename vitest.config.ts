@@ -18,6 +18,12 @@ export default defineConfig({
         '.next/',
         'prisma/',
       ],
+      thresholds: {
+        statements: 30,
+        branches: 25,
+        functions: 25,
+        lines: 30,
+      },
     },
   },
   resolve: {
