@@ -5,6 +5,7 @@
 
 import type { Bill, OrderItem, BillCloseResult, CloseBillsResult } from '@/types/reset';
 import { fetchTimezoneFromConfiguration } from './timezone-service';
+import { loggedFetch } from './api-call-logger';
 
 // Hardcoded Mews client token for demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -15,7 +16,8 @@ const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
  */
 export async function getBills(
   accessToken: string,
-  states?: string[]
+  states?: string[],
+  logId?: string
 ): Promise<{ bills: Bill[]; error?: string }> {
   try {
     // Calculate a wide time range to get all bills
@@ -24,7 +26,8 @@ export async function getBills(
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 3);
 
-    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/bills/getAll`, {
+    const url = `${MEWS_API_URL}/api/connector/v1/bills/getAll`;
+    const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -38,7 +41,15 @@ export async function getBills(
         ...(states && { States: states }),
         Limitation: { Count: 1000 }
       })
-    });
+    };
+
+    const response = logId
+      ? await loggedFetch(url, fetchOptions, {
+          unifiedLogId: logId,
+          group: 'bills',
+          endpoint: 'bills/getAll',
+        })
+      : await fetch(url, fetchOptions);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -63,14 +74,16 @@ export async function getBills(
  */
 export async function getOrderItems(
   accessToken: string,
-  billIds: string[]
+  billIds: string[],
+  logId?: string
 ): Promise<{ items: OrderItem[]; error?: string }> {
   if (billIds.length === 0) {
     return { items: [] };
   }
 
   try {
-    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/orderItems/getAll`, {
+    const url = `${MEWS_API_URL}/api/connector/v1/orderItems/getAll`;
+    const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -80,7 +93,15 @@ export async function getOrderItems(
         BillIds: billIds,
         Limitation: { Count: 1000 }
       })
-    });
+    };
+
+    const response = logId
+      ? await loggedFetch(url, fetchOptions, {
+          unifiedLogId: logId,
+          group: 'bills',
+          endpoint: 'orderItems/getAll',
+        })
+      : await fetch(url, fetchOptions);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -136,7 +157,8 @@ export async function addExternalPayment(
   accountId: string,
   amount: number,
   currency: string,
-  billId?: string
+  billId?: string,
+  logId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const payload = {
@@ -154,11 +176,20 @@ export async function addExternalPayment(
 
     console.log('[BILL-SERVICE] Adding payment with payload:', JSON.stringify(payload, null, 2));
 
-    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/payments/addExternal`, {
+    const url = `${MEWS_API_URL}/api/connector/v1/payments/addExternal`;
+    const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    });
+    };
+
+    const response = logId
+      ? await loggedFetch(url, fetchOptions, {
+          unifiedLogId: logId,
+          group: 'bills',
+          endpoint: 'payments/addExternal',
+        })
+      : await fetch(url, fetchOptions);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -182,7 +213,8 @@ export async function addExternalPayment(
  */
 export async function closeBill(
   accessToken: string,
-  billId: string
+  billId: string,
+  logId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const payload = {
@@ -195,11 +227,20 @@ export async function closeBill(
 
     console.log('[BILL-SERVICE] Closing bill with payload:', JSON.stringify(payload, null, 2));
 
-    const response = await fetch(`${MEWS_API_URL}/api/connector/v1/bills/close`, {
+    const url = `${MEWS_API_URL}/api/connector/v1/bills/close`;
+    const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    });
+    };
+
+    const response = logId
+      ? await loggedFetch(url, fetchOptions, {
+          unifiedLogId: logId,
+          group: 'bills',
+          endpoint: 'bills/close',
+        })
+      : await fetch(url, fetchOptions);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -231,12 +272,13 @@ export async function closeBill(
  *    d. Close bill (always, even if total = 0)
  */
 export async function closeBillsForEnvironment(
-  accessToken: string
+  accessToken: string,
+  logId?: string
 ): Promise<CloseBillsResult> {
   console.log('[BILL-SERVICE] Starting bill closure process');
 
   // Fetch configuration to get currency
-  const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken);
+  const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken, logId);
   const currency = config.currency;
 
   if (!currency) {
@@ -252,7 +294,7 @@ export async function closeBillsForEnvironment(
   console.log(`[BILL-SERVICE] Using currency: ${currency}`);
 
   // Fetch all open bills
-  const { bills, error: fetchError } = await getBills(accessToken, ['Open']);
+  const { bills, error: fetchError } = await getBills(accessToken, ['Open'], logId);
 
   if (fetchError) {
     console.error('[BILL-SERVICE] Failed to fetch bills:', fetchError);
@@ -280,7 +322,7 @@ export async function closeBillsForEnvironment(
 
     try {
       // Step 1: Get order items for this bill
-      const { items, error: itemsError } = await getOrderItems(accessToken, [bill.Id]);
+      const { items, error: itemsError } = await getOrderItems(accessToken, [bill.Id], logId);
 
       if (itemsError) {
         result.error = `Failed to get order items: ${itemsError}`;
@@ -303,7 +345,8 @@ export async function closeBillsForEnvironment(
           bill.AccountId,
           total,
           currency,
-          bill.Id
+          bill.Id,
+          logId
         );
 
         if (!paymentSuccess) {
@@ -323,7 +366,8 @@ export async function closeBillsForEnvironment(
       // Step 4: Close bill (always, even if total = 0)
       const { success: closeSuccess, error: closeError } = await closeBill(
         accessToken,
-        bill.Id
+        bill.Id,
+        logId
       );
 
       if (!closeSuccess) {

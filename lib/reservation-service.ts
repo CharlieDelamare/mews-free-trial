@@ -12,6 +12,7 @@ import { updateEnvironmentReservationStats, createDemoFillerLog, updateUnifiedLo
 import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
 import { fetchWithRateLimit } from './mews-rate-limiter';
+import { fetchWithRateLimitAndLog } from './api-call-logger';
 import { log, logError } from './force-log';
 import { resolveLanguage, type SupportedLanguage } from './translations/language-utils';
 import { translateNote } from './translations/customer-notes';
@@ -60,23 +61,27 @@ interface CategoryTarget {
 /**
  * Fetch timezone from Mews configuration API
  */
-async function fetchTimezoneFromMews(accessToken: string): Promise<string> {
+async function fetchTimezoneFromMews(accessToken: string, logId?: string): Promise<string> {
   console.log('[RESERVATIONS] Fetching timezone from Mews API...');
 
-  const response = await fetchWithRateLimit(
-    `${MEWS_API_URL}/api/connector/v1/configuration/get`,
-    accessToken,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager'
+  const url = `${MEWS_API_URL}/api/connector/v1/configuration/get`;
+  const fetchOpts: RequestInit = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ClientToken: MEWS_CLIENT_TOKEN,
+      AccessToken: accessToken,
+      Client: 'Mews Sandbox Manager'
+    })
+  };
+  const contextStr = 'configuration/get';
+
+  const response = logId
+    ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+        unifiedLogId: logId,
+        group: 'setup',
       })
-    },
-    'configuration/get'
-  );
+    : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -152,7 +157,8 @@ export async function createReservationsForEnvironment(
     const envData = await fetchEnvironmentData(
       enterpriseId,
       accessToken,
-      !!options?.dateRange
+      !!options?.dateRange,
+      logId
     );
 
     // Fetch Mews data
@@ -206,7 +212,8 @@ export async function createReservationsForEnvironment(
       totalReservations,
       enterpriseId,
       accessTokenId,
-      language
+      language,
+      logId
     );
 
     // Validate that we have customers before proceeding
@@ -242,7 +249,8 @@ export async function createReservationsForEnvironment(
       mewsData.serviceId,
       accessToken,
       mewsData.ageCategories.adult,
-      mewsData.vouchersByRate
+      mewsData.vouchersByRate,
+      logId
     );
 
     // Fetch reservation details to get assigned resource IDs
@@ -253,15 +261,15 @@ export async function createReservationsForEnvironment(
     // Skip state transitions if requested (leaves all reservations in Confirmed state)
     if (!options?.skipStateTransitions) {
       if (reservationIds.length > 0) {
-        reservationDetails = await fetchReservationDetails(reservationIds, accessToken);
+        reservationDetails = await fetchReservationDetails(reservationIds, accessToken, logId);
 
         // Prepare resources for check-in (set to Inspected state)
-        const prepResult = await prepareResourcesForCheckIn(reservationDetails, accessToken);
+        const prepResult = await prepareResourcesForCheckIn(reservationDetails, accessToken, logId);
         inspectedRoomIds = prepResult.inspectedRoomIds;
       }
 
       // Apply state transitions sequentially per room, passing tracked inspections
-      await applyStateTransitionsSequentially(createdReservations, reservationDetails, accessToken, inspectedRoomIds);
+      await applyStateTransitionsSequentially(createdReservations, reservationDetails, accessToken, inspectedRoomIds, logId);
     } else {
       console.log(`[RESERVATIONS] Skipping state transitions - all reservations will remain in Confirmed state`);
     }
@@ -365,7 +373,8 @@ export async function createReservationsForEnvironment(
 async function fetchEnvironmentData(
   enterpriseId: string,
   accessToken: string,
-  hasDateRange: boolean
+  hasDateRange: boolean,
+  logId?: string
 ): Promise<EnvironmentData> {
   // Try unified log first
   const unifiedLog = await prisma.unifiedLog.findFirst({
@@ -418,7 +427,7 @@ async function fetchEnvironmentData(
     // When dateRange is provided, we only need timezone (duration/createdAt not used)
     console.log(`[RESERVATIONS] No environment log found for enterprise ${enterpriseId}, but dateRange provided - fetching timezone from Mews API`);
 
-    const timezone = await fetchTimezoneFromMews(accessToken);
+    const timezone = await fetchTimezoneFromMews(accessToken, logId);
 
     // Return minimal EnvironmentData with fetched timezone
     // Other fields are dummy values since they won't be used when dateRange is provided
@@ -546,7 +555,8 @@ async function createCustomersOnDemand(
   count: number,
   enterpriseId: string,
   accessTokenId: number,
-  language: SupportedLanguage = 'en'
+  language: SupportedLanguage = 'en',
+  logId?: string
 ): Promise<string[]> {
   const customers = getSampleCustomers().slice(0, count);
   const customerIds: string[] = [];
@@ -573,7 +583,7 @@ async function createCustomersOnDemand(
     // Process in batches
     for (let i = 0; i < customers.length; i += CUSTOMER_CONCURRENCY) {
       const batch = customers.slice(i, i + CUSTOMER_CONCURRENCY);
-      const promises = batch.map(customer => createSingleCustomer(customer, accessToken, language));
+      const promises = batch.map(customer => createSingleCustomer(customer, accessToken, language, logId));
       const results = await Promise.allSettled(promises);
 
       results.forEach((result, idx) => {
@@ -620,28 +630,32 @@ async function createCustomersOnDemand(
 /**
  * Get existing customer by email address
  */
-async function getCustomerByEmail(email: string, accessToken: string): Promise<string | null> {
+async function getCustomerByEmail(email: string, accessToken: string, logId?: string): Promise<string | null> {
   try {
-    const response = await fetchWithRateLimit(
-      `${MEWS_API_URL}/api/connector/v1/customers/getAll`,
-      accessToken,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
-          AccessToken: accessToken,
-          Client: 'Mews Sandbox Manager',
-          Emails: [email],
-          Extent: {
-            Customers: true,
-            Documents: false,
-            Addresses: false
-          }
+    const url = `${MEWS_API_URL}/api/connector/v1/customers/getAll`;
+    const fetchOpts: RequestInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: MEWS_CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Mews Sandbox Manager',
+        Emails: [email],
+        Extent: {
+          Customers: true,
+          Documents: false,
+          Addresses: false
+        }
+      })
+    };
+    const contextStr = 'customers/getAll';
+
+    const response = logId
+      ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+          unifiedLogId: logId,
+          group: 'customers',
         })
-      },
-      'customers/getAll'
-    );
+      : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
 
     if (!response.ok) {
       console.warn(`[CUSTOMERS] Failed to fetch existing customer ${email}: ${response.status}`);
@@ -666,7 +680,7 @@ async function getCustomerByEmail(email: string, accessToken: string): Promise<s
 /**
  * Create a single customer
  */
-async function createSingleCustomer(customer: SampleCustomer, accessToken: string, language: SupportedLanguage = 'en'): Promise<string> {
+async function createSingleCustomer(customer: SampleCustomer, accessToken: string, language: SupportedLanguage = 'en', logId?: string): Promise<string> {
   const requestBody = {
     ClientToken: MEWS_CLIENT_TOKEN,
     AccessToken: accessToken,
@@ -683,16 +697,21 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
     Notes: customer.Notes ? translateNote(customer.Notes, language) : undefined
   };
 
-  const response = await fetchWithRateLimit(
-    `${MEWS_API_URL}/api/connector/v1/customers/add`,
-    accessToken,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
-    },
-    'customers/add'
-  );
+  const url = `${MEWS_API_URL}/api/connector/v1/customers/add`;
+  const fetchOpts: RequestInit = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody)
+  };
+  const contextStr = 'customers/add';
+
+  const response = logId
+    ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+        unifiedLogId: logId,
+        group: 'customers',
+        metadata: { customerEmail: customer.Email },
+      })
+    : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -704,7 +723,7 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
       console.log(`[CUSTOMERS] ℹ Customer ${customer.Email} already exists, fetching existing ID...`);
 
       // Try to fetch existing customer ID
-      const existingCustomerId = await getCustomerByEmail(customer.Email, accessToken);
+      const existingCustomerId = await getCustomerByEmail(customer.Email, accessToken, logId);
 
       if (existingCustomerId) {
         return existingCustomerId;
@@ -1028,7 +1047,8 @@ async function createReservationGroups(
   serviceId: string,
   accessToken: string,
   adultAgeCategoryId: string,
-  vouchersByRate: Map<string, string>
+  vouchersByRate: Map<string, string>,
+  logId?: string
 ): Promise<{ createdReservations: any[]; failures: any[] }> {
   const createdReservations: any[] = [];
   const failures: any[] = [];
@@ -1037,18 +1057,16 @@ async function createReservationGroups(
     const group = groups[i];
 
     try {
-      const response = await fetchWithRateLimit(
-        `${MEWS_API_URL}/api/connector/v1/reservations/add`,
-        accessToken,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ClientToken: MEWS_CLIENT_TOKEN,
-            AccessToken: accessToken,
-            Client: 'Mews Sandbox Manager',
-            ServiceId: serviceId,
-            Reservations: group.map(r => {
+      const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
+      const fetchOpts: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Mews Sandbox Manager',
+          ServiceId: serviceId,
+          Reservations: group.map(r => {
             const reservation: any = {
               State: 'Confirmed',
               StartUtc: r.checkInUtc.toISOString(),
@@ -1071,9 +1089,15 @@ async function createReservationGroups(
             return reservation;
           })
         })
-      },
-      'reservations/add'
-    );
+      };
+      const contextStr = 'reservations/add';
+
+      const response = logId
+        ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+            unifiedLogId: logId,
+            group: 'reservations',
+          })
+        : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1145,7 +1169,8 @@ async function createReservationGroups(
  */
 async function fetchReservationDetails(
   reservationIds: string[],
-  accessToken: string
+  accessToken: string,
+  logId?: string
 ): Promise<Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }>> {
   const allReservations: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }> = [];
 
@@ -1154,22 +1179,26 @@ async function fetchReservationDetails(
     const batch = reservationIds.slice(i, Math.min(i + 1000, reservationIds.length));
 
     try {
-      const response = await fetchWithRateLimit(
-        `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`,
-        accessToken,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ClientToken: MEWS_CLIENT_TOKEN,
-            AccessToken: accessToken,
-            Client: 'Mews Sandbox Manager',
-            ReservationIds: batch,
-            Limitation: { Count: 1000 }
+      const url = `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`;
+      const fetchOpts: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Mews Sandbox Manager',
+          ReservationIds: batch,
+          Limitation: { Count: 1000 }
+        })
+      };
+      const contextStr = 'reservations/getAll';
+
+      const response = logId
+        ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+            unifiedLogId: logId,
+            group: 'reservations',
           })
-        },
-        'reservations/getAll'
-      );
+        : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -1197,32 +1226,37 @@ async function fetchReservationDetails(
  */
 async function updateResourceStates(
   resourceIds: string[],
-  accessToken: string
+  accessToken: string,
+  logId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const response = await fetchWithRateLimit(
-      `${MEWS_API_URL}/api/connector/v1/resources/update`,
-      accessToken,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
-          AccessToken: accessToken,
-          Client: 'Mews Sandbox Manager',
-          ResourceUpdates: resourceIds.map(resourceId => ({
-            ResourceId: resourceId,
-            State: {
-              Value: 'Inspected'
-            },
-            StateReason: {
-              Value: 'Room inspection completed'
-            }
-          }))
+    const url = `${MEWS_API_URL}/api/connector/v1/resources/update`;
+    const fetchOpts: RequestInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: MEWS_CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Mews Sandbox Manager',
+        ResourceUpdates: resourceIds.map(resourceId => ({
+          ResourceId: resourceId,
+          State: {
+            Value: 'Inspected'
+          },
+          StateReason: {
+            Value: 'Room inspection completed'
+          }
+        }))
+      })
+    };
+    const contextStr = 'resources/update';
+
+    const response = logId
+      ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+          unifiedLogId: logId,
+          group: 'state_transitions',
         })
-      },
-      'resources/update'
-    );
+      : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -1249,7 +1283,8 @@ async function updateResourceStates(
  */
 async function prepareResourcesForCheckIn(
   reservations: Array<{ Id: string; AssignedResourceId?: string }>,
-  accessToken: string
+  accessToken: string,
+  logId?: string
 ): Promise<{ successCount: number; failureCount: number; inspectedRoomIds: Set<string> }> {
   console.log(`[RESOURCE_PREP] Preparing resources for ${reservations.length} reservations...`);
 
@@ -1288,7 +1323,7 @@ async function prepareResourcesForCheckIn(
     console.log(`[RESOURCE_PREP] Updating batch ${batchNum}/${totalBatches} (${batch.length} resources)...`);
 
     try {
-      const result = await updateResourceStates(batch, accessToken);
+      const result = await updateResourceStates(batch, accessToken, logId);
       if (result.success) {
         // Track successfully inspected rooms
         batch.forEach(roomId => inspectedRoomIds.add(roomId));
@@ -1323,7 +1358,8 @@ async function applyStateTransitionsSequentially(
   reservations: Array<{ id: string; desiredState: string }>,
   reservationDetails: Array<{ Id: string; AssignedResourceId?: string; StartUtc?: string }>,
   accessToken: string,
-  initialInspectedRooms?: Set<string>
+  initialInspectedRooms?: Set<string>,
+  logId?: string
 ): Promise<void> {
   // Initialize with rooms that were successfully inspected in bulk preparation
   const inspectedRooms = new Set<string>(initialInspectedRooms || []);
@@ -1387,7 +1423,7 @@ async function applyStateTransitionsSequentially(
         // If previous reservation was processed (checked out), re-inspect the room before starting next
         if (prevRes && prevRes.desiredState === 'Processed' && res.assignedResourceId !== 'unassigned') {
           console.log(`[RESERVATIONS] Re-inspecting room ${res.assignedResourceId} after checkout (room is now Dirty)...`);
-          const inspectResult = await updateResourceStates([res.assignedResourceId], accessToken);
+          const inspectResult = await updateResourceStates([res.assignedResourceId], accessToken, logId);
           if (inspectResult.success) {
             inspectedRooms.add(res.assignedResourceId);
             console.log(`[RESERVATIONS] ✅ Room ${res.assignedResourceId} re-inspected after checkout`);
@@ -1401,7 +1437,7 @@ async function applyStateTransitionsSequentially(
             res.assignedResourceId !== 'unassigned' &&
             !inspectedRooms.has(res.assignedResourceId)) {
           console.log(`[RESERVATIONS] Inspecting room ${res.assignedResourceId} before first check-in (not in tracked set)...`);
-          const inspectResult = await updateResourceStates([res.assignedResourceId], accessToken);
+          const inspectResult = await updateResourceStates([res.assignedResourceId], accessToken, logId);
           if (inspectResult.success) {
             inspectedRooms.add(res.assignedResourceId);
             console.log(`[RESERVATIONS] ✅ Room ${res.assignedResourceId} inspected successfully before first check-in`);
@@ -1414,11 +1450,11 @@ async function applyStateTransitionsSequentially(
 
         // Apply state transitions with enhanced error handling
         if (res.desiredState === 'Started') {
-          await callStateTransitionAPI('start', res.id, accessToken, res.assignedResourceId, inspectedRooms);
+          await callStateTransitionAPI('start', res.id, accessToken, res.assignedResourceId, inspectedRooms, logId);
           successCount++;
         } else if (res.desiredState === 'Processed') {
-          await callStateTransitionAPI('start', res.id, accessToken, res.assignedResourceId, inspectedRooms);
-          await callStateTransitionAPI('process', res.id, accessToken);
+          await callStateTransitionAPI('start', res.id, accessToken, res.assignedResourceId, inspectedRooms, logId);
+          await callStateTransitionAPI('process', res.id, accessToken, undefined, undefined, logId);
           successCount++;
         }
         // Confirmed state doesn't need transitions
@@ -1446,7 +1482,8 @@ async function callStateTransitionAPI(
   reservationId: string,
   accessToken: string,
   assignedResourceId?: string,
-  inspectedRooms?: Set<string>
+  inspectedRooms?: Set<string>,
+  logId?: string
 ): Promise<void> {
   const endpoint = action === 'start' ? 'reservations/start' : 'reservations/process';
   const url = `${MEWS_API_URL}/api/connector/v1/${endpoint}`;
@@ -1470,16 +1507,19 @@ async function callStateTransitionAPI(
   console.log(`[RESERVATIONS] URL: ${url}`);
   console.log(`[RESERVATIONS] Payload:`, JSON.stringify(payload, null, 2));
 
-  const response = await fetchWithRateLimit(
-    url,
-    accessToken,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    },
-    `reservations/${action}`
-  );
+  const fetchOpts: RequestInit = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  };
+  const contextStr = `reservations/${action}`;
+
+  const response = logId
+    ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+        unifiedLogId: logId,
+        group: 'state_transitions',
+      })
+    : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
 
   console.log(`[RESERVATIONS] 📥 Response Status: ${response.status} ${response.statusText}`);
 
@@ -1510,23 +1550,26 @@ async function callStateTransitionAPI(
       console.log(`[RESERVATIONS] ⚠️ Room may be ${errorType}. Attempting inspection to resolve...`);
 
       // Attempt to inspect the room
-      const inspectResult = await updateResourceStates([assignedResourceId], accessToken);
+      const inspectResult = await updateResourceStates([assignedResourceId], accessToken, logId);
 
       if (inspectResult.success) {
         inspectedRooms.add(assignedResourceId);
         console.log(`[RESERVATIONS] ✅ Room ${assignedResourceId} inspected. Retrying check-in...`);
 
         // Retry the start transition
-        const retryResponse = await fetchWithRateLimit(
-          url,
-          accessToken,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          },
-          `reservations/${action}-retry`
-        );
+        const retryFetchOpts: RequestInit = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        };
+        const retryContextStr = `reservations/${action}-retry`;
+
+        const retryResponse = logId
+          ? await fetchWithRateLimitAndLog(url, accessToken, retryFetchOpts, retryContextStr, {
+              unifiedLogId: logId,
+              group: 'state_transitions',
+            })
+          : await fetchWithRateLimit(url, accessToken, retryFetchOpts, retryContextStr);
 
         console.log(`[RESERVATIONS] 📥 Retry Response Status: ${retryResponse.status} ${retryResponse.statusText}`);
 

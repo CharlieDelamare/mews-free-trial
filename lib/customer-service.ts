@@ -11,6 +11,7 @@ import { getSampleCustomers, SampleCustomer } from './sample-customers';
 import { updateEnvironmentCustomerStats } from './unified-logger';
 import { log, logError } from './force-log';
 import { fetchWithRateLimit } from './mews-rate-limiter';
+import { fetchWithRateLimitAndLog } from './api-call-logger';
 import { resolveLanguage, type SupportedLanguage } from './translations/language-utils';
 import { translateNote } from './translations/customer-notes';
 
@@ -104,7 +105,7 @@ export async function createSampleCustomers(
   try {
 
     // Process in batches with concurrency control
-    const results = await processBatch(customers, accessToken, CONCURRENCY, language);
+    const results = await processBatch(customers, accessToken, CONCURRENCY, language, logId);
 
     // Calculate success/failure counts
     const successCount = results.filter(r => r.success).length;
@@ -207,7 +208,8 @@ async function processBatch(
   customers: SampleCustomer[],
   accessToken: string,
   concurrency: number,
-  language: SupportedLanguage = 'en'
+  language: SupportedLanguage = 'en',
+  logId?: string
 ): Promise<CustomerResult[]> {
   const results: CustomerResult[] = [];
 
@@ -216,7 +218,7 @@ async function processBatch(
     const chunk = customers.slice(i, i + concurrency);
 
     // Process this chunk in parallel
-    const promises = chunk.map(customer => createSingleCustomer(accessToken, customer, language));
+    const promises = chunk.map(customer => createSingleCustomer(accessToken, customer, language, logId));
     const settledResults = await Promise.allSettled(promises);
 
     // Extract results from settled promises
@@ -257,7 +259,8 @@ async function processBatch(
 async function createSingleCustomer(
   accessToken: string,
   customer: SampleCustomer,
-  language: SupportedLanguage = 'en'
+  language: SupportedLanguage = 'en',
+  logId?: string
 ): Promise<CustomerResult> {
   try {
     const requestBody = {
@@ -277,16 +280,32 @@ async function createSingleCustomer(
       Notes: customer.Notes ? translateNote(customer.Notes, language) : undefined
     };
 
-    const response = await fetchWithRateLimit(
-      `${MEWS_API_URL}/api/connector/v1/customers/add`,
-      accessToken,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      },
-      'customers/add'
-    );
+    const response = logId
+      ? await fetchWithRateLimitAndLog(
+          `${MEWS_API_URL}/api/connector/v1/customers/add`,
+          accessToken,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          },
+          'customers/add',
+          {
+            unifiedLogId: logId,
+            group: 'customers',
+            metadata: { customerEmail: customer.Email },
+          }
+        )
+      : await fetchWithRateLimit(
+          `${MEWS_API_URL}/api/connector/v1/customers/add`,
+          accessToken,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          },
+          'customers/add'
+        );
 
     const data = await response.json();
 

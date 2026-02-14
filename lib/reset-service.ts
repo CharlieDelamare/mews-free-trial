@@ -11,6 +11,7 @@ import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { startOfDay, addDays } from 'date-fns';
 import { createResetLog, updateUnifiedLog } from './unified-logger';
 import { fetchTimezoneFromConfiguration } from './timezone-service';
+import { loggedFetch } from './api-call-logger';
 import type { ResetResult, ResetOperationDetails, ResetStep } from '@/types/reset';
 
 // Hardcoded Mews client token for demo environment
@@ -29,7 +30,8 @@ interface Reservation {
 async function getAllReservationsWithPagination(
   accessToken: string,
   serviceId: string,
-  states: string[]
+  states: string[],
+  logId?: string
 ): Promise<{ reservations: Reservation[]; error?: string }> {
   const allReservations: Reservation[] = [];
   let cursor: string | null = null;
@@ -40,24 +42,30 @@ async function getAllReservationsWithPagination(
       pageCount++;
       console.log(`[RESET-SERVICE] Fetching reservations page ${pageCount}...`);
 
-      const response: Response = await fetch(
-        `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ClientToken: MEWS_CLIENT_TOKEN,
-            AccessToken: accessToken,
-            Client: 'Mews Sandbox Manager',
-            ServiceIds: [serviceId],
-            States: states,
-            Limitation: {
-              Count: 1000,
-              ...(cursor && { Cursor: cursor })
-            }
+      const url = `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`;
+      const fetchOptions: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Mews Sandbox Manager',
+          ServiceIds: [serviceId],
+          States: states,
+          Limitation: {
+            Count: 1000,
+            ...(cursor && { Cursor: cursor })
+          }
+        })
+      };
+
+      const response: Response = logId
+        ? await loggedFetch(url, fetchOptions, {
+            unifiedLogId: logId,
+            group: 'reservations',
+            endpoint: 'reservations/getAll/2023-06-06'
           })
-        }
-      );
+        : await fetch(url, fetchOptions);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -91,7 +99,8 @@ async function getAllReservationsWithPagination(
  */
 async function cancelReservationsInBatches(
   accessToken: string,
-  reservationIds: string[]
+  reservationIds: string[],
+  logId?: string
 ): Promise<{ successCount: number; failureCount: number }> {
   if (reservationIds.length === 0) {
     return { successCount: 0, failureCount: 0 };
@@ -111,7 +120,8 @@ async function cancelReservationsInBatches(
     );
 
     try {
-      const response = await fetch(`${MEWS_API_URL}/api/connector/v1/reservations/cancel`, {
+      const url = `${MEWS_API_URL}/api/connector/v1/reservations/cancel`;
+      const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -123,7 +133,16 @@ async function cancelReservationsInBatches(
           SendEmail: false,
           Notes: 'Automated demo environment reset'
         })
-      });
+      };
+
+      const response = logId
+        ? await loggedFetch(url, fetchOptions, {
+            unifiedLogId: logId,
+            group: 'reservations',
+            endpoint: 'reservations/cancel',
+            metadata: { batchNumber, totalBatches, batchSize: batch.length }
+          })
+        : await fetch(url, fetchOptions);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -183,7 +202,7 @@ export async function resetEnvironment(
     // STEP 1: Get Configuration & Timezone
     // ========================================
     console.log(`[RESET-SERVICE] Step 1/7: Fetching configuration and timezone...`);
-    const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken);
+    const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken, log.id);
     const languageCode = config.defaultLanguageCode;
 
     if (config.error) {
@@ -208,7 +227,7 @@ export async function resetEnvironment(
     // STEP 2: Get Services
     // ========================================
     console.log(`[RESET-SERVICE] Step 2/7: Fetching services...`);
-    const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
+    const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken, { logId: log.id });
 
     if (!mewsData.serviceId) {
       throw new Error('No bookable service found');
@@ -230,7 +249,8 @@ export async function resetEnvironment(
     const { reservations, error: reservationsError } = await getAllReservationsWithPagination(
       accessToken,
       mewsData.serviceId,
-      ['Confirmed', 'Optional'] // NOT 'Started'
+      ['Confirmed', 'Optional'], // NOT 'Started'
+      log.id
     );
 
     if (reservationsError) {
@@ -252,7 +272,8 @@ export async function resetEnvironment(
       const reservationIds = reservations.map(r => r.Id);
       const { successCount, failureCount } = await cancelReservationsInBatches(
         accessToken,
-        reservationIds
+        reservationIds,
+        log.id
       );
 
       details.reservationsCanceled = successCount;
@@ -284,7 +305,7 @@ export async function resetEnvironment(
     // STEP 6: Close Bills
     // ========================================
     console.log(`[RESET-SERVICE] Step 6/7: Closing bills...`);
-    const billsResult = await closeBillsForEnvironment(accessToken);
+    const billsResult = await closeBillsForEnvironment(accessToken, log.id);
 
     details.billsFetched = billsResult.totalBills;
     details.billsClosed = billsResult.successCount;
@@ -325,7 +346,8 @@ export async function resetEnvironment(
           start: todayUtc,
           end: endDateUtc
         },
-        languageCode
+        languageCode,
+        logId: log.id
       }
     );
 
