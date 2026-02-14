@@ -44,8 +44,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       salesforceAccountId
     } = body;
 
+    console.log('[CREATE-TRIAL] Received request:', {
+      requestorEmail,
+      firstName,
+      lastName,
+      customerEmail,
+      preferredLanguage,
+      propertyName,
+      propertyCountry,
+      propertyType,
+      durationDays,
+      salesforceAccountId: salesforceAccountId || '(none)'
+    });
+
     // Validate required fields
     if (!firstName || !lastName || !customerEmail || !propertyName || !propertyCountry) {
+      console.error('[CREATE-TRIAL] Validation failed: missing required fields');
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
@@ -59,6 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Validate duration (context-aware for Charlie)
     const validDurations = isCharlie ? [1, 7, 30, 60] : [7, 30, 60];
     if (!validDurations.includes(durationDays)) {
+      console.error('[CREATE-TRIAL] Validation failed: invalid duration', { durationDays, isCharlie, validDurations });
       return NextResponse.json(
         {
           success: false,
@@ -95,6 +110,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const accessToken = process.env.MEWS_SAMPLE_TOKEN;
     if (!accessToken) {
+      console.error('[CREATE-TRIAL] Validation failed: MEWS_SAMPLE_TOKEN not configured');
       return NextResponse.json(
         { success: false, error: 'Server configuration error' },
         { status: 500 }
