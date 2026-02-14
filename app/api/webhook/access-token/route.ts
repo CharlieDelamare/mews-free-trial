@@ -205,21 +205,48 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create new token entry in database
-    const newToken = await prisma.accessToken.create({
-      data: {
+    // Check if this token was manually stored (same accessToken, no integrationId).
+    // If so, update the existing record with webhook data instead of creating a duplicate.
+    const manuallyStoredToken = await prisma.accessToken.findFirst({
+      where: {
         accessToken: createdPayload.Data.AccessToken,
-        enterpriseId: createdPayload.Data.Enterprise.Id,
-        enterpriseName: createdPayload.Data.Enterprise.Name,
-        serviceId: createdPayload.Data.Service?.Id,
-        serviceName: createdPayload.Data.Service?.Name,
-        integrationId: createdPayload.Data.Integration?.Id,
-        integrationName: createdPayload.Data.Integration?.Name,
-        createdUtc: createdPayload.Data.CreatedUtc,
-        isEnabled: createdPayload.Data.IsEnabled,
-        action: createdPayload.Action
+        integrationId: null,
       }
     });
+
+    let newToken;
+    if (manuallyStoredToken) {
+      console.log('[WEBHOOK] Found manually-stored token, updating with webhook data:', {
+        tokenId: manuallyStoredToken.id,
+        enterpriseId: manuallyStoredToken.enterpriseId
+      });
+      newToken = await prisma.accessToken.update({
+        where: { id: manuallyStoredToken.id },
+        data: {
+          integrationId: createdPayload.Data.Integration?.Id,
+          integrationName: createdPayload.Data.Integration?.Name,
+          serviceId: createdPayload.Data.Service?.Id ?? manuallyStoredToken.serviceId,
+          serviceName: createdPayload.Data.Service?.Name ?? manuallyStoredToken.serviceName,
+          action: createdPayload.Action
+        }
+      });
+    } else {
+      // Create new token entry in database
+      newToken = await prisma.accessToken.create({
+        data: {
+          accessToken: createdPayload.Data.AccessToken,
+          enterpriseId: createdPayload.Data.Enterprise.Id,
+          enterpriseName: createdPayload.Data.Enterprise.Name,
+          serviceId: createdPayload.Data.Service?.Id,
+          serviceName: createdPayload.Data.Service?.Name,
+          integrationId: createdPayload.Data.Integration?.Id,
+          integrationName: createdPayload.Data.Integration?.Name,
+          createdUtc: createdPayload.Data.CreatedUtc,
+          isEnabled: createdPayload.Data.IsEnabled,
+          action: createdPayload.Action
+        }
+      });
+    }
 
     // Find and update the corresponding EnvironmentLog
     // Match by property name (PRIMARY method) since Enterprise.Name in webhook equals our propertyName

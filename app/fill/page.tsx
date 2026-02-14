@@ -37,6 +37,11 @@ export default function SandboxFillerPage() {
     return formatDate(date);
   };
 
+  const [showManualAdd, setShowManualAdd] = useState(false);
+  const [manualToken, setManualToken] = useState('');
+  const [manualAddLoading, setManualAddLoading] = useState(false);
+  const [manualAddMessage, setManualAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const [sandboxFillerData, setDemoFillerData] = useState({
     selectedEnvironment: '',
     startDate: getTodayDate(),
@@ -70,6 +75,43 @@ export default function SandboxFillerPage() {
       console.error('Failed to fetch environments:', error);
     } finally {
       setEnvironmentsLoading(false);
+    }
+  };
+
+  const openManualAddModal = () => {
+    setManualToken('');
+    setManualAddMessage(null);
+    setShowManualAdd(true);
+  };
+
+  const closeManualAddModal = () => {
+    setShowManualAdd(false);
+    setManualToken('');
+    setManualAddMessage(null);
+  };
+
+  const handleManualAdd = async () => {
+    if (!manualToken.trim()) return;
+    setManualAddLoading(true);
+    setManualAddMessage(null);
+    try {
+      const response = await fetch('/api/store-environment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken: manualToken.trim() })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setManualAddMessage({ type: 'success', text: `Added: ${data.data.enterpriseName}` });
+        setManualToken('');
+        await fetchEnvironments();
+      } else {
+        setManualAddMessage({ type: 'error', text: data.error || 'Failed to add environment' });
+      }
+    } catch (error) {
+      setManualAddMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setManualAddLoading(false);
     }
   };
 
@@ -119,9 +161,21 @@ export default function SandboxFillerPage() {
         <form onSubmit={handleSandboxFillerSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
           {/* Sandbox Dropdown */}
           <div>
-            <label htmlFor="selectedEnvironment" className="block text-sm font-medium text-gray-700 mb-1">
-              Select Sandbox *
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-700">
+                Select Sandbox *
+              </label>
+              <button
+                type="button"
+                onClick={openManualAddModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                title="Add environment manually"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                </svg>
+              </button>
+            </div>
             {environmentsLoading ? (
               <div className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
                 Loading sandboxes...
@@ -228,7 +282,64 @@ export default function SandboxFillerPage() {
             All reservations will be created in Confirmed state with random check-in dates and stay lengths (1-4 nights)
           </p>
         </form>
+
       </div>
+
+      {/* Manual Add Environment Modal */}
+      {showManualAdd && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Add existing environment
+            </h2>
+            <p className="text-sm text-gray-500 mb-5">
+              Paste an access token to add an environment without waiting for the webhook.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Access Token
+                </label>
+                <input
+                  type="text"
+                  value={manualToken}
+                  onChange={(e) => setManualToken(e.target.value)}
+                  placeholder="Paste access token here"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              {manualAddMessage && (
+                <p className={`text-sm ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                  {manualAddMessage.text}
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeManualAddModal}
+                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  {manualAddMessage?.type === 'success' ? 'Done' : 'Cancel'}
+                </button>
+                {manualAddMessage?.type !== 'success' && (
+                  <button
+                    type="button"
+                    onClick={handleManualAdd}
+                    disabled={!manualToken.trim() || manualAddLoading}
+                    className={`flex-1 py-2 px-4 font-semibold rounded-lg transition-colors ${
+                      !manualToken.trim() || manualAddLoading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-700 text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {manualAddLoading ? 'Storing...' : 'Store'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
