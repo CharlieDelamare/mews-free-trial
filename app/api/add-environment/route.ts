@@ -5,6 +5,7 @@ import { fetchReservations, cancelReservation } from '@/lib/reservations';
 import { sendZapierNotification } from '@/lib/zapier';
 import { createSampleCustomers } from '@/lib/customer-service';
 import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
+import { runInBackground } from '@/lib/background';
 
 // Hardcoded configuration for Mews demo environment
 const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
@@ -257,7 +258,7 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Create 100 sample customers in the background
     console.log('[ADD-ENVIRONMENT] Starting sample customer creation for enterprise:', configData.Enterprise.Id);
-    createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id, { languageCode })
+    const customerWork = createSampleCustomers(accessToken, configData.Enterprise.Id, newToken.id, { languageCode })
       .then(result => {
         console.log('[ADD-ENVIRONMENT] ✅ Customer creation completed:', {
           enterpriseId: configData.Enterprise.Id,
@@ -269,6 +270,7 @@ export async function POST(request: NextRequest) {
       .catch(error => {
         console.error('[ADD-ENVIRONMENT] ❌ Customer creation failed:', error);
       });
+    runInBackground(customerWork);
 
     // Step 4: Send Zapier notification
     try {

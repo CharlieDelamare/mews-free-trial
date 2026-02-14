@@ -75,7 +75,7 @@ This prevents implementing incorrect API calls that will fail in production.
 - **Database**: PostgreSQL with Prisma ORM
 - **Styling**: Tailwind CSS
 - **Runtime**: Node.js
-- **Deployment**: Render (standalone output mode)
+- **Deployment**: Vercel (serverless)
 
 ## Project Structure
 
@@ -643,9 +643,8 @@ The duration feature is implemented in:
 
 ## Production Deployment
 
-- Deployed on Render at `https://mews-free-trial-2.onrender.com`
-- Uses `output: 'standalone'` for optimized Docker builds
-- Webhook endpoint: `https://mews-free-trial-2.onrender.com/api/webhook/access-token`
+- Deployed on Vercel
+- Webhook endpoint: `https://<your-domain>.vercel.app/api/webhook/access-token`
 
 ## Test Infrastructure
 

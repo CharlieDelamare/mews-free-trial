@@ -8,7 +8,7 @@ echo ""
 LAST_COUNT=0
 
 while true; do
-  RESPONSE=$(curl -s https://mews-free-trial-2.onrender.com/api/webhook/access-token)
+  RESPONSE=$(curl -s https://<your-domain>.vercel.app/api/webhook/access-token)
   COUNT=$(echo "$RESPONSE" | jq '.count')
 
   if [ "$COUNT" -gt "$LAST_COUNT" ]; then

@@ -19,5 +19,6 @@ beforeAll(() => {
   process.env.SLACK_BOT_TOKEN = 'test-slack-token';
   process.env.SLACK_CHANNEL_ID = 'test-channel-id';
   process.env.ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/test';
-  process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+  process.env.mews_free_trial_PRISMA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+  process.env.mews_free_trial_POSTGRES_URL = 'postgresql://test:test@localhost:5432/test';
 });

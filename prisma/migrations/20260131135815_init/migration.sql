@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "EnvironmentLog" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "timestamp" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "id" TEXT NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "propertyName" TEXT NOT NULL,
     "customerName" TEXT NOT NULL,
     "customerEmail" TEXT NOT NULL,
@@ -11,7 +11,9 @@ CREATE TABLE "EnvironmentLog" (
     "loginEmail" TEXT NOT NULL,
     "loginPassword" TEXT NOT NULL,
     "status" TEXT NOT NULL,
-    "errorMessage" TEXT
+    "errorMessage" TEXT,
+
+    CONSTRAINT "EnvironmentLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

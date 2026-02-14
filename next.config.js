@@ -1,10 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-
-  // Use SWC minification (7x faster than Terser)
-  swcMinify: true,
-
   // Disable source maps in production
   productionBrowserSourceMaps: false,
 

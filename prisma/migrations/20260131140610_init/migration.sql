@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "AccessToken" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL NOT NULL,
     "accessToken" TEXT NOT NULL,
     "enterpriseId" TEXT NOT NULL,
     "enterpriseName" TEXT NOT NULL,
@@ -9,9 +9,11 @@ CREATE TABLE "AccessToken" (
     "integrationId" TEXT,
     "integrationName" TEXT,
     "createdUtc" TEXT NOT NULL,
-    "receivedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "receivedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "isEnabled" BOOLEAN NOT NULL DEFAULT true,
-    "action" TEXT NOT NULL
+    "action" TEXT NOT NULL,
+
+    CONSTRAINT "AccessToken_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
