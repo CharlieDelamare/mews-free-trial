@@ -127,18 +127,25 @@ function extractName(names: Record<string, string> | undefined): string {
 export async function fetchMewsData(
   clientToken: string,
   accessToken: string,
-  options?: { logId?: string }
+  options?: { logId?: string; serviceId?: string }
 ): Promise<MewsData> {
   try {
-    // Fetch services (already filtered by ServiceType: 'Bookable')
-    const services = await fetchServices(clientToken, accessToken, options?.logId);
-    const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
+    let serviceId: string;
 
-    if (!bookableService) {
-      throw new Error('No bookable service found');
+    if (options?.serviceId) {
+      serviceId = options.serviceId;
+      console.log(`[MEWS-DATA] Using provided service ID: ${serviceId}`);
+    } else {
+      // Fetch services (already filtered by ServiceType: 'Bookable')
+      const services = await fetchServices(clientToken, accessToken, options?.logId);
+      const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
+
+      if (!bookableService) {
+        throw new Error('No bookable service found');
+      }
+
+      serviceId = bookableService.Id;
     }
-
-    const serviceId = bookableService.Id;
 
     // Step 2: Fetch rates, resource categories, and age categories in parallel
     const [rates, resourceCategories, ageCategories] = await Promise.all([
@@ -735,4 +742,18 @@ export async function updateBestPriceRate(
     console.error('[RATE-UPDATE] Error stack:', (error as Error).stack);
     return false;
   }
+}
+
+/**
+ * Fetch bookable services for a given enterprise.
+ * Returns a simplified list of { id, name } for each bookable service.
+ */
+export async function fetchBookableServices(
+  clientToken: string,
+  accessToken: string
+): Promise<Array<{ id: string; name: string }>> {
+  const services = await fetchServices(clientToken, accessToken);
+  return services
+    .filter((s: MewsService) => s.Data.Discriminator === 'Bookable')
+    .map((s: MewsService) => ({ id: s.Id, name: s.Name }));
 }

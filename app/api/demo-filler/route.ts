@@ -8,6 +8,7 @@ import { runInBackground } from '@/lib/background';
 
 interface DemoFillerRequest {
   enterpriseId: string;
+  serviceId?: string;
   startDate: string; // ISO date string
   endDate: string;   // ISO date string
   reservationCount: number;
@@ -42,7 +43,7 @@ interface DemoFillerResponse {
 export async function POST(request: NextRequest): Promise<NextResponse<DemoFillerResponse>> {
   try {
     const body: DemoFillerRequest = await request.json();
-    const { enterpriseId, startDate, endDate, reservationCount } = body;
+    const { enterpriseId, serviceId, startDate, endDate, reservationCount } = body;
 
     // Log API endpoint entry
     log.demoFiller('API endpoint called', {
@@ -212,7 +213,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
       reservationCount,
       skipStateTransitions: true,
       operationType: 'demo_filler',
-      logId: logId || undefined
+      logId: logId || undefined,
+      serviceId
     })
       .then(result => {
         log.demoFiller('Operation completed', {
