@@ -6,7 +6,7 @@ const CONSECUTIVE_ERROR_THRESHOLD = 3;
 
 interface UseAdaptivePollingOptions {
   /** Async function that fetches data and returns whether active operations exist */
-  fetchFn: () => Promise<{ hasActiveOperations: boolean }>;
+  fetchFn: (signal?: AbortSignal) => Promise<{ hasActiveOperations: boolean }>;
   /** Polling interval when active operations are in progress (ms) */
   fastIntervalMs?: number;
   /** Polling interval when all operations are idle (ms) */
@@ -40,6 +40,7 @@ export function useAdaptivePolling({
   const enabledRef = useRef(enabled);
   const fetchFnRef = useRef(fetchFn);
   const isHandlingVisibilityRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Keep refs in sync with latest props
   useEffect(() => {
@@ -61,14 +62,21 @@ export function useAdaptivePolling({
     if (isFetchingRef.current) return false;
     isFetchingRef.current = true;
 
+    // Abort any previous in-flight request
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const result = await fetchFnRef.current();
+      const result = await fetchFnRef.current(controller.signal);
+      if (controller.signal.aborted) return false;
       hasActiveRef.current = result.hasActiveOperations;
       consecutiveErrorsRef.current = 0;
       setIsPolling(result.hasActiveOperations);
       setLastFetchedAt(new Date());
       return true;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return false;
       console.error('Adaptive polling fetch failed:', err);
       consecutiveErrorsRef.current += 1;
       // Assume active on error to avoid missing updates, unless too many consecutive errors
@@ -127,6 +135,7 @@ export function useAdaptivePolling({
 
     return () => {
       clearScheduled();
+      abortControllerRef.current?.abort();
     };
   }, [enabled, scheduleNext, clearScheduled]);
 
@@ -137,13 +146,14 @@ export function useAdaptivePolling({
     const handleVisibility = () => {
       // Prevent concurrent executions of the visibility handler
       if (isHandlingVisibilityRef.current) return;
-      
+
       if (document.hidden) {
         clearScheduled();
+        abortControllerRef.current?.abort();
       } else if (enabledRef.current) {
         // Tab became visible — fetch immediately to catch up, then resume schedule
         isHandlingVisibilityRef.current = true;
-        
+
         (async () => {
           try {
             await doFetch();
