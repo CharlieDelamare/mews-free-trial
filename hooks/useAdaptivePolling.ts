@@ -57,7 +57,7 @@ export function useAdaptivePolling({
   }, []);
 
   const doFetch = useCallback(async () => {
-    if (isFetchingRef.current) return;
+    if (isFetchingRef.current) return false;
     isFetchingRef.current = true;
 
     try {
@@ -66,6 +66,7 @@ export function useAdaptivePolling({
       consecutiveErrorsRef.current = 0;
       setIsPolling(result.hasActiveOperations);
       setLastFetchedAt(new Date());
+      return true;
     } catch (err) {
       console.error('Adaptive polling fetch failed:', err);
       consecutiveErrorsRef.current += 1;
@@ -77,6 +78,7 @@ export function useAdaptivePolling({
         hasActiveRef.current = false;
         setIsPolling(false);
       }
+      return true;
     } finally {
       isFetchingRef.current = false;
     }
@@ -90,8 +92,19 @@ export function useAdaptivePolling({
 
     const delay = hasActiveRef.current ? fastIntervalMs : idleIntervalMs;
     timeoutRef.current = setTimeout(async () => {
-      await doFetch();
-      scheduleNext();
+      const didFetch = await doFetch();
+      // Always reschedule: either immediately after successful fetch,
+      // or with a small retry delay if fetch was skipped due to another in progress
+      if (didFetch) {
+        scheduleNext();
+      } else {
+        // A fetch is already in progress, retry scheduling soon
+        // Use a separate timer that will schedule the next polling cycle
+        const retryTimer = setTimeout(() => {
+          scheduleNext();
+        }, 50);
+        timeoutRef.current = retryTimer;
+      }
     }, delay);
   }, [fastIntervalMs, idleIntervalMs, doFetch, clearScheduled]);
 
