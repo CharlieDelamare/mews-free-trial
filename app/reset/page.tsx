@@ -149,50 +149,6 @@ export default function ResetSandboxPage() {
             </p>
           </div>
 
-          {/* Manual Add Environment */}
-          <div className="border-t border-gray-200 pt-4">
-            <button
-              type="button"
-              onClick={() => { setShowManualAdd(!showManualAdd); setManualAddMessage(null); }}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-            >
-              {showManualAdd ? 'Cancel' : 'Manually add environment'}
-            </button>
-            {showManualAdd && (
-              <div className="mt-3 space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Access Token
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={manualToken}
-                    onChange={(e) => setManualToken(e.target.value)}
-                    placeholder="Paste access token here"
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleManualAdd}
-                    disabled={!manualToken.trim() || manualAddLoading}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      !manualToken.trim() || manualAddLoading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {manualAddLoading ? 'Adding...' : 'Add'}
-                  </button>
-                </div>
-              </div>
-            )}
-            {manualAddMessage && (
-              <p className={`text-sm mt-2 ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-                {manualAddMessage.text}
-              </p>
-            )}
-          </div>
-
           {/* Reset Button */}
           <button
             onClick={handleResetClick}
@@ -209,6 +165,53 @@ export default function ResetSandboxPage() {
           <p className="text-xs text-gray-500 text-center">
             Resetting will cancel reservations, close bills, and create fresh sample data for the next 7 days
           </p>
+        </div>
+
+        {/* Manual Add Environment - separate section */}
+        <div className="mt-6 border border-dashed border-gray-300 rounded-xl bg-gray-50 p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700">Add existing environment</h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Paste an access token to add an environment without waiting for the webhook.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setShowManualAdd(!showManualAdd); setManualAddMessage(null); }}
+              className="text-xs text-gray-500 hover:text-gray-700 font-medium shrink-0 ml-4"
+            >
+              {showManualAdd ? 'Close' : 'Add'}
+            </button>
+          </div>
+          {showManualAdd && (
+            <div className="mt-4 flex gap-2">
+              <input
+                type="text"
+                value={manualToken}
+                onChange={(e) => setManualToken(e.target.value)}
+                placeholder="Paste access token here"
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={handleManualAdd}
+                disabled={!manualToken.trim() || manualAddLoading}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  !manualToken.trim() || manualAddLoading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-700 text-white hover:bg-gray-800'
+                }`}
+              >
+                {manualAddLoading ? 'Adding...' : 'Store'}
+              </button>
+            </div>
+          )}
+          {manualAddMessage && (
+            <p className={`text-sm mt-3 ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+              {manualAddMessage.text}
+            </p>
+          )}
         </div>
       </div>
 
