@@ -112,6 +112,7 @@ export async function createReservationsForEnvironment(
     operationType?: 'automatic' | 'demo_filler';
     logId?: string; // Unified log ID for updating operationDetails
     languageCode?: string; // Property language for translating customer notes
+    serviceId?: string; // Specific bookable service ID to use
   }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
@@ -162,7 +163,9 @@ export async function createReservationsForEnvironment(
     );
 
     // Fetch Mews data
-    const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
+    const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken, {
+      serviceId: options?.serviceId
+    });
 
     // Step 3: Filter resource categories based on what was actually created
     const filteredCategories = filterResourceCategories(mewsData.resourceCategories);

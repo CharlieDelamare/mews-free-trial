@@ -42,6 +42,10 @@ export default function SandboxFillerPage() {
   const [manualAddLoading, setManualAddLoading] = useState(false);
   const [manualAddMessage, setManualAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  const [services, setServices] = useState<Array<{ id: string; name: string; ordering: number }>>([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState('');
+
   const [sandboxFillerData, setDemoFillerData] = useState({
     selectedEnvironment: '',
     startDate: getTodayDate(),
@@ -75,6 +79,32 @@ export default function SandboxFillerPage() {
       console.error('Failed to fetch environments:', error);
     } finally {
       setEnvironmentsLoading(false);
+    }
+  };
+
+  const fetchServicesForEnvironment = async (enterpriseId: string) => {
+    setServicesLoading(true);
+    setServices([]);
+    setSelectedServiceId('');
+    try {
+      const response = await fetch('/api/services/list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enterpriseId })
+      });
+      const data = await response.json();
+      if (data.success && data.services) {
+        setServices(data.services);
+        if (data.services.length === 1) {
+          setSelectedServiceId(data.services[0].id);
+        }
+      } else {
+        console.error('Failed to fetch services:', data.error);
+      }
+    } catch (error) {
+      console.error('Failed to fetch services:', error);
+    } finally {
+      setServicesLoading(false);
     }
   };
 
@@ -133,6 +163,7 @@ export default function SandboxFillerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           enterpriseId: sandboxFillerData.selectedEnvironment,
+          serviceId: selectedServiceId,
           startDate: sandboxFillerData.startDate,
           endDate: sandboxFillerData.endDate,
           reservationCount: Number(sandboxFillerData.reservationCount) || 20
@@ -185,7 +216,15 @@ export default function SandboxFillerPage() {
                 id="selectedEnvironment"
                 name="selectedEnvironment"
                 value={sandboxFillerData.selectedEnvironment}
-                onChange={(e) => setDemoFillerData(prev => ({ ...prev, selectedEnvironment: e.target.value }))}
+                onChange={(e) => {
+                  const newEnterpriseId = e.target.value;
+                  setDemoFillerData(prev => ({ ...prev, selectedEnvironment: newEnterpriseId }));
+                  setServices([]);
+                  setSelectedServiceId('');
+                  if (newEnterpriseId) {
+                    fetchServicesForEnvironment(newEnterpriseId);
+                  }
+                }}
                 required
                 className={selectClasses}
                 style={selectStyle}
@@ -206,6 +245,46 @@ export default function SandboxFillerPage() {
             <p className="text-xs text-gray-500 mt-2">
               If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
             </p>
+          </div>
+
+          {/* Service Dropdown */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Service *
+            </label>
+            {servicesLoading ? (
+              <div className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                Loading services...
+              </div>
+            ) : !sandboxFillerData.selectedEnvironment ? (
+              <select
+                disabled
+                className={`${selectClasses} bg-gray-100 text-gray-400 cursor-not-allowed`}
+                style={selectStyle}
+              >
+                <option>-- Select a sandbox first --</option>
+              </select>
+            ) : (
+              <select
+                value={selectedServiceId}
+                onChange={(e) => setSelectedServiceId(e.target.value)}
+                required
+                className={selectClasses}
+                style={selectStyle}
+              >
+                <option value="">-- Select a service --</option>
+                {services.map((svc) => (
+                  <option key={svc.id} value={svc.id}>
+                    {svc.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {!servicesLoading && sandboxFillerData.selectedEnvironment && services.length === 0 && (
+              <p className="text-sm text-red-500 mt-2">
+                No bookable services found for this sandbox.
+              </p>
+            )}
           </div>
 
           {/* Start Date */}
@@ -268,9 +347,9 @@ export default function SandboxFillerPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={!sandboxFillerData.selectedEnvironment || sandboxFillerLoading}
+            disabled={!sandboxFillerData.selectedEnvironment || !selectedServiceId || sandboxFillerLoading}
             className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
-              !sandboxFillerData.selectedEnvironment || sandboxFillerLoading
+              !sandboxFillerData.selectedEnvironment || !selectedServiceId || sandboxFillerLoading
                 ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
