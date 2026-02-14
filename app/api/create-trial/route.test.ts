@@ -560,6 +560,143 @@ describe('POST /api/create-trial', () => {
     });
   });
 
+  describe('Charlie Delamare Exception', () => {
+    test('allows 1-day duration for charlie.delamare@mews.com', async () => {
+      const request = createMockRequest({
+        firstName: 'Charlie',
+        lastName: 'Delamare',
+        requestorEmail: 'charlie.delamare@mews.com',
+        customerEmail: 'customer@example.com',
+        propertyName: 'Charlie Test Hotel',
+        propertyCountry: 'United Kingdom',
+        preferredLanguage: 'English (UK)',
+        propertyType: 'hotel',
+        durationDays: 1,
+      });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+
+      // Verify the API was called with 1-day lifetime
+      const fetchCall = (global.fetch as any).mock.calls.find(
+        (call: any) => call[0] === 'https://app.mews-demo.com/api/general/v1/enterprises/addSample'
+      );
+      const payload = JSON.parse(fetchCall[1].body);
+      expect(payload.Lifetime).toBe('P0Y0M1DT0H0M0S');
+    });
+
+    test('allows 1-day duration for charlie.delamare@gmail.com', async () => {
+      const request = createMockRequest({
+        firstName: 'Charlie',
+        lastName: 'Delamare',
+        requestorEmail: 'charlie.delamare@gmail.com',
+        customerEmail: 'customer@example.com',
+        propertyName: 'Charlie Test Hotel',
+        propertyCountry: 'United Kingdom',
+        preferredLanguage: 'English (UK)',
+        propertyType: 'hotel',
+        durationDays: 1,
+      });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(200);
+    });
+
+    test('rejects 1-day duration for non-Charlie users', async () => {
+      const request = createMockRequest({
+        firstName: 'John',
+        lastName: 'Doe',
+        requestorEmail: 'john@example.com',
+        customerEmail: 'customer@example.com',
+        propertyName: 'Test Hotel',
+        propertyCountry: 'United Kingdom',
+        preferredLanguage: 'English (UK)',
+        propertyType: 'hotel',
+        durationDays: 1,
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Invalid duration');
+    });
+  });
+
+  describe('Duplicate Salesforce ID Prevention', () => {
+    test('returns 409 when Salesforce ID already has an environment', async () => {
+      const { prisma } = await import('@/lib/prisma');
+      (prisma.unifiedLog.findFirst as any).mockResolvedValueOnce({
+        id: 'existing-log-1',
+        propertyName: 'Existing Hotel',
+        customerEmail: 'existing@example.com',
+        status: 'completed',
+        timestamp: new Date(),
+        enterpriseId: 'ent-existing',
+      });
+
+      const request = createMockRequest({
+        firstName: 'John',
+        lastName: 'Doe',
+        requestorEmail: 'john@example.com',
+        customerEmail: 'new@example.com',
+        propertyName: 'New Hotel',
+        propertyCountry: 'United Kingdom',
+        preferredLanguage: 'English (UK)',
+        propertyType: 'hotel',
+        durationDays: 30,
+        salesforceAccountId: '001ABCDEFGHIJKLM',
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(409);
+      expect(data.error).toContain('already exists for this Salesforce Account ID');
+      expect(data.existingEnvironment).toBeDefined();
+      expect(data.existingEnvironment.propertyName).toBe('Existing Hotel');
+    });
+
+    test('skips duplicate check for Charlie users', async () => {
+      const request = createMockRequest({
+        firstName: 'Charlie',
+        lastName: 'Delamare',
+        requestorEmail: 'charlie.delamare@mews.com',
+        customerEmail: 'customer@example.com',
+        propertyName: 'Charlie Hotel',
+        propertyCountry: 'United Kingdom',
+        preferredLanguage: 'English (UK)',
+        propertyType: 'hotel',
+        durationDays: 7,
+        salesforceAccountId: '001ABCDEFGHIJKLM',
+      });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(200);
+
+      // The unifiedLog.findFirst for salesforce check should NOT have been called
+      // (Charlie bypasses it). The mock returns null by default anyway.
+    });
+  });
+
   describe('Error Handling', () => {
     test('handles fetch error during API call', async () => {
       const request = createMockRequest({
