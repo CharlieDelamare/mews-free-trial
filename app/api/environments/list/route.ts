@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Disable caching - this endpoint needs fresh data on every request
+export const dynamic = 'force-dynamic';
+
 interface Environment {
   enterpriseId: string;
   enterpriseName: string;
