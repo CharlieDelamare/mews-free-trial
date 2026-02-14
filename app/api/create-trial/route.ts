@@ -11,6 +11,7 @@ import { createEnvironmentLog, updateUnifiedLog } from '@/lib/unified-logger';
 import { convertDaysToISO8601 } from '@/lib/duration';
 import { prisma } from '@/lib/prisma';
 import { sendZapierNotification } from '@/lib/zapier';
+import { loggedFetch } from '@/lib/api-call-logger';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 
@@ -278,10 +279,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Call Mews API
-    const response = await fetch(MEWS_API_URL, {
+    const response = await loggedFetch(MEWS_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(apiBody)
+    }, {
+      unifiedLogId: log.id,
+      group: 'initial',
+      endpoint: 'enterprises/addSample',
     });
 
     const result = await response.json();

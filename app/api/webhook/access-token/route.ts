@@ -273,13 +273,13 @@ export async function POST(request: NextRequest) {
       const backgroundWork = (async () => {
         try {
           // Fetch timezone and language from configuration API
-          const timezoneResult = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, newToken.accessToken);
+          const timezoneResult = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, newToken.accessToken, log.id);
           const timezone = timezoneResult.timezone;
           const languageCode = timezoneResult.defaultLanguageCode;
           await updateUnifiedLog(log.id, { timezone });
 
           // Fetch Mews data and update Best Price rate
-          const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, newToken.accessToken);
+          const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, newToken.accessToken, { logId: log.id });
 
           const bestPriceRate = mewsData.rates.find(r => r.name === 'Best Price');
           if (bestPriceRate && timezone) {
@@ -287,7 +287,8 @@ export async function POST(request: NextRequest) {
               MEWS_CLIENT_TOKEN,
               newToken.accessToken,
               bestPriceRate.id,
-              timezone
+              timezone,
+              log.id
             );
           } else {
             console.warn('[WEBHOOK-SETUP] Best Price rate or timezone not found, skipping rate update');

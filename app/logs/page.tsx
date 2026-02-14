@@ -7,6 +7,7 @@ import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
 import { CopyButton } from '@/components/CopyButton';
 import { Pagination } from '@/components/Pagination';
 import { useAdaptivePolling } from '@/hooks/useAdaptivePolling';
+import { ApiCallLogs } from '@/components/ApiCallLogs';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -299,6 +300,8 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">{log.errorMessage}</pre>
         </div>
       )}
+
+      {log.status !== 'building' && <ApiCallLogs logId={log.id} />}
     </>
   );
 }
@@ -336,6 +339,8 @@ function ResetContent({ log }: { log: import('@/types/logs').ResetLog }) {
           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">{log.errorMessage}</pre>
         </div>
       )}
+
+      <ApiCallLogs logId={log.id} />
     </>
   );
 }
@@ -379,6 +384,8 @@ function DemoFillerContent({ log }: { log: import('@/types/logs').DemoFillerLog 
           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">{log.errorMessage}</pre>
         </div>
       )}
+
+      <ApiCallLogs logId={log.id} />
     </>
   );
 }
