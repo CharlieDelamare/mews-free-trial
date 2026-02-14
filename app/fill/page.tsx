@@ -119,7 +119,7 @@ export default function SandboxFillerPage() {
         <form onSubmit={handleSandboxFillerSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
           {/* Sandbox Dropdown */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="selectedEnvironment" className="block text-sm font-medium text-gray-700 mb-1">
               Select Sandbox *
             </label>
             {environmentsLoading ? (
@@ -128,6 +128,7 @@ export default function SandboxFillerPage() {
               </div>
             ) : (
               <select
+                id="selectedEnvironment"
                 name="selectedEnvironment"
                 value={sandboxFillerData.selectedEnvironment}
                 onChange={(e) => setDemoFillerData(prev => ({ ...prev, selectedEnvironment: e.target.value }))}
@@ -155,11 +156,12 @@ export default function SandboxFillerPage() {
 
           {/* Start Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
               Start Date *
             </label>
             <input
               type="date"
+              id="startDate"
               name="startDate"
               value={sandboxFillerData.startDate}
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, startDate: e.target.value }))}
@@ -172,11 +174,12 @@ export default function SandboxFillerPage() {
 
           {/* End Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
               End Date *
             </label>
             <input
               type="date"
+              id="endDate"
               name="endDate"
               value={sandboxFillerData.endDate}
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, endDate: e.target.value }))}
@@ -189,11 +192,12 @@ export default function SandboxFillerPage() {
 
           {/* Reservation Count */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="reservationCount" className="block text-sm font-medium text-gray-700 mb-1">
               Number of Reservations *
             </label>
             <input
               type="number"
+              id="reservationCount"
               name="reservationCount"
               value={sandboxFillerData.reservationCount}
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, reservationCount: e.target.value === '' ? '' : parseInt(e.target.value) || 0 }))}

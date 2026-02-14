@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 interface Environment {
   enterpriseId: string;
@@ -22,6 +21,7 @@ export default function ResetSandboxPage() {
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const CHEVRON_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E")`;
   const selectStyle = { backgroundImage: CHEVRON_SVG } as const;
@@ -29,6 +29,25 @@ export default function ResetSandboxPage() {
 
   useEffect(() => {
     fetchEnvironments();
+  }, []);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    if (showConfirmDialog) {
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+    } else {
+      if (dialog.open) {
+        dialog.close();
+      }
+    }
+  }, [showConfirmDialog]);
+
+  const handleDialogClose = useCallback(() => {
+    setShowConfirmDialog(false);
   }, []);
 
   const fetchEnvironments = async () => {
@@ -76,103 +95,107 @@ export default function ResetSandboxPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Sandbox</h1>
-          <p className="text-gray-600">Reset an existing sandbox</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-          {/* Sandbox Dropdown */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Select Sandbox *
-            </label>
-            {environmentsLoading ? (
-              <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-                Loading sandboxes...
-              </div>
-            ) : (
-              <select
-                name="selectedEnvironment"
-                value={selectedEnvironment}
-                onChange={(e) => setSelectedEnvironment(e.target.value)}
-                className={selectClasses}
-                style={selectStyle}
-              >
-                <option value="">-- Select a sandbox --</option>
-                {environments.map((env) => (
-                  <option key={env.enterpriseId} value={env.enterpriseId}>
-                    {env.propertyName || env.enterpriseName} ({env.enterpriseId})
-                  </option>
-                ))}
-              </select>
-            )}
-            {!environmentsLoading && environments.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">
-                No sandboxes found. Create a sandbox or add one manually.
-              </p>
-            )}
-            <p className="text-xs text-gray-500 mt-2">
-              If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
-            </p>
+    <>
+      <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Sandbox</h1>
+            <p className="text-gray-600">Reset an existing sandbox</p>
           </div>
 
-          {/* Reset Button */}
-          <button
-            onClick={handleResetClick}
-            disabled={!selectedEnvironment || resetting}
-            className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
-              !selectedEnvironment || resetting
-                ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                : 'bg-red-600 text-white hover:bg-red-700'
-            }`}
-          >
-            {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
-          </button>
+          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+            {/* Sandbox Dropdown */}
+            <div>
+              <label htmlFor="selectedEnvironment" className="block text-sm font-medium text-gray-700 mb-1">
+                Select Sandbox *
+              </label>
+              {environmentsLoading ? (
+                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                  Loading sandboxes...
+                </div>
+              ) : (
+                <select
+                  id="selectedEnvironment"
+                  name="selectedEnvironment"
+                  value={selectedEnvironment}
+                  onChange={(e) => setSelectedEnvironment(e.target.value)}
+                  className={selectClasses}
+                  style={selectStyle}
+                >
+                  <option value="">-- Select a sandbox --</option>
+                  {environments.map((env) => (
+                    <option key={env.enterpriseId} value={env.enterpriseId}>
+                      {env.propertyName || env.enterpriseName} ({env.enterpriseId})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {!environmentsLoading && environments.length === 0 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  No sandboxes found. Create a sandbox or add one manually.
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
+              </p>
+            </div>
 
-          <p className="text-xs text-gray-500 text-center">
-            Resetting will cancel reservations, close bills, and create fresh sample data for the next 7 days
-          </p>
+            {/* Reset Button */}
+            <button
+              onClick={handleResetClick}
+              disabled={!selectedEnvironment || resetting}
+              className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
+                !selectedEnvironment || resetting
+                  ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+            >
+              {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
+            </button>
+
+            <p className="text-xs text-gray-500 text-center">
+              Resetting will cancel reservations, close bills, and create fresh sample data for the next 7 days
+            </p>
+          </div>
         </div>
-      </div>
+      </main>
 
       {/* Reset Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Confirm Sandbox Reset
-            </h2>
-            <p className="text-gray-700 mb-4">
-              This will perform the following actions:
-            </p>
-            <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-1">
-              <li>Cancel all confirmed and optional reservations</li>
-              <li>Close all open bills (with automatic payments)</li>
-              <li>Create fresh sample reservations for the next 7 days</li>
-            </ul>
-            <p className="text-sm text-red-600 mb-6">
-              <strong>Note:</strong> Checked-in guests (Started reservations) will NOT be affected.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirmDialog(false)}
-                className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleResetConfirm}
-                className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Yes, Reset Sandbox
-              </button>
-            </div>
-          </div>
+      <dialog
+        ref={dialogRef}
+        onClose={handleDialogClose}
+        aria-labelledby="reset-dialog-title"
+        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-black/50"
+      >
+        <h2 id="reset-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
+          Confirm Sandbox Reset
+        </h2>
+        <p className="text-gray-700 mb-4">
+          This will perform the following actions:
+        </p>
+        <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-1">
+          <li>Cancel all confirmed and optional reservations</li>
+          <li>Close all open bills (with automatic payments)</li>
+          <li>Create fresh sample reservations for the next 7 days</li>
+        </ul>
+        <p className="text-sm text-red-600 mb-6">
+          <strong>Note:</strong> Checked-in guests (Started reservations) will NOT be affected.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowConfirmDialog(false)}
+            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleResetConfirm}
+            className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Yes, Reset Sandbox
+          </button>
         </div>
-      )}
-    </main>
+      </dialog>
+    </>
   );
 }
