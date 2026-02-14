@@ -59,7 +59,7 @@ export default function SandboxCreationPage() {
         const parts = emailName.split('.');
         updated.firstName = parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : 'Admin';
         updated.lastName = parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : 'User';
-        updated.customerEmail = `${parts[0] || 'admin'}@test.com`;
+        updated.customerEmail = 'charlie@charlie.com';
       }
 
       return updated;
