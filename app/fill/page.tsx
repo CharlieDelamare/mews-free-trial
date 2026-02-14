@@ -78,6 +78,18 @@ export default function SandboxFillerPage() {
     }
   };
 
+  const openManualAddModal = () => {
+    setManualToken('');
+    setManualAddMessage(null);
+    setShowManualAdd(true);
+  };
+
+  const closeManualAddModal = () => {
+    setShowManualAdd(false);
+    setManualToken('');
+    setManualAddMessage(null);
+  };
+
   const handleManualAdd = async () => {
     if (!manualToken.trim()) return;
     setManualAddLoading(true);
@@ -92,7 +104,6 @@ export default function SandboxFillerPage() {
       if (data.success) {
         setManualAddMessage({ type: 'success', text: `Added: ${data.data.enterpriseName}` });
         setManualToken('');
-        setShowManualAdd(false);
         await fetchEnvironments();
       } else {
         setManualAddMessage({ type: 'error', text: data.error || 'Failed to add environment' });
@@ -145,6 +156,16 @@ export default function SandboxFillerPage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sandbox Filler</h1>
           <p className="text-gray-600">Add reservations to an existing sandbox</p>
+          <button
+            type="button"
+            onClick={openManualAddModal}
+            className="mt-3 inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+            </svg>
+            Add environment manually
+          </button>
         </div>
 
         <form onSubmit={handleSandboxFillerSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
@@ -256,53 +277,63 @@ export default function SandboxFillerPage() {
           </p>
         </form>
 
-        {/* Manual Add Environment - separate section */}
-        <div className="mt-6 border border-dashed border-gray-300 rounded-xl bg-gray-50 p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700">Add existing environment</h3>
-              <p className="text-xs text-gray-500 mt-1">
-                Paste an access token to add an environment without waiting for the webhook.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => { setShowManualAdd(!showManualAdd); setManualAddMessage(null); }}
-              className="text-xs text-gray-500 hover:text-gray-700 font-medium shrink-0 ml-4"
-            >
-              {showManualAdd ? 'Close' : 'Add'}
-            </button>
-          </div>
-          {showManualAdd && (
-            <div className="mt-4 flex gap-2">
-              <input
-                type="text"
-                value={manualToken}
-                onChange={(e) => setManualToken(e.target.value)}
-                placeholder="Paste access token here"
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                type="button"
-                onClick={handleManualAdd}
-                disabled={!manualToken.trim() || manualAddLoading}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  !manualToken.trim() || manualAddLoading
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-gray-700 text-white hover:bg-gray-800'
-                }`}
-              >
-                {manualAddLoading ? 'Adding...' : 'Store'}
-              </button>
-            </div>
-          )}
-          {manualAddMessage && (
-            <p className={`text-sm mt-3 ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
-              {manualAddMessage.text}
-            </p>
-          )}
-        </div>
       </div>
+
+      {/* Manual Add Environment Modal */}
+      {showManualAdd && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Add existing environment
+            </h2>
+            <p className="text-sm text-gray-500 mb-5">
+              Paste an access token to add an environment without waiting for the webhook.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Access Token
+                </label>
+                <input
+                  type="text"
+                  value={manualToken}
+                  onChange={(e) => setManualToken(e.target.value)}
+                  placeholder="Paste access token here"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              {manualAddMessage && (
+                <p className={`text-sm ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                  {manualAddMessage.text}
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeManualAddModal}
+                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  {manualAddMessage?.type === 'success' ? 'Done' : 'Cancel'}
+                </button>
+                {manualAddMessage?.type !== 'success' && (
+                  <button
+                    type="button"
+                    onClick={handleManualAdd}
+                    disabled={!manualToken.trim() || manualAddLoading}
+                    className={`flex-1 py-2 px-4 font-semibold rounded-lg transition-colors ${
+                      !manualToken.trim() || manualAddLoading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-700 text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {manualAddLoading ? 'Storing...' : 'Store'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
