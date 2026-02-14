@@ -49,6 +49,7 @@ export default function LogsPage() {
     const data = await response.json();
     if (data.success) {
       setLogs(data.logs);
+      setError(''); // Clear any previous error state
       return { hasActiveOperations: data.hasActiveOperations ?? false };
     }
     throw new Error(data.error || 'Failed to fetch logs');
