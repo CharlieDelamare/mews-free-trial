@@ -144,53 +144,24 @@ export default function ResetSandboxPage() {
             <p className="text-gray-600">Reset an existing sandbox</p>
           </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-          {/* Sandbox Dropdown */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">
-                Select Sandbox *
-              </label>
-              <button
-                type="button"
-                onClick={openManualAddModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-                title="Add environment manually"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                  <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                </svg>
-              </button>
-            </div>
-            {environmentsLoading ? (
-              <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
-                Loading sandboxes...
-              </div>
-            ) : (
-              <select
-                name="selectedEnvironment"
-                value={selectedEnvironment}
-                onChange={(e) => setSelectedEnvironment(e.target.value)}
-                className={selectClasses}
-                style={selectStyle}
-              >
-                <option value="">-- Select a sandbox --</option>
-                {environments.map((env) => (
-                  <option key={env.enterpriseId} value={env.enterpriseId}>
-                    {env.propertyName || env.enterpriseName} ({env.enterpriseId})
-                  </option>
-                ))}
-              </select>
-            )}
-            {!environmentsLoading && environments.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">
-                No sandboxes found. Create a sandbox or add one manually.
           <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
             {/* Sandbox Dropdown */}
             <div>
-              <label htmlFor="selectedEnvironment" className="block text-sm font-medium text-gray-700 mb-1">
-                Select Sandbox *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="selectedEnvironment" className="text-sm font-medium text-gray-700">
+                  Select Sandbox *
+                </label>
+                <button
+                  type="button"
+                  onClick={openManualAddModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Add environment manually"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                    <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                  </svg>
+                </button>
+              </div>
               {environmentsLoading ? (
                 <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
                   Loading sandboxes...
@@ -241,48 +212,6 @@ export default function ResetSandboxPage() {
           </div>
         </div>
       </main>
-
-      {/* Reset Confirmation Dialog */}
-      <dialog
-        ref={dialogRef}
-        onClose={handleDialogClose}
-        aria-labelledby="reset-dialog-title"
-        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-black/50"
-      >
-        <h2 id="reset-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
-          Confirm Sandbox Reset
-        </h2>
-        <p className="text-gray-700 mb-4">
-          This will perform the following actions:
-        </p>
-        <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-1">
-          <li>Cancel all confirmed and optional reservations</li>
-          <li>Close all open bills (with automatic payments)</li>
-          <li>Create fresh sample reservations for the next 7 days</li>
-        </ul>
-        <p className="text-sm text-red-600 mb-6">
-          <strong>Note:</strong> Checked-in guests (Started reservations) will NOT be affected.
-        </p>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowConfirmDialog(false)}
-            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleResetConfirm}
-            className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Yes, Reset Sandbox
-          </button>
-
-          <p className="text-xs text-gray-500 text-center">
-            Resetting will cancel reservations, close bills, and create fresh sample data for the next 7 days
-          </p>
-        </div>
-
-      </div>
 
       {/* Manual Add Environment Modal */}
       {showManualAdd && (
@@ -341,38 +270,39 @@ export default function ResetSandboxPage() {
       )}
 
       {/* Reset Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Confirm Sandbox Reset
-            </h2>
-            <p className="text-gray-700 mb-4">
-              This will perform the following actions:
-            </p>
-            <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-1">
-              <li>Cancel all confirmed and optional reservations</li>
-              <li>Close all open bills (with automatic payments)</li>
-              <li>Create fresh sample reservations for the next 7 days</li>
-            </ul>
-            <p className="text-sm text-red-600 mb-6">
-              <strong>Note:</strong> Checked-in guests (Started reservations) will NOT be affected.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirmDialog(false)}
-                className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleResetConfirm}
-                className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Yes, Reset Sandbox
-              </button>
-            </div>
-          </div>
+      <dialog
+        ref={dialogRef}
+        onClose={handleDialogClose}
+        aria-labelledby="reset-dialog-title"
+        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-black/50"
+      >
+        <h2 id="reset-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
+          Confirm Sandbox Reset
+        </h2>
+        <p className="text-gray-700 mb-4">
+          This will perform the following actions:
+        </p>
+        <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-1">
+          <li>Cancel all confirmed and optional reservations</li>
+          <li>Close all open bills (with automatic payments)</li>
+          <li>Create fresh sample reservations for the next 7 days</li>
+        </ul>
+        <p className="text-sm text-red-600 mb-6">
+          <strong>Note:</strong> Checked-in guests (Started reservations) will NOT be affected.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowConfirmDialog(false)}
+            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleResetConfirm}
+            className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Yes, Reset Sandbox
+          </button>
         </div>
       </dialog>
     </>
