@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // Disable caching - this endpoint needs fresh data on every request
 export const dynamic = 'force-dynamic';
+
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 
 interface TransformedLog {
   id: string;
@@ -36,64 +39,122 @@ interface TransformedLog {
   failureCount?: number;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const allLogs: TransformedLog[] = [];
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10)));
+    const skip = (page - 1) * pageSize;
 
-    // 1. Try to fetch from new UnifiedLog table first
+    // 1. Try the UnifiedLog table (primary path) with server-side pagination
     try {
-      const unifiedLogs = await prisma.unifiedLog.findMany({
-        orderBy: { timestamp: 'desc' },
-      });
+      const [unifiedLogs, totalCount, activeCount] = await Promise.all([
+        prisma.unifiedLog.findMany({
+          orderBy: { timestamp: 'desc' },
+          take: pageSize,
+          skip,
+        }),
+        prisma.unifiedLog.count(),
+        prisma.unifiedLog.count({
+          where: { status: { in: ['building', 'processing', 'Updating'] } },
+        }),
+      ]);
 
-      for (const log of unifiedLogs) {
-        allLogs.push({
-          id: log.id,
-          logType: log.logType as 'environment' | 'reset' | 'demo_filler',
-          type: log.logType as 'environment' | 'reset' | 'demo_filler',
-          timestamp: log.timestamp.toISOString(),
-          enterpriseId: log.enterpriseId,
-          status: log.status,
-          completedAt: log.completedAt?.toISOString() || null,
-          errorMessage: log.errorMessage,
-          // Environment fields
-          propertyName: log.propertyName || undefined,
-          customerName: log.customerName || undefined,
-          customerEmail: log.customerEmail || undefined,
-          propertyCountry: log.propertyCountry || undefined,
-          propertyType: log.propertyType || undefined,
-          loginUrl: log.loginUrl || undefined,
-          loginEmail: log.loginEmail || undefined,
-          loginPassword: log.loginPassword || undefined,
-          requestorEmail: log.requestorEmail,
-          durationDays: log.durationDays,
-          salesforceAccountId: log.salesforceAccountId,
-          operationDetails: log.operationDetails,
-          // Reset fields
-          currentStep: log.currentStep || undefined,
-          totalSteps: log.totalSteps || undefined,
-          // Demo filler fields
-          totalItems: log.totalItems || undefined,
-          successCount: log.successCount || undefined,
-          failureCount: log.failureCount || undefined,
+      const logs: TransformedLog[] = unifiedLogs.map(log => ({
+        id: log.id,
+        logType: log.logType as 'environment' | 'reset' | 'demo_filler',
+        type: log.logType as 'environment' | 'reset' | 'demo_filler',
+        timestamp: log.timestamp.toISOString(),
+        enterpriseId: log.enterpriseId,
+        status: log.status,
+        completedAt: log.completedAt?.toISOString() || null,
+        errorMessage: log.errorMessage,
+        propertyName: log.propertyName || undefined,
+        customerName: log.customerName || undefined,
+        customerEmail: log.customerEmail || undefined,
+        propertyCountry: log.propertyCountry || undefined,
+        propertyType: log.propertyType || undefined,
+        loginUrl: log.loginUrl || undefined,
+        loginEmail: log.loginEmail || undefined,
+        loginPassword: log.loginPassword || undefined,
+        requestorEmail: log.requestorEmail,
+        durationDays: log.durationDays,
+        salesforceAccountId: log.salesforceAccountId,
+        operationDetails: log.operationDetails,
+        currentStep: log.currentStep || undefined,
+        totalSteps: log.totalSteps || undefined,
+        totalItems: log.totalItems || undefined,
+        successCount: log.successCount || undefined,
+        failureCount: log.failureCount || undefined,
+      }));
+
+      // Enrich with enterprise names
+      const enterpriseIds = Array.from(new Set(logs.map(l => l.enterpriseId).filter((id): id is string => id != null)));
+      if (enterpriseIds.length > 0) {
+        const tokens = await prisma.accessToken.findMany({
+          where: { enterpriseId: { in: enterpriseIds } },
+          select: { enterpriseId: true, enterpriseName: true },
+          distinct: ['enterpriseId'],
         });
+        const nameMap = new Map(tokens.map(t => [t.enterpriseId, t.enterpriseName]));
+        for (const log of logs) {
+          if (log.enterpriseId) {
+            log.enterpriseName = nameMap.get(log.enterpriseId);
+          }
+        }
       }
+
+      return NextResponse.json({
+        success: true,
+        logs,
+        totalCount,
+        page,
+        pageSize,
+        hasActiveOperations: activeCount > 0,
+      });
     } catch (error) {
-      console.log('[LOGS API] UnifiedLog table not available, using legacy tables only');
+      console.log('[LOGS API] UnifiedLog table not available, using legacy tables');
     }
 
-    // 2. Fetch from legacy EnvironmentLog table
-    const environmentLogs = await prisma.environmentLog.findMany({
-      orderBy: { timestamp: 'desc' },
-    });
-
-    // Get customer/reservation stats for each environment log
-    const customerLogs = await prisma.customerCreationLog.findMany({
-      orderBy: { startedAt: 'desc' },
-    });
-    const reservationLogs = await prisma.reservationCreationLog.findMany({
-      orderBy: { startedAt: 'desc' },
-    });
+    // 2. Legacy fallback: fetch from old tables (no pagination — degraded mode)
+    const [environmentLogs, customerLogs, reservationLogs] = await Promise.all([
+      prisma.environmentLog.findMany({
+        orderBy: { timestamp: 'desc' },
+      }),
+      prisma.customerCreationLog.findMany({
+        orderBy: { startedAt: 'desc' },
+        select: {
+          id: true,
+          enterpriseId: true,
+          accessTokenId: true,
+          totalCustomers: true,
+          successCount: true,
+          failureCount: true,
+          startedAt: true,
+          completedAt: true,
+          status: true,
+          errorSummary: true,
+          // Exclude customerResults (large JSON)
+        },
+      }),
+      prisma.reservationCreationLog.findMany({
+        orderBy: { startedAt: 'desc' },
+        select: {
+          id: true,
+          enterpriseId: true,
+          accessTokenId: true,
+          totalReservations: true,
+          successCount: true,
+          failureCount: true,
+          startedAt: true,
+          completedAt: true,
+          status: true,
+          errorSummary: true,
+          reservationResults: true, // Needed for .byState extraction
+          // Exclude individual per-item results where possible
+        },
+      }),
+    ]);
 
     // Create lookup maps
     const customerLogsByEnterprise = new Map<string, typeof customerLogs[0]>();
@@ -110,11 +171,16 @@ export async function GET() {
       }
     }
 
+    const allLogs: TransformedLog[] = [];
+
+    // Use Set for O(1) dedup instead of O(n) .some()
+    const seenEnvironmentNames = new Set<string>();
+
     for (const log of environmentLogs) {
-      // Skip if already in unified logs (by property name match)
-      if (allLogs.some(l => l.logType === 'environment' && l.propertyName === log.propertyName)) {
+      if (seenEnvironmentNames.has(log.propertyName)) {
         continue;
       }
+      seenEnvironmentNames.add(log.propertyName);
 
       // Build operationDetails from legacy customer/reservation logs
       let operationDetails: any = undefined;
@@ -180,12 +246,22 @@ export async function GET() {
         orderBy: { startedAt: 'desc' },
       });
 
+      // Use Set for O(1) dedup with composite key (enterpriseId + timestamp second)
+      const seenResetKeys = new Set(
+        allLogs
+          .filter(l => l.logType === 'reset')
+          .map(l => `${l.enterpriseId}|${Math.floor(new Date(l.timestamp).getTime() / 1000)}`)
+      );
+
       for (const log of resetLogs) {
-        // Skip if already in unified logs
-        if (allLogs.some(l => l.logType === 'reset' && l.enterpriseId === log.enterpriseId &&
-            Math.abs(new Date(l.timestamp).getTime() - log.startedAt.getTime()) < 1000)) {
+        const ts = Math.floor(log.startedAt.getTime() / 1000);
+        const key = `${log.enterpriseId}|${ts}`;
+        if (seenResetKeys.has(key) ||
+            seenResetKeys.has(`${log.enterpriseId}|${ts - 1}`) ||
+            seenResetKeys.has(`${log.enterpriseId}|${ts + 1}`)) {
           continue;
         }
+        seenResetKeys.add(key);
 
         allLogs.push({
           id: String(log.id),
@@ -207,7 +283,7 @@ export async function GET() {
 
     // 4. Fetch enterprise names for all logs
     const enterpriseIds = Array.from(new Set(
-      allLogs.map(l => l.enterpriseId).filter((id): id is string => id !== null && id !== undefined)
+      allLogs.map(l => l.enterpriseId).filter((id): id is string => id != null)
     ));
 
     if (enterpriseIds.length > 0) {
@@ -233,7 +309,17 @@ export async function GET() {
     const ACTIVE_STATUSES = new Set(['building', 'processing', 'Updating']);
     const hasActiveOperations = allLogs.some(log => ACTIVE_STATUSES.has(log.status));
 
-    return NextResponse.json({ success: true, logs: allLogs, hasActiveOperations });
+    // Apply pagination to legacy fallback
+    const paginatedLogs = allLogs.slice(skip, skip + pageSize);
+
+    return NextResponse.json({
+      success: true,
+      logs: paginatedLogs,
+      totalCount: allLogs.length,
+      page,
+      pageSize,
+      hasActiveOperations,
+    });
   } catch (error) {
     console.error('Failed to fetch logs:', error);
     return NextResponse.json(

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { UnifiedLog, EnvironmentLog } from '@/types/logs';
 import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
@@ -41,20 +41,28 @@ function buildLoginDetailsText(log: EnvironmentLog): string {
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<UnifiedLog[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const currentPageRef = useRef(currentPage);
+  currentPageRef.current = currentPage;
 
-  const fetchLogsForPolling = useCallback(async () => {
-    const response = await fetch('/api/logs');
+  const fetchPage = useCallback(async (page: number, signal?: AbortSignal) => {
+    const response = await fetch(`/api/logs?page=${page}&pageSize=${ITEMS_PER_PAGE}`, { signal });
     const data = await response.json();
     if (data.success) {
       setLogs(data.logs);
-      setError(''); // Clear any previous error state
+      setTotalCount(data.totalCount ?? data.logs.length);
+      setError('');
       return { hasActiveOperations: data.hasActiveOperations ?? false };
     }
     throw new Error(data.error || 'Failed to fetch logs');
   }, []);
+
+  const fetchLogsForPolling = useCallback(async (signal?: AbortSignal) => {
+    return fetchPage(currentPageRef.current, signal);
+  }, [fetchPage]);
 
   const { isPolling, lastFetchedAt, refresh } = useAdaptivePolling({
     fetchFn: fetchLogsForPolling,
@@ -64,30 +72,33 @@ export default function LogsPage() {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
     const initialFetch = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/logs');
-        const data = await response.json();
-        if (data.success) setLogs(data.logs);
-        else setError('Failed to load logs');
+        await fetchPage(1, controller.signal);
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         setError('Error fetching logs');
         console.error(err);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     initialFetch();
-  }, []);
+    return () => controller.abort();
+  }, [fetchPage]);
 
-  const totalPages = Math.ceil(logs.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentLogs = logs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = async (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      await fetchPage(page);
+    } catch (err) {
+      console.error('Failed to fetch page:', err);
+    }
   };
 
   return (
@@ -151,7 +162,7 @@ export default function LogsPage() {
 
           {!loading && !error && logs.length > 0 && (
             <div className="space-y-3">
-              {currentLogs.map((log) => {
+              {logs.map((log) => {
                 const cardStyle = getStatusCardStyle(log.status);
                 const typeInfo = getLogTypeLabel(log.type);
                 const displayName = log.type === 'environment' && 'propertyName' in log
@@ -183,7 +194,7 @@ export default function LogsPage() {
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
-                totalItems={logs.length}
+                totalItems={totalCount}
                 itemsPerPage={ITEMS_PER_PAGE}
                 onPageChange={handlePageChange}
               />
