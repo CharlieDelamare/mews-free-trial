@@ -33,6 +33,7 @@ export interface MewsData {
 interface MewsService {
   Id: string;
   Name: string;
+  Ordering: number;
   Data: {
     Discriminator: 'Bookable' | 'Additional';
     Value?: {
@@ -751,9 +752,10 @@ export async function updateBestPriceRate(
 export async function fetchBookableServices(
   clientToken: string,
   accessToken: string
-): Promise<Array<{ id: string; name: string }>> {
+): Promise<Array<{ id: string; name: string; ordering: number }>> {
   const services = await fetchServices(clientToken, accessToken);
   return services
     .filter((s: MewsService) => s.Data.Discriminator === 'Bookable')
-    .map((s: MewsService) => ({ id: s.Id, name: s.Name }));
+    .map((s: MewsService) => ({ id: s.Id, name: s.Name, ordering: s.Ordering }))
+    .sort((a, b) => a.ordering - b.ordering || a.name.localeCompare(b.name));
 }

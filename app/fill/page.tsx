@@ -42,7 +42,7 @@ export default function SandboxFillerPage() {
   const [manualAddLoading, setManualAddLoading] = useState(false);
   const [manualAddMessage, setManualAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const [services, setServices] = useState<Array<{ id: string; name: string }>>([]);
+  const [services, setServices] = useState<Array<{ id: string; name: string; ordering: number }>>([]);
   const [servicesLoading, setServicesLoading] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState('');
 

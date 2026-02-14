@@ -9,7 +9,7 @@ interface ServiceListRequest {
 
 interface ServiceListResponse {
   success: boolean;
-  services?: Array<{ id: string; name: string }>;
+  services?: Array<{ id: string; name: string; ordering: number }>;
   error?: string;
 }
 
