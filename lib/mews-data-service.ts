@@ -122,7 +122,7 @@ function extractName(names: Record<string, string> | undefined): string {
 }
 
 /**
- * Fetch all required Mews data for reservation creation
+ * Fetch all required Mews data for reservation creation (first bookable service only)
  */
 export async function fetchMewsData(
   clientToken: string,
@@ -130,7 +130,6 @@ export async function fetchMewsData(
   options?: { logId?: string }
 ): Promise<MewsData> {
   try {
-    // Fetch services (already filtered by ServiceType: 'Bookable')
     const services = await fetchServices(clientToken, accessToken, options?.logId);
     const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
 
@@ -138,120 +137,159 @@ export async function fetchMewsData(
       throw new Error('No bookable service found');
     }
 
-    const serviceId = bookableService.Id;
-
-    // Step 2: Fetch rates, resource categories, and age categories in parallel
-    const [rates, resourceCategories, ageCategories] = await Promise.all([
-      fetchRates(clientToken, accessToken, serviceId, options?.logId),
-      fetchResourceCategories(clientToken, accessToken, serviceId, options?.logId),
-      fetchAgeCategories(clientToken, accessToken, serviceId, options?.logId)
-    ]);
-
-    // Step 3: Fetch resource category assignments (needs category IDs from previous step)
-    const categoryIds = resourceCategories.map((rc: MewsResourceCategory) => rc.Id);
-    const assignments = await fetchResourceCategoryAssignments(clientToken, accessToken, categoryIds, options?.logId);
-
-    // Map rates (all active/enabled rates, no name requirements)
-    const rateMap = mapRates(rates);
-
-    // Fetch voucher assignments and voucher codes
-    console.log('[MEWS-DATA] Fetching voucher assignments and voucher codes...');
-    const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId, options?.logId);
-    console.log(`[MEWS-DATA] Found ${voucherAssignments.length} voucher assignments`);
-
-    let vouchersByRate = new Map<string, string>();
-    if (voucherAssignments.length > 0) {
-      // Extract unique voucher IDs from assignments
-      const voucherIds = Array.from(
-        new Set(voucherAssignments.map((assignment: MewsVoucherAssignment) => assignment.VoucherId))
-      );
-      console.log(`[MEWS-DATA] Found ${voucherIds.length} unique voucher(s) with rate assignments`);
-
-      // Fetch voucher codes for these vouchers
-      const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds, options?.logId);
-      console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
-
-      // Map voucher codes to rates using assignments
-      vouchersByRate = mapVoucherCodesToRates(voucherAssignments, voucherCodes);
-      console.log(`[MEWS-DATA] Mapped ${vouchersByRate.size} rate(s) to voucher codes`);
-    } else {
-      console.log('[MEWS-DATA] No voucher assignments found, proceeding without voucher codes');
-    }
-
-    // Step 4: Count resources per category using assignments
-    console.log('[MEWS-DATA] Counting resources per category from assignments...');
-    console.log(`[MEWS-DATA] Total assignments: ${assignments.length}`);
-
-    // Only count active assignments
-    const activeAssignments = assignments.filter((a: MewsResourceCategoryAssignment) => a.IsActive);
-    console.log(`[MEWS-DATA] Active assignments: ${activeAssignments.length}`);
-
-    const resourceCountsPerCategory = new Map<string, number>();
-    for (const assignment of activeAssignments) {
-      const count = resourceCountsPerCategory.get(assignment.CategoryId) || 0;
-      resourceCountsPerCategory.set(assignment.CategoryId, count + 1);
-    }
-
-    console.log('[MEWS-DATA] Resource counts map:', Object.fromEntries(resourceCountsPerCategory));
-
-    // Step 5: Map resource categories with resource counts
-    console.log('[MEWS-DATA] Mapping resource categories...');
-    console.log('[MEWS-DATA] Input categories:', resourceCategories.map((rc: any) => ({
-      Id: rc.Id,
-      Names: rc.Names,
-      Type: rc.Type,
-      allFields: Object.keys(rc)
-    })));
-
-    const resourceCategoryList = resourceCategories.map((rc: MewsResourceCategory) => ({
-      id: rc.Id,
-      name: extractName(rc.Names),
-      type: rc.Type,
-      resourceCount: resourceCountsPerCategory.get(rc.Id) || 0
-    }));
-
-    console.log('[MEWS-DATA] Resource counts per category:');
-    resourceCategoryList.forEach(rc => {
-      console.log(`[MEWS-DATA]   - ${rc.name} (${rc.type}): ${rc.resourceCount} resources`);
-    });
-
-    // Step 6: Find adult and child age categories
-    const adultCategory = ageCategories.find((ac: MewsAgeCategory) => ac.Classification === 'Adult');
-    const childCategory = ageCategories.find((ac: MewsAgeCategory) => ac.Classification === 'Child');
-
-    if (!adultCategory) {
-      throw new Error('No adult age category found');
-    }
-
-    console.log('[MEWS-DATA] ✅ Mews data fetch complete');
-    console.log(`[MEWS-DATA] - Service: ${serviceId}`);
-    console.log(`[MEWS-DATA] - Rates: ${rateMap.length}`);
-    console.log(`[MEWS-DATA] - Resource categories: ${resourceCategoryList.length}`);
-    console.log(`[MEWS-DATA] - Total resource assignments: ${activeAssignments.length}`);
-    console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
-    console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
-    console.log('[MEWS-DATA] ✅ Fetch complete:', {
-      serviceId,
-      rates: rateMap.length,
-      resourceCategories: resourceCategoryList.length,
-      voucherMappings: vouchersByRate.size
-    });
-
-    return {
-      serviceId,
-      rates: rateMap,
-      resourceCategories: resourceCategoryList,
-      ageCategories: {
-        adult: adultCategory.Id,
-        child: childCategory?.Id
-      },
-      vouchersByRate
-    };
-
+    return await fetchMewsDataForService(clientToken, accessToken, bookableService.Id, options?.logId);
   } catch (error) {
     console.error('[MEWS-DATA] ❌ Failed to fetch Mews data:', error);
     throw new Error(`Mews data fetch failed: ${(error as Error).message}`);
   }
+}
+
+/**
+ * Fetch Mews data for ALL bookable services in an enterprise.
+ * Returns an array of MewsData, one per bookable service.
+ */
+export async function fetchAllMewsData(
+  clientToken: string,
+  accessToken: string,
+  options?: { logId?: string }
+): Promise<MewsData[]> {
+  try {
+    const services = await fetchServices(clientToken, accessToken, options?.logId);
+    const bookableServices = services.filter((s: MewsService) => s.Data.Discriminator === 'Bookable');
+
+    if (bookableServices.length === 0) {
+      throw new Error('No bookable services found');
+    }
+
+    console.log(`[MEWS-DATA] Found ${bookableServices.length} bookable service(s)`);
+    bookableServices.forEach((s, i) => {
+      console.log(`[MEWS-DATA]   Service ${i + 1}: ${s.Name} (${s.Id})`);
+    });
+
+    const results = await Promise.all(
+      bookableServices.map(s => fetchMewsDataForService(clientToken, accessToken, s.Id, options?.logId))
+    );
+
+    console.log(`[MEWS-DATA] ✅ Fetched data for ${results.length} bookable service(s)`);
+    return results;
+  } catch (error) {
+    console.error('[MEWS-DATA] ❌ Failed to fetch all Mews data:', error);
+    throw new Error(`Mews data fetch (all services) failed: ${(error as Error).message}`);
+  }
+}
+
+/**
+ * Fetch rates, resource categories, age categories, and vouchers for a single service
+ */
+async function fetchMewsDataForService(
+  clientToken: string,
+  accessToken: string,
+  serviceId: string,
+  logId?: string
+): Promise<MewsData> {
+  // Fetch rates, resource categories, and age categories in parallel
+  const [rates, resourceCategories, ageCategories] = await Promise.all([
+    fetchRates(clientToken, accessToken, serviceId, logId),
+    fetchResourceCategories(clientToken, accessToken, serviceId, logId),
+    fetchAgeCategories(clientToken, accessToken, serviceId, logId)
+  ]);
+
+  // Fetch resource category assignments (needs category IDs from previous step)
+  const categoryIds = resourceCategories.map((rc: MewsResourceCategory) => rc.Id);
+  const assignments = await fetchResourceCategoryAssignments(clientToken, accessToken, categoryIds, logId);
+
+  // Map rates (all active/enabled rates, no name requirements)
+  const rateMap = mapRates(rates);
+
+  // Fetch voucher assignments and voucher codes
+  console.log(`[MEWS-DATA] Fetching voucher assignments for service ${serviceId}...`);
+  const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId, logId);
+  console.log(`[MEWS-DATA] Found ${voucherAssignments.length} voucher assignments`);
+
+  let vouchersByRate = new Map<string, string>();
+  if (voucherAssignments.length > 0) {
+    const voucherIds = Array.from(
+      new Set(voucherAssignments.map((assignment: MewsVoucherAssignment) => assignment.VoucherId))
+    );
+    console.log(`[MEWS-DATA] Found ${voucherIds.length} unique voucher(s) with rate assignments`);
+
+    const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds, logId);
+    console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
+
+    vouchersByRate = mapVoucherCodesToRates(voucherAssignments, voucherCodes);
+    console.log(`[MEWS-DATA] Mapped ${vouchersByRate.size} rate(s) to voucher codes`);
+  } else {
+    console.log('[MEWS-DATA] No voucher assignments found, proceeding without voucher codes');
+  }
+
+  // Count resources per category using assignments
+  console.log('[MEWS-DATA] Counting resources per category from assignments...');
+  console.log(`[MEWS-DATA] Total assignments: ${assignments.length}`);
+
+  const activeAssignments = assignments.filter((a: MewsResourceCategoryAssignment) => a.IsActive);
+  console.log(`[MEWS-DATA] Active assignments: ${activeAssignments.length}`);
+
+  const resourceCountsPerCategory = new Map<string, number>();
+  for (const assignment of activeAssignments) {
+    const count = resourceCountsPerCategory.get(assignment.CategoryId) || 0;
+    resourceCountsPerCategory.set(assignment.CategoryId, count + 1);
+  }
+
+  console.log('[MEWS-DATA] Resource counts map:', Object.fromEntries(resourceCountsPerCategory));
+
+  // Map resource categories with resource counts
+  console.log('[MEWS-DATA] Mapping resource categories...');
+  console.log('[MEWS-DATA] Input categories:', resourceCategories.map((rc: any) => ({
+    Id: rc.Id,
+    Names: rc.Names,
+    Type: rc.Type,
+    allFields: Object.keys(rc)
+  })));
+
+  const resourceCategoryList = resourceCategories.map((rc: MewsResourceCategory) => ({
+    id: rc.Id,
+    name: extractName(rc.Names),
+    type: rc.Type,
+    resourceCount: resourceCountsPerCategory.get(rc.Id) || 0
+  }));
+
+  console.log('[MEWS-DATA] Resource counts per category:');
+  resourceCategoryList.forEach(rc => {
+    console.log(`[MEWS-DATA]   - ${rc.name} (${rc.type}): ${rc.resourceCount} resources`);
+  });
+
+  // Find adult and child age categories
+  const adultCategory = ageCategories.find((ac: MewsAgeCategory) => ac.Classification === 'Adult');
+  const childCategory = ageCategories.find((ac: MewsAgeCategory) => ac.Classification === 'Child');
+
+  if (!adultCategory) {
+    throw new Error('No adult age category found');
+  }
+
+  console.log('[MEWS-DATA] ✅ Mews data fetch complete');
+  console.log(`[MEWS-DATA] - Service: ${serviceId}`);
+  console.log(`[MEWS-DATA] - Rates: ${rateMap.length}`);
+  console.log(`[MEWS-DATA] - Resource categories: ${resourceCategoryList.length}`);
+  console.log(`[MEWS-DATA] - Total resource assignments: ${activeAssignments.length}`);
+  console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
+  console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
+  console.log('[MEWS-DATA] ✅ Fetch complete:', {
+    serviceId,
+    rates: rateMap.length,
+    resourceCategories: resourceCategoryList.length,
+    voucherMappings: vouchersByRate.size
+  });
+
+  return {
+    serviceId,
+    rates: rateMap,
+    resourceCategories: resourceCategoryList,
+    ageCategories: {
+      adult: adultCategory.Id,
+      child: childCategory?.Id
+    },
+    vouchersByRate
+  };
 }
 
 /**

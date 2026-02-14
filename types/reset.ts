@@ -34,6 +34,8 @@ export interface ResetOperationDetails {
   services?: {
     serviceId?: string;
     serviceName?: string;
+    serviceCount?: number;
+    serviceIds?: string[];
   };
   reservationsFetched?: number;
   reservationsCanceled?: number;

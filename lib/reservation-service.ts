@@ -27,6 +27,7 @@ export interface ReservationCreationResult {
   successCount: number;
   failureCount: number;
   durationSeconds: number;
+  customerIds?: string[];
 }
 
 interface EnvironmentData {
@@ -112,6 +113,8 @@ export async function createReservationsForEnvironment(
     operationType?: 'automatic' | 'demo_filler';
     logId?: string; // Unified log ID for updating operationDetails
     languageCode?: string; // Property language for translating customer notes
+    mewsData?: MewsData; // Pre-fetched service data (skip internal fetchMewsData)
+    customerIds?: string[]; // Pre-created customer IDs (skip createCustomersOnDemand)
   }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
@@ -161,8 +164,8 @@ export async function createReservationsForEnvironment(
       logId
     );
 
-    // Fetch Mews data
-    const mewsData = await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
+    // Fetch Mews data (or use pre-fetched data if provided)
+    const mewsData = options?.mewsData ?? await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
 
     // Step 3: Filter resource categories based on what was actually created
     const filteredCategories = filterResourceCategories(mewsData.resourceCategories);
@@ -205,26 +208,35 @@ export async function createReservationsForEnvironment(
       data: { totalReservations }
     });
 
-    // Step 6: Create customers on-demand
-    const language = resolveLanguage(options?.languageCode);
-    const customerIds = await createCustomersOnDemand(
-      accessToken,
-      totalReservations,
-      enterpriseId,
-      accessTokenId,
-      language,
-      logId
-    );
+    // Step 6: Create customers on-demand (or use pre-provided customer IDs)
+    let customerIds: string[];
+    if (options?.customerIds && options.customerIds.length > 0) {
+      customerIds = options.customerIds;
+      log.reservations('Using pre-provided customers', {
+        count: customerIds.length,
+        serviceId: mewsData.serviceId
+      });
+    } else {
+      const language = resolveLanguage(options?.languageCode);
+      customerIds = await createCustomersOnDemand(
+        accessToken,
+        totalReservations,
+        enterpriseId,
+        accessTokenId,
+        language,
+        logId
+      );
 
-    // Validate that we have customers before proceeding
-    if (customerIds.length === 0) {
-      throw new Error('Failed to create any customers. Cannot proceed with reservation creation.');
+      // Validate that we have customers before proceeding
+      if (customerIds.length === 0) {
+        throw new Error('Failed to create any customers. Cannot proceed with reservation creation.');
+      }
+
+      log.reservations('Created customers', {
+        count: customerIds.length,
+        requested: totalReservations
+      });
     }
-
-    log.reservations('Created customers', {
-      count: customerIds.length,
-      requested: totalReservations
-    });
     if (customerIds.length < totalReservations) {
       console.log(`[RESERVATIONS] ⚠️ Warning: Only ${customerIds.length} customers created, but ${totalReservations} reservations requested. Customers will be reused.`);
     }
@@ -332,7 +344,8 @@ export async function createReservationsForEnvironment(
       totalCustomers: customerIds.length,
       successCount: createdReservations.length,
       failureCount: failures.length,
-      durationSeconds: parseFloat(durationSeconds)
+      durationSeconds: parseFloat(durationSeconds),
+      customerIds: !options?.customerIds ? customerIds : undefined
     };
 
   } catch (error) {
