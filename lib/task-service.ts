@@ -11,6 +11,7 @@ import { getOnboardingTasks, OnboardingTask } from './onboarding-tasks';
 import { updateEnvironmentTaskStats } from './unified-logger';
 import { log, logError } from './force-log';
 import { fetchWithRateLimit } from './mews-rate-limiter';
+import { fetchWithRateLimitAndLog } from './api-call-logger';
 import { getMewsClientToken, getMewsApiUrl } from './config';
 import { resolveLanguage } from './translations/language-utils';
 
@@ -99,7 +100,7 @@ export async function createOnboardingTasks(
     // Process all 8 tasks with Promise.allSettled (no chunking needed for just 8)
     const deadlineUtc = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    const promises = tasks.map((task) => createSingleTask(accessToken, task, deadlineUtc));
+    const promises = tasks.map((task) => createSingleTask(accessToken, task, deadlineUtc, logId));
     const settledResults = await Promise.allSettled(promises);
 
     const results: TaskResult[] = settledResults.map((result, index) => {
@@ -210,7 +211,8 @@ export async function createOnboardingTasks(
 async function createSingleTask(
   accessToken: string,
   task: OnboardingTask,
-  deadlineUtc: string
+  deadlineUtc: string,
+  logId?: string
 ): Promise<TaskResult> {
   try {
     const requestBody = {
@@ -222,16 +224,26 @@ async function createSingleTask(
       DeadlineUtc: deadlineUtc,
     };
 
-    const response = await fetchWithRateLimit(
-      `${MEWS_API_URL}/api/connector/v1/tasks/add`,
-      accessToken,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      },
-      'tasks/add'
-    );
+    const url = `${MEWS_API_URL}/api/connector/v1/tasks/add`;
+    const fetchOpts = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    };
+
+    const response = logId
+      ? await fetchWithRateLimitAndLog(
+          url,
+          accessToken,
+          fetchOpts,
+          'tasks/add',
+          {
+            unifiedLogId: logId,
+            group: 'tasks',
+            metadata: { taskName: task.Name },
+          }
+        )
+      : await fetchWithRateLimit(url, accessToken, fetchOpts, 'tasks/add');
 
     const data = await response.json();
 

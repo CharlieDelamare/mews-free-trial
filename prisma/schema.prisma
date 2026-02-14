@@ -175,3 +175,24 @@ model UnifiedLog {
   @@index([enterpriseId, logType])
   @@index([logType, salesforceAccountId])
 }
+
+model ApiCallLog {
+  id            Int      @id @default(autoincrement())
+  unifiedLogId  String
+  timestamp     DateTime @default(now())
+  endpoint      String   // e.g., "customers/add", "services/getAll"
+  method        String   @default("POST")
+  url           String
+  group         String   // "initial" | "setup" | "customers" | "reservations" | "state_transitions" | "tasks" | "bills"
+  statusCode    Int?
+  durationMs    Int
+  success       Boolean  @default(true)
+  requestBody   String?  @db.Text
+  responseBody  String?  @db.Text
+  errorMessage  String?
+  metadata      Json?
+
+  @@index([unifiedLogId])
+  @@index([unifiedLogId, group])
+  @@index([unifiedLogId, timestamp])
+}

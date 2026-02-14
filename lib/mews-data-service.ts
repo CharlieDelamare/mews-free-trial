@@ -6,6 +6,7 @@
  */
 
 import { fromZonedTime } from 'date-fns-tz';
+import { loggedFetch } from './api-call-logger';
 
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
 
@@ -125,11 +126,12 @@ function extractName(names: Record<string, string> | undefined): string {
  */
 export async function fetchMewsData(
   clientToken: string,
-  accessToken: string
+  accessToken: string,
+  options?: { logId?: string }
 ): Promise<MewsData> {
   try {
     // Fetch services (already filtered by ServiceType: 'Bookable')
-    const services = await fetchServices(clientToken, accessToken);
+    const services = await fetchServices(clientToken, accessToken, options?.logId);
     const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
 
     if (!bookableService) {
@@ -140,21 +142,21 @@ export async function fetchMewsData(
 
     // Step 2: Fetch rates, resource categories, and age categories in parallel
     const [rates, resourceCategories, ageCategories] = await Promise.all([
-      fetchRates(clientToken, accessToken, serviceId),
-      fetchResourceCategories(clientToken, accessToken, serviceId),
-      fetchAgeCategories(clientToken, accessToken, serviceId)
+      fetchRates(clientToken, accessToken, serviceId, options?.logId),
+      fetchResourceCategories(clientToken, accessToken, serviceId, options?.logId),
+      fetchAgeCategories(clientToken, accessToken, serviceId, options?.logId)
     ]);
 
     // Step 3: Fetch resource category assignments (needs category IDs from previous step)
     const categoryIds = resourceCategories.map((rc: MewsResourceCategory) => rc.Id);
-    const assignments = await fetchResourceCategoryAssignments(clientToken, accessToken, categoryIds);
+    const assignments = await fetchResourceCategoryAssignments(clientToken, accessToken, categoryIds, options?.logId);
 
     // Map rates (all active/enabled rates, no name requirements)
     const rateMap = mapRates(rates);
 
     // Fetch voucher assignments and voucher codes
     console.log('[MEWS-DATA] Fetching voucher assignments and voucher codes...');
-    const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId);
+    const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId, options?.logId);
     console.log(`[MEWS-DATA] Found ${voucherAssignments.length} voucher assignments`);
 
     let vouchersByRate = new Map<string, string>();
@@ -166,7 +168,7 @@ export async function fetchMewsData(
       console.log(`[MEWS-DATA] Found ${voucherIds.length} unique voucher(s) with rate assignments`);
 
       // Fetch voucher codes for these vouchers
-      const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds);
+      const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds, options?.logId);
       console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
 
       // Map voucher codes to rates using assignments
@@ -255,8 +257,9 @@ export async function fetchMewsData(
 /**
  * Fetch services from Mews API
  */
-async function fetchServices(clientToken: string, accessToken: string): Promise<MewsService[]> {
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/services/getAll`, {
+async function fetchServices(clientToken: string, accessToken: string, logId?: string): Promise<MewsService[]> {
+  const url = `${MEWS_API_URL}/api/connector/v1/services/getAll`;
+  const fetchOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -265,7 +268,11 @@ async function fetchServices(clientToken: string, accessToken: string): Promise<
       Client: 'Mews Sandbox Manager',
       ServiceType: 'Bookable' // Filter for bookable services only
     })
-  });
+  };
+
+  const response = logId
+    ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+    : await fetch(url, fetchOptions);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -279,8 +286,9 @@ async function fetchServices(clientToken: string, accessToken: string): Promise<
 /**
  * Fetch rates from Mews API
  */
-async function fetchRates(clientToken: string, accessToken: string, serviceId: string): Promise<MewsRate[]> {
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/rates/getAll`, {
+async function fetchRates(clientToken: string, accessToken: string, serviceId: string, logId?: string): Promise<MewsRate[]> {
+  const url = `${MEWS_API_URL}/api/connector/v1/rates/getAll`;
+  const fetchOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -289,7 +297,11 @@ async function fetchRates(clientToken: string, accessToken: string, serviceId: s
       Client: 'Mews Sandbox Manager',
       ServiceIds: [serviceId]
     })
-  });
+  };
+
+  const response = logId
+    ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+    : await fetch(url, fetchOptions);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -306,11 +318,13 @@ async function fetchRates(clientToken: string, accessToken: string, serviceId: s
 async function fetchResourceCategories(
   clientToken: string,
   accessToken: string,
-  serviceId: string
+  serviceId: string,
+  logId?: string
 ): Promise<MewsResourceCategory[]> {
   console.log('[MEWS-DATA] Fetching resource categories...');
 
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceCategories/getAll`, {
+  const url = `${MEWS_API_URL}/api/connector/v1/resourceCategories/getAll`;
+  const fetchOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -319,7 +333,11 @@ async function fetchResourceCategories(
       Client: 'Mews Sandbox Manager',
       ServiceIds: [serviceId]
     })
-  });
+  };
+
+  const response = logId
+    ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+    : await fetch(url, fetchOptions);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -346,9 +364,11 @@ async function fetchResourceCategories(
 async function fetchAgeCategories(
   clientToken: string,
   accessToken: string,
-  serviceId: string
+  serviceId: string,
+  logId?: string
 ): Promise<MewsAgeCategory[]> {
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/ageCategories/getAll`, {
+  const url = `${MEWS_API_URL}/api/connector/v1/ageCategories/getAll`;
+  const fetchOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -357,7 +377,11 @@ async function fetchAgeCategories(
       Client: 'Mews Sandbox Manager',
       ServiceIds: [serviceId]
     })
-  });
+  };
+
+  const response = logId
+    ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+    : await fetch(url, fetchOptions);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -375,12 +399,14 @@ async function fetchAgeCategories(
 async function fetchResourceCategoryAssignments(
   clientToken: string,
   accessToken: string,
-  resourceCategoryIds: string[]
+  resourceCategoryIds: string[],
+  logId?: string
 ): Promise<MewsResourceCategoryAssignment[]> {
   console.log('[MEWS-DATA] Fetching resource category assignments...');
   console.log(`[MEWS-DATA] Requesting assignments for ${resourceCategoryIds.length} categories`);
 
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceCategoryAssignments/getAll`, {
+  const url = `${MEWS_API_URL}/api/connector/v1/resourceCategoryAssignments/getAll`;
+  const fetchOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -392,7 +418,11 @@ async function fetchResourceCategoryAssignments(
         Count: 1000
       }
     })
-  });
+  };
+
+  const response = logId
+    ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+    : await fetch(url, fetchOptions);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -447,7 +477,7 @@ function mapRates(rates: MewsRate[]): MewsData['rates'] {
  * Fetch voucher assignments from Mews API
  * Returns VoucherAssignments which directly map VoucherId to RateId
  */
-async function fetchVoucherAssignments(clientToken: string, accessToken: string, serviceId: string): Promise<MewsVoucherAssignment[]> {
+async function fetchVoucherAssignments(clientToken: string, accessToken: string, serviceId: string, logId?: string): Promise<MewsVoucherAssignment[]> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/vouchers/getAll`;
   const payload = {
     ClientToken: clientToken,
@@ -459,11 +489,6 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
     }
   };
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
   console.log('[MEWS-DATA] Fetching voucher assignments...');
   console.log('[MEWS-DATA] Endpoint:', endpoint);
   console.log('[MEWS-DATA] Payload:', JSON.stringify({
@@ -473,11 +498,15 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
   }, null, 2));
 
   try {
-    const response = await fetch(endpoint, {
+    const fetchOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    });
+    };
+
+    const response = logId
+      ? await loggedFetch(endpoint, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+      : await fetch(endpoint, fetchOptions);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -509,9 +538,11 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
 async function fetchVoucherCodes(
   clientToken: string,
   accessToken: string,
-  voucherIds: string[]
+  voucherIds: string[],
+  logId?: string
 ): Promise<MewsVoucherCode[]> {
-  const response = await fetch(`${MEWS_API_URL}/api/connector/v1/voucherCodes/getAll`, {
+  const url = `${MEWS_API_URL}/api/connector/v1/voucherCodes/getAll`;
+  const fetchOptions = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -523,7 +554,11 @@ async function fetchVoucherCodes(
         Count: 1000
       }
     })
-  });
+  };
+
+  const response = logId
+    ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+    : await fetch(url, fetchOptions);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -604,7 +639,8 @@ export async function updateBestPriceRate(
   clientToken: string,
   accessToken: string,
   bestPriceRateId: string,
-  timezone: string
+  timezone: string,
+  logId?: string
 ): Promise<boolean> {
   const endpoint = `${MEWS_API_URL}/api/connector/v1/rates/updatePrice`;
 
@@ -660,11 +696,15 @@ export async function updateBestPriceRate(
   }, null, 2));
 
   try {
-    const response = await fetch(endpoint, {
+    const fetchOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
-    });
+    };
+
+    const response = logId
+      ? await loggedFetch(endpoint, fetchOptions, { unifiedLogId: logId, group: 'setup' })
+      : await fetch(endpoint, fetchOptions);
 
     console.log('[RATE-UPDATE] Response status:', response.status, response.statusText);
 

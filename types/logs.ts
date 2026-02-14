@@ -74,3 +74,40 @@ export interface DemoFillerLog extends BaseLog {
 }
 
 export type UnifiedLog = EnvironmentLog | ResetLog | DemoFillerLog;
+
+// === API Call Log Types ===
+
+export interface ApiCallSummary {
+  id: number;
+  timestamp: string;
+  endpoint: string;
+  method: string;
+  group: string;
+  statusCode: number | null;
+  durationMs: number;
+  success: boolean;
+  errorMessage: string | null;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface ApiCallDetail extends ApiCallSummary {
+  requestBody: string | null;
+  responseBody: string | null;
+  url: string;
+}
+
+export interface ApiCallGroupSummary {
+  group: string;
+  count: number;
+  avgDurationMs: number;
+  totalDurationMs: number;
+}
+
+export interface ApiCallLogsResponse {
+  success: boolean;
+  apiCalls: ApiCallSummary[];
+  total: number;
+  successCount: number;
+  failureCount: number;
+  groups: ApiCallGroupSummary[];
+}

@@ -211,7 +211,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
       dateRange: { start, end },
       reservationCount,
       skipStateTransitions: true,
-      operationType: 'demo_filler'
+      operationType: 'demo_filler',
+      logId: logId || undefined
     })
       .then(result => {
         log.demoFiller('Operation completed', {
