@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test webhook script for Mews access token endpoint
 
-WEBHOOK_URL="https://mews-free-trial-2.onrender.com/api/webhook/access-token"
+WEBHOOK_URL="https://<your-domain>.vercel.app/api/webhook/access-token"
 
 echo "Sending test webhook to: $WEBHOOK_URL"
 echo ""

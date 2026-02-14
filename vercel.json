@@ -1,0 +1,17 @@
+{
+  "buildCommand": "prisma migrate deploy && next build",
+  "functions": {
+    "app/api/webhook/access-token/route.ts": {
+      "maxDuration": 120
+    },
+    "app/api/add-environment/route.ts": {
+      "maxDuration": 120
+    },
+    "app/api/demo-filler/route.ts": {
+      "maxDuration": 120
+    },
+    "app/api/reset-environment/route.ts": {
+      "maxDuration": 120
+    }
+  }
+}

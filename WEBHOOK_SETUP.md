@@ -4,7 +4,7 @@ This application includes a webhook endpoint to receive Access Tokens from the M
 
 ## Webhook Endpoint
 
-**Production URL:** `https://mews-free-trial-2.onrender.com/api/webhook/access-token`
+**Production URL:** `https://<your-domain>.vercel.app/api/webhook/access-token`
 
 **Local Development:** `POST /api/webhook/access-token`
 
@@ -84,7 +84,7 @@ To enable this webhook:
 
 1. **Production:** Configure Mews to send the webhook to:
    ```
-   https://mews-free-trial-2.onrender.com/api/webhook/access-token
+   https://<your-domain>.vercel.app/api/webhook/access-token
    ```
 
 2. **Local Development:** Use a tool like ngrok to expose your local server, then configure Mews to send the webhook to:

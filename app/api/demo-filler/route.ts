@@ -4,6 +4,7 @@ import { resolveAccessToken } from '@/lib/reservations';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { createDemoFillerLog, updateUnifiedLog } from '@/lib/unified-logger';
 import { log, logError } from '@/lib/force-log';
+import { runInBackground } from '@/lib/background';
 
 interface DemoFillerRequest {
   enterpriseId: string;
@@ -204,9 +205,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
       days: daysDiff
     });
 
-    // Run reservation creation in background without awaiting
+    // Run reservation creation in background
     // skipStateTransitions keeps all reservations in Confirmed state
-    createReservationsForEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id, {
+    const reservationWork = createReservationsForEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id, {
       dateRange: { start, end },
       reservationCount,
       skipStateTransitions: true,
@@ -244,6 +245,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
           }).catch(err => console.error('[DEMO-FILLER] Failed to update log:', err));
         }
       });
+    runInBackground(reservationWork);
 
     // Return immediate response
     return NextResponse.json(

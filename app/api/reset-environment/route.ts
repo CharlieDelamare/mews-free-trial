@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { resolveAccessToken } from '@/lib/reservations';
 import { resetEnvironment } from '@/lib/reset-service';
 import type { ResetOperationRequest, ResetOperationResponse } from '@/types/reset';
+import { runInBackground } from '@/lib/background';
 
 /**
  * POST /api/reset-environment
@@ -75,8 +76,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResetOper
       `[RESET-ENVIRONMENT] 🔄 Starting reset operation for enterprise: ${tokenRecord.enterpriseId}`
     );
 
-    // Run reset in background without awaiting
-    resetEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id)
+    // Run reset in background
+    const resetWork = resetEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id)
       .then(result => {
         console.log(
           `[RESET-ENVIRONMENT] ✅ Reset completed for ${tokenRecord.enterpriseId}:`,
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResetOper
           error
         );
       });
+    runInBackground(resetWork);
 
     // Return immediate response
     return NextResponse.json(

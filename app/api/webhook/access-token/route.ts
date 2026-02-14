@@ -6,6 +6,7 @@ import { sendZapierNotification } from '@/lib/zapier';
 import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
 import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
 import { getMewsClientToken } from '@/lib/config';
+import { runInBackground } from '@/lib/background';
 
 // Disable caching for GET endpoint - webhook debug data needs to be fresh
 export const dynamic = 'force-dynamic';
@@ -241,8 +242,8 @@ export async function POST(request: NextRequest) {
         status: 'processing'
       });
 
-      // Start full environment setup in the background (fire-and-forget)
-      (async () => {
+      // Start full environment setup in the background
+      const backgroundWork = (async () => {
         try {
           // Fetch timezone and language from configuration API
           const timezoneResult = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, newToken.accessToken);
@@ -316,6 +317,7 @@ export async function POST(request: NextRequest) {
           });
         }
       })();
+      runInBackground(backgroundWork);
     } else {
       // No matching log found - this token doesn't match any pending environment
       // Store the token but don't send notifications

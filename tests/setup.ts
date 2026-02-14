@@ -20,4 +20,5 @@ beforeAll(() => {
   process.env.SLACK_CHANNEL_ID = 'test-channel-id';
   process.env.ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/test';
   process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+  process.env.DATABASE_DIRECT_URL = 'postgresql://test:test@localhost:5432/test';
 });
