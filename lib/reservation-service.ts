@@ -115,6 +115,7 @@ export async function createReservationsForEnvironment(
     languageCode?: string; // Property language for translating customer notes
     mewsData?: MewsData; // Pre-fetched service data (skip internal fetchMewsData)
     customerIds?: string[]; // Pre-created customer IDs (skip createCustomersOnDemand)
+    serviceId?: string; // Specific bookable service ID to use
   }
 ): Promise<ReservationCreationResult> {
   const startTime = Date.now();
@@ -165,7 +166,9 @@ export async function createReservationsForEnvironment(
     );
 
     // Fetch Mews data (or use pre-fetched data if provided)
-    const mewsData = options?.mewsData ?? await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken);
+    const mewsData = options?.mewsData ?? await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken, {
+      serviceId: options?.serviceId
+    });
 
     // Step 3: Filter resource categories based on what was actually created
     const filteredCategories = filterResourceCategories(mewsData.resourceCategories);

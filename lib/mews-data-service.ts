@@ -33,6 +33,7 @@ export interface MewsData {
 interface MewsService {
   Id: string;
   Name: string;
+  Ordering?: number;
   Data: {
     Discriminator: 'Bookable' | 'Additional';
     Value?: {
@@ -127,17 +128,26 @@ function extractName(names: Record<string, string> | undefined): string {
 export async function fetchMewsData(
   clientToken: string,
   accessToken: string,
-  options?: { logId?: string }
+  options?: { logId?: string; serviceId?: string }
 ): Promise<MewsData> {
   try {
-    const services = await fetchServices(clientToken, accessToken, options?.logId);
-    const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
+    let serviceId: string;
 
-    if (!bookableService) {
-      throw new Error('No bookable service found');
+    if (options?.serviceId) {
+      serviceId = options.serviceId;
+      console.log(`[MEWS-DATA] Using provided service ID: ${serviceId}`);
+    } else {
+      const services = await fetchServices(clientToken, accessToken, options?.logId);
+      const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
+
+      if (!bookableService) {
+        throw new Error('No bookable service found');
+      }
+
+      serviceId = bookableService.Id;
     }
 
-    return await fetchMewsDataForService(clientToken, accessToken, bookableService.Id, options?.logId);
+    return await fetchMewsDataForService(clientToken, accessToken, serviceId, options?.logId);
   } catch (error) {
     console.error('[MEWS-DATA] ❌ Failed to fetch Mews data:', error);
     throw new Error(`Mews data fetch failed: ${(error as Error).message}`);
@@ -773,4 +783,19 @@ export async function updateBestPriceRate(
     console.error('[RATE-UPDATE] Error stack:', (error as Error).stack);
     return false;
   }
+}
+
+/**
+ * Fetch bookable services for a given enterprise.
+ * Returns a simplified list of { id, name } for each bookable service.
+ */
+export async function fetchBookableServices(
+  clientToken: string,
+  accessToken: string
+): Promise<Array<{ id: string; name: string; ordering: number }>> {
+  const services = await fetchServices(clientToken, accessToken);
+  return services
+    .filter((s: MewsService) => s.Data.Discriminator === 'Bookable')
+    .map((s: MewsService) => ({ id: s.Id, name: s.Name, ordering: s.Ordering }))
+    .sort((a, b) => a.ordering - b.ordering || a.name.localeCompare(b.name));
 }
