@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { UnifiedLog, EnvironmentLog } from '@/types/logs';
+import type { UnifiedLog, EnvironmentLog, ResetLog, DemoFillerLog } from '@/types/unified-log';
 import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
 import { CopyButton } from '@/components/CopyButton';
 import { Pagination } from '@/components/Pagination';
@@ -317,7 +317,7 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
   );
 }
 
-function ResetContent({ log }: { log: import('@/types/logs').ResetLog }) {
+function ResetContent({ log }: { log: ResetLog }) {
   return (
     <>
       <div className="border-t border-gray-200 pt-3 mt-3">
@@ -356,7 +356,7 @@ function ResetContent({ log }: { log: import('@/types/logs').ResetLog }) {
   );
 }
 
-function DemoFillerContent({ log }: { log: import('@/types/logs').DemoFillerLog }) {
+function DemoFillerContent({ log }: { log: DemoFillerLog }) {
   return (
     <>
       <div className="border-t border-gray-200 pt-3 mt-3">

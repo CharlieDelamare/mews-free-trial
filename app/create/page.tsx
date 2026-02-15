@@ -5,17 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { languageOptions, countryOptions } from '@/lib/codes';
 import { useToast } from '@/components/Toast';
-
-const DEFAULT_ADMIN_EMAILS = ['charlie.delamare@gmail.com', 'charlie.delamare@mews.com'];
-
-function isAdminEmail(email: string): boolean {
-  if (!email) return false;
-  const envEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
-  const adminEmails = envEmails
-    ? envEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-    : DEFAULT_ADMIN_EMAILS;
-  return adminEmails.includes(email.trim().toLowerCase());
-}
+import { isAdminEmail } from '@/lib/admin';
 
 export default function SandboxCreationPage() {
   const router = useRouter();
