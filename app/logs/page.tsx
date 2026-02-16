@@ -22,7 +22,7 @@ function getLogTypeLabel(type: UnifiedLog['logType']) {
   }
 }
 
-function formatDate(timestamp: string) {
+function formatDate(timestamp: string | Date) {
   return new Date(timestamp).toLocaleString();
 }
 
