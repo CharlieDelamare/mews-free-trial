@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { ApiCallSummary, ApiCallGroupSummary } from '@/types/logs';
+import type { ApiCallSummary, ApiCallGroupSummary } from '@/types/unified-log';
 
 const GROUP_LABELS: Record<string, string> = {
   initial: 'Initial',

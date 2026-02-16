@@ -17,9 +17,10 @@ const DEFAULT_ADMIN_EMAILS = [
 
 /**
  * Get the list of admin emails from env var or defaults
+ * Supports both server-side (ADMIN_EMAILS) and client-side (NEXT_PUBLIC_ADMIN_EMAILS)
  */
 function getAdminEmails(): string[] {
-  const envEmails = process.env.ADMIN_EMAILS;
+  const envEmails = process.env.ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAILS;
   if (envEmails) {
     return envEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
   }

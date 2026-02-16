@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { UnifiedLog, EnvironmentLog } from '@/types/logs';
+import type { UnifiedLog, EnvironmentLog, ResetLog, DemoFillerLog } from '@/types/unified-log';
 import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
 import { CopyButton } from '@/components/CopyButton';
 import { Pagination } from '@/components/Pagination';
@@ -11,7 +11,7 @@ import { ApiCallLogs } from '@/components/ApiCallLogs';
 
 const ITEMS_PER_PAGE = 20;
 
-function getLogTypeLabel(type: UnifiedLog['type']) {
+function getLogTypeLabel(type: UnifiedLog['logType']) {
   switch (type) {
     case 'environment':
       return { label: 'New Sandbox', color: 'bg-blue-100 text-blue-800' };
@@ -22,7 +22,7 @@ function getLogTypeLabel(type: UnifiedLog['type']) {
   }
 }
 
-function formatDate(timestamp: string) {
+function formatDate(timestamp: string | Date) {
   return new Date(timestamp).toLocaleString();
 }
 
@@ -164,8 +164,8 @@ export default function LogsPage() {
             <div className="space-y-3">
               {logs.map((log) => {
                 const cardStyle = getStatusCardStyle(log.status);
-                const typeInfo = getLogTypeLabel(log.type);
-                const displayName = log.type === 'environment' && 'propertyName' in log
+                const typeInfo = getLogTypeLabel(log.logType);
+                const displayName = log.logType === 'environment' && 'propertyName' in log
                   ? log.propertyName
                   : log.enterpriseName || log.enterpriseId || 'Unknown';
 
@@ -184,9 +184,9 @@ export default function LogsPage() {
                       <StatusBadge status={log.status} />
                     </div>
 
-                    {log.type === 'environment' && <EnvironmentContent log={log} />}
-                    {log.type === 'reset' && <ResetContent log={log} />}
-                    {log.type === 'demo_filler' && <DemoFillerContent log={log} />}
+                    {log.logType === 'environment' && <EnvironmentContent log={log} />}
+                    {log.logType === 'reset' && <ResetContent log={log} />}
+                    {log.logType === 'demo_filler' && <DemoFillerContent log={log} />}
                   </div>
                 );
               })}
@@ -283,13 +283,13 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
         </div>
       )}
 
-      {(log.status === 'building' || log.status === 'processing' || log.status === 'Updating') && (
+      {(log.status === 'building' || log.status === 'processing') && (
         <div className="border-t border-gray-200 pt-3 mt-3">
           <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
             <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
             <p className="text-xs font-medium">
               {log.status === 'building' && `Creating ${log.propertyType} for ${log.durationDays || 30} days`}
-              {(log.status === 'processing' || log.status === 'Updating') && 'Setting up customers and reservations. Login details will appear when ready.'}
+              {log.status === 'processing' && 'Setting up customers and reservations. Login details will appear when ready.'}
             </p>
           </div>
         </div>
@@ -305,7 +305,7 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
         </div>
       )}
 
-      {(log.status === 'failed' || log.status === 'failure') && log.errorMessage && (
+      {log.status === 'failed' && log.errorMessage && (
         <div className="border-t border-gray-200 pt-3 mt-3">
           <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">{log.errorMessage}</pre>
@@ -317,7 +317,7 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
   );
 }
 
-function ResetContent({ log }: { log: import('@/types/logs').ResetLog }) {
+function ResetContent({ log }: { log: ResetLog }) {
   return (
     <>
       <div className="border-t border-gray-200 pt-3 mt-3">
@@ -356,7 +356,7 @@ function ResetContent({ log }: { log: import('@/types/logs').ResetLog }) {
   );
 }
 
-function DemoFillerContent({ log }: { log: import('@/types/logs').DemoFillerLog }) {
+function DemoFillerContent({ log }: { log: DemoFillerLog }) {
   return (
     <>
       <div className="border-t border-gray-200 pt-3 mt-3">
