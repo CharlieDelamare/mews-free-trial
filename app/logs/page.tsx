@@ -283,13 +283,13 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
         </div>
       )}
 
-      {(log.status === 'building' || log.status === 'processing' || log.status === 'Updating') && (
+      {(log.status === 'building' || log.status === 'processing') && (
         <div className="border-t border-gray-200 pt-3 mt-3">
           <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
             <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
             <p className="text-xs font-medium">
               {log.status === 'building' && `Creating ${log.propertyType} for ${log.durationDays || 30} days`}
-              {(log.status === 'processing' || log.status === 'Updating') && 'Setting up customers and reservations. Login details will appear when ready.'}
+              {log.status === 'processing' && 'Setting up customers and reservations. Login details will appear when ready.'}
             </p>
           </div>
         </div>
@@ -305,7 +305,7 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
         </div>
       )}
 
-      {(log.status === 'failed' || log.status === 'failure') && log.errorMessage && (
+      {log.status === 'failed' && log.errorMessage && (
         <div className="border-t border-gray-200 pt-3 mt-3">
           <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
           <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">{log.errorMessage}</pre>
