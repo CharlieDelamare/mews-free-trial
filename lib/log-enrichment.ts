@@ -1,5 +1,5 @@
 import { CustomerCreationLog, ReservationCreationLog } from '@prisma/client';
-import { EnvironmentLog } from './logger';
+import type { EnvironmentLog } from '@/types/unified-log';
 
 /**
  * Breakdown of reservation counts by state
