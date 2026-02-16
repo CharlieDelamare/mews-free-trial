@@ -11,7 +11,7 @@ import { ApiCallLogs } from '@/components/ApiCallLogs';
 
 const ITEMS_PER_PAGE = 20;
 
-function getLogTypeLabel(type: UnifiedLog['type']) {
+function getLogTypeLabel(type: UnifiedLog['logType']) {
   switch (type) {
     case 'environment':
       return { label: 'New Sandbox', color: 'bg-blue-100 text-blue-800' };
@@ -164,8 +164,8 @@ export default function LogsPage() {
             <div className="space-y-3">
               {logs.map((log) => {
                 const cardStyle = getStatusCardStyle(log.status);
-                const typeInfo = getLogTypeLabel(log.type);
-                const displayName = log.type === 'environment' && 'propertyName' in log
+                const typeInfo = getLogTypeLabel(log.logType);
+                const displayName = log.logType === 'environment' && 'propertyName' in log
                   ? log.propertyName
                   : log.enterpriseName || log.enterpriseId || 'Unknown';
 
@@ -184,9 +184,9 @@ export default function LogsPage() {
                       <StatusBadge status={log.status} />
                     </div>
 
-                    {log.type === 'environment' && <EnvironmentContent log={log} />}
-                    {log.type === 'reset' && <ResetContent log={log} />}
-                    {log.type === 'demo_filler' && <DemoFillerContent log={log} />}
+                    {log.logType === 'environment' && <EnvironmentContent log={log} />}
+                    {log.logType === 'reset' && <ResetContent log={log} />}
+                    {log.logType === 'demo_filler' && <DemoFillerContent log={log} />}
                   </div>
                 );
               })}
