@@ -104,12 +104,6 @@ export default function LogsPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-            &larr; Back to Home
-          </Link>
-        </div>
-
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">Logs</h1>
