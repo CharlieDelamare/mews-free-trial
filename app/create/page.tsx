@@ -276,9 +276,6 @@ export default function SandboxCreationPage() {
               {loading ? 'Creating Sandbox... (this may take a few minutes)' : 'Create Sandbox'}
             </button>
 
-            <p className="text-xs text-gray-500 text-center">
-              Sandbox environments are valid for {formData.durationDays} days. Login details will be sent to the customer email.
-            </p>
           </form>
       </div>
     </main>

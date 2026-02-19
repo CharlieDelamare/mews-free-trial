@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByPropertyName, updateUnifiedLog } from '@/lib/unified-logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
+import { sendSandboxReadyEmail } from '@/lib/email-service';
 import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
 import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
 import { getMewsClientToken } from '@/lib/config';
@@ -333,6 +334,18 @@ export async function POST(request: NextRequest) {
             tokenId: newToken.id,
             customersCreated: result.totalCustomers,
             reservationsCreated: result.totalReservations
+          });
+
+          // Send email with login credentials to customer and requestor
+          await sendSandboxReadyEmail({
+            customerEmail: log.customerEmail,
+            customerName: log.customerName,
+            requestorEmail: log.requestorEmail || undefined,
+            propertyName: log.propertyName,
+            loginUrl: log.loginUrl,
+            loginEmail: log.loginEmail,
+            loginPassword: log.loginPassword,
+            durationDays: log.durationDays ?? undefined,
           });
 
           // Update status to completed
