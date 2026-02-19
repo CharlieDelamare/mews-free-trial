@@ -42,7 +42,8 @@ interface EnvironmentData {
 }
 
 interface ReservationData {
-  customerId: string;
+  customerId?: string;      // Assigned during interleaved creation or from pre-provided IDs
+  customerIndex: number;    // Index into customer profiles array (for repeat guest rotation)
   resourceCategoryId: string;
   rateId: string;
   checkInUtc: Date;
@@ -114,7 +115,7 @@ export async function createReservationsForEnvironment(
     logId?: string; // Unified log ID for updating operationDetails
     languageCode?: string; // Property language for translating customer notes
     mewsData?: MewsData; // Pre-fetched service data (skip internal fetchMewsData)
-    customerIds?: string[]; // Pre-created customer IDs (skip createCustomersOnDemand)
+    customerIds?: string[]; // Pre-created customer IDs (skip dynamic customer creation)
     serviceId?: string; // Specific bookable service ID to use
   }
 ): Promise<ReservationCreationResult> {
@@ -211,62 +212,149 @@ export async function createReservationsForEnvironment(
       data: { totalReservations }
     });
 
-    // Step 6: Create customers on-demand (or use pre-provided customer IDs)
+    // Step 6: Determine customer strategy and generate reservation templates
+    const language = resolveLanguage(options?.languageCode);
     let customerIds: string[];
+    let createdReservations: any[];
+    let failures: any[];
+
     if (options?.customerIds && options.customerIds.length > 0) {
+      // Path A: Pre-provided customer IDs — assign directly to reservation templates
       customerIds = options.customerIds;
       log.reservations('Using pre-provided customers', {
         count: customerIds.length,
         serviceId: mewsData.serviceId
       });
-    } else {
-      const language = resolveLanguage(options?.languageCode);
-      customerIds = await createCustomersOnDemand(
+
+      const reservations = generateReservationData(
+        categoryTargets,
+        customerIds.length,
+        mewsData.rates,
+        envData,
+        mewsData.ageCategories.adult,
+        options?.dateRange,
+        mewsData.vouchersByRate
+      );
+
+      // Assign customer IDs using the customerIndex from templates
+      for (const reservation of reservations) {
+        reservation.customerId = customerIds[reservation.customerIndex];
+      }
+
+      const groups = groupReservationsForAPI(reservations);
+      const result = await createReservationGroups(
+        groups,
+        mewsData.serviceId,
         accessToken,
+        mewsData.ageCategories.adult,
+        mewsData.vouchersByRate,
+        logId
+      );
+      createdReservations = result.createdReservations;
+      failures = result.failures;
+    } else {
+      // Path B: Dynamic interleaved customer + reservation creation
+      const uniqueCustomerCount = calculateUniqueCustomerCount(totalReservations);
+      const customerProfiles = getSampleCustomers(uniqueCustomerCount);
+
+      log.reservations('Dynamic customer+reservation creation', {
         totalReservations,
-        enterpriseId,
-        accessTokenId,
+        uniqueCustomers: uniqueCustomerCount,
+        ratio: `${(totalReservations / uniqueCustomerCount).toFixed(1)} reservations per customer`
+      });
+
+      // Create customer creation log
+      const customerLog = await prisma.customerCreationLog.create({
+        data: {
+          enterpriseId,
+          accessTokenId,
+          totalCustomers: uniqueCustomerCount,
+          successCount: 0,
+          failureCount: 0,
+          status: 'processing',
+          customerResults: []
+        }
+      });
+
+      // Update unified log customer stats to 'processing'
+      if (logId) {
+        try {
+          await updateEnvironmentCustomerStats(logId, {
+            status: 'processing',
+            total: uniqueCustomerCount,
+            success: 0,
+            failed: 0
+          });
+        } catch (error) {
+          console.error('[CUSTOMERS] Failed to update unified log customer stats:', error);
+        }
+      }
+
+      // Generate reservation templates (no customer IDs yet)
+      const reservations = generateReservationData(
+        categoryTargets,
+        uniqueCustomerCount,
+        mewsData.rates,
+        envData,
+        mewsData.ageCategories.adult,
+        options?.dateRange,
+        mewsData.vouchersByRate
+      );
+
+      const groups = groupReservationsForAPI(reservations);
+
+      // Interleaved: create customers JIT as reservation groups are processed
+      const result = await createReservationGroupsWithCustomers(
+        groups,
+        customerProfiles,
+        mewsData.serviceId,
+        accessToken,
+        mewsData.ageCategories.adult,
+        mewsData.vouchersByRate,
         language,
         logId
       );
+      createdReservations = result.createdReservations;
+      failures = result.failures;
+      customerIds = Array.from(result.customerPool.values());
 
-      // Validate that we have customers before proceeding
+      // Validate that we created at least some customers
       if (customerIds.length === 0) {
         throw new Error('Failed to create any customers. Cannot proceed with reservation creation.');
       }
 
-      log.reservations('Created customers', {
-        count: customerIds.length,
-        requested: totalReservations
+      // Update customer creation log
+      const customerFailureCount = uniqueCustomerCount - result.customerPool.size;
+      await prisma.customerCreationLog.update({
+        where: { id: customerLog.id },
+        data: {
+          successCount: result.customerPool.size,
+          failureCount: customerFailureCount,
+          completedAt: new Date(),
+          status: 'completed'
+        }
+      });
+
+      // Update unified log customer stats to 'completed'
+      if (logId) {
+        try {
+          await updateEnvironmentCustomerStats(logId, {
+            status: 'completed',
+            total: uniqueCustomerCount,
+            success: result.customerPool.size,
+            failed: customerFailureCount
+          });
+        } catch (error) {
+          console.error('[CUSTOMERS] Failed to update unified log customer stats:', error);
+        }
+      }
+
+      log.reservations('Interleaved creation complete', {
+        customersCreated: result.customerPool.size,
+        reservationsCreated: createdReservations.length,
+        reservationsFailed: failures.length
       });
     }
-    if (customerIds.length < totalReservations) {
-      console.log(`[RESERVATIONS] ⚠️ Warning: Only ${customerIds.length} customers created, but ${totalReservations} reservations requested. Customers will be reused.`);
-    }
-
-    // Step 7: Generate reservation data with per-category targets
-    const reservations = generateReservationData(
-      categoryTargets,
-      customerIds,
-      mewsData.rates,
-      envData,
-      mewsData.ageCategories.adult,
-      options?.dateRange,
-      mewsData.vouchersByRate
-    );
-
-    // Group reservations for API calls
-    const groups = groupReservationsForAPI(reservations);
-
-    // Create reservations via API
-    const { createdReservations, failures } = await createReservationGroups(
-      groups,
-      mewsData.serviceId,
-      accessToken,
-      mewsData.ageCategories.adult,
-      mewsData.vouchersByRate,
-      logId
-    );
 
     // Fetch reservation details to get assigned resource IDs
     const reservationIds = createdReservations.map(r => r.id);
@@ -564,126 +652,14 @@ function calculateCategoryTargets(
 }
 
 /**
- * Create customers on-demand
+ * Calculate how many unique customers to create for a given reservation count.
+ * Uses a repeat-guest ratio to keep customer creation proportional.
+ * Real properties have repeat guests, so 1 customer per reservation is wasteful.
  */
-async function createCustomersOnDemand(
-  accessToken: string,
-  count: number,
-  enterpriseId: string,
-  accessTokenId: number,
-  language: SupportedLanguage = 'en',
-  logId?: string
-): Promise<string[]> {
-  const customers = getSampleCustomers().slice(0, count);
-  const customerIds: string[] = [];
-
-  // Create customer creation log
-  const inlineCustomerLog = await prisma.customerCreationLog.create({
-    data: {
-      enterpriseId,
-      accessTokenId,
-      totalCustomers: count,
-      successCount: 0,
-      failureCount: 0,
-      status: 'processing',
-      customerResults: []
-    }
-  });
-
-  // Update unified log customer stats to 'processing'
-  if (logId) {
-    try {
-      await updateEnvironmentCustomerStats(logId, {
-        status: 'processing',
-        total: count,
-        success: 0,
-        failed: 0
-      });
-    } catch (error) {
-      console.error('[CUSTOMERS] Failed to update unified log customer stats:', error);
-    }
-  }
-
-  try {
-    log.customers('Starting customer creation (inline)', {
-    count,
-    source: 'reservation-service'
-  });
-
-    // Process in batches
-    for (let i = 0; i < customers.length; i += CUSTOMER_CONCURRENCY) {
-      const batch = customers.slice(i, i + CUSTOMER_CONCURRENCY);
-      const promises = batch.map(customer => createSingleCustomer(customer, accessToken, language, logId));
-      const results = await Promise.allSettled(promises);
-
-      results.forEach((result, idx) => {
-        const customer = batch[idx];
-        if (result.status === 'fulfilled' && result.value) {
-          customerIds.push(result.value);
-        } else if (result.status === 'rejected') {
-          console.error(`[CUSTOMERS] ❌ Failed to create customer ${customer.Email}:`, result.reason);
-        }
-      });
-    }
-
-    console.log(`[CUSTOMERS] ✅ Successfully created ${customerIds.length} out of ${count} customers`);
-    if (customerIds.length < count) {
-      console.warn(`[CUSTOMERS] ⚠️ ${count - customerIds.length} customer(s) failed to create`);
-    }
-
-    // Update customer log
-    await prisma.customerCreationLog.update({
-      where: { id: inlineCustomerLog.id },
-      data: {
-        successCount: customerIds.length,
-        failureCount: count - customerIds.length,
-        completedAt: new Date(),
-        status: 'completed'
-      }
-    });
-
-    // Update unified log customer stats to 'completed'
-    if (logId) {
-      try {
-        await updateEnvironmentCustomerStats(logId, {
-          status: 'completed',
-          total: count,
-          success: customerIds.length,
-          failed: count - customerIds.length
-        });
-      } catch (error) {
-        console.error('[CUSTOMERS] Failed to update unified log customer stats:', error);
-      }
-    }
-
-    return customerIds;
-
-  } catch (error) {
-    await prisma.customerCreationLog.update({
-      where: { id: inlineCustomerLog.id },
-      data: {
-        status: 'failed',
-        errorSummary: (error as Error).message,
-        completedAt: new Date()
-      }
-    });
-
-    // Update unified log customer stats to 'failed'
-    if (logId) {
-      try {
-        await updateEnvironmentCustomerStats(logId, {
-          status: 'failed',
-          total: count,
-          success: 0,
-          failed: count
-        });
-      } catch (updateError) {
-        console.error('[CUSTOMERS] Failed to update unified log customer stats:', updateError);
-      }
-    }
-
-    throw error;
-  }
+function calculateUniqueCustomerCount(totalReservations: number): number {
+  const ratio = 2.0; // ~2 reservations per unique customer
+  const raw = Math.ceil(totalReservations / ratio);
+  return Math.max(10, Math.min(raw, 150));
 }
 
 /**
@@ -826,7 +802,7 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
  */
 function generateReservationData(
   categoryTargets: CategoryTarget[],
-  customerIds: string[],
+  uniqueCustomerCount: number,
   rates: MewsData['rates'],
   envData: EnvironmentData,
   adultAgeCategoryId: string,
@@ -870,14 +846,8 @@ function generateReservationData(
     console.log(`[RESERVATIONS] Generating ${target.targetReservations} reservations for category: ${target.categoryName}`);
 
     for (let i = 0; i < target.targetReservations; i++) {
-      // Assign customer (rotate through available customers)
-      const customerId = customerIds[globalIndex % customerIds.length];
-
-      // Validate customer ID is a valid string
-      if (!customerId || typeof customerId !== 'string' || customerId.trim() === '') {
-        console.error(`[RESERVATIONS] ❌ Invalid customer ID at globalIndex ${globalIndex}:`, customerId);
-        throw new Error(`Invalid customer ID at index ${globalIndex}: ${customerId}`);
-      }
+      // Assign customer index (rotate through unique customers for repeat guests)
+      const customerIndex = globalIndex % uniqueCustomerCount;
 
       // Determine stay length based on per-category distribution
       const stayLength = getStayLength(i, target.targetReservations);
@@ -904,7 +874,7 @@ function generateReservationData(
       const desiredState = stateTracker.determineState(checkInDate, checkOutDate, today);
 
       reservations.push({
-        customerId,
+        customerIndex,
         resourceCategoryId: target.categoryId,
         rateId,
         checkInUtc,
@@ -1099,7 +1069,121 @@ function groupReservationsForAPI(reservations: ReservationData[]): ReservationDa
 }
 
 /**
- * Create reservation groups via API
+ * Send a single reservation group to the Mews API
+ */
+async function sendReservationGroup(
+  group: ReservationData[],
+  groupIndex: number,
+  serviceId: string,
+  accessToken: string,
+  adultAgeCategoryId: string,
+  vouchersByRate: Map<string, string>,
+  logId?: string
+): Promise<{ created: any[]; failed: any[] }> {
+  const created: any[] = [];
+  const failed: any[] = [];
+
+  const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
+  const fetchOpts: RequestInit = {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ClientToken: MEWS_CLIENT_TOKEN,
+      AccessToken: accessToken,
+      Client: 'Mews Sandbox Manager',
+      ServiceId: serviceId,
+      Reservations: group.map(r => {
+        const reservation: any = {
+          State: 'Confirmed',
+          StartUtc: r.checkInUtc.toISOString(),
+          EndUtc: r.checkOutUtc.toISOString(),
+          CustomerId: r.customerId,
+          RequestedCategoryId: r.resourceCategoryId,
+          RateId: r.rateId,
+          PersonCounts: [{
+            AgeCategoryId: adultAgeCategoryId,
+            Count: r.adultCount
+          }]
+        };
+
+        // Add voucher code if available for this rate
+        const voucherCode = vouchersByRate.get(r.rateId);
+        if (voucherCode) {
+          reservation.VoucherCode = voucherCode;
+        }
+
+        return reservation;
+      })
+    })
+  };
+  const contextStr = 'reservations/add';
+
+  const response = logId
+    ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
+        unifiedLogId: logId,
+        group: 'reservations',
+      })
+    : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+
+    // Handle "no availability" errors gracefully - this is expected and not a critical failure
+    if (response.status === 403 &&
+        errorData.Message &&
+        errorData.Message.toLowerCase().includes('no availability')) {
+      console.log(`[RESERVATIONS] ℹ️ Group ${groupIndex} skipped: No availability for selected dates (expected for some date ranges)`);
+      console.log(`[RESERVATIONS] ℹ️ Continuing with remaining groups...`);
+      group.forEach(r => {
+        failed.push({
+          ...r,
+          error: 'No availability for selected dates',
+          skipped: true
+        });
+      });
+      return { created, failed };
+    }
+
+    // For other errors, log and throw
+    console.error(`[RESERVATIONS] Reservation API error for group ${groupIndex}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      groupSize: group.length,
+      errorData: errorData
+    });
+    throw new Error(`Reservation API failed: ${response.status} - ${errorData.Message || errorData.error || JSON.stringify(errorData)}`);
+  }
+
+  const data = await response.json();
+  const reservationIds = data.Reservations?.map((r: any) => r.Reservation?.Id) || [];
+
+  // Validate and store reservations with desired states for later state transitions
+  for (let j = 0; j < reservationIds.length; j++) {
+    const id = reservationIds[j];
+    if (id && typeof id === 'string' && id.trim() !== '') {
+      created.push({
+        id: id,
+        desiredState: group[j].desiredState
+      });
+    } else {
+      console.warn(`[RESERVATIONS] ⚠️ Invalid reservation ID at index ${j} in group ${groupIndex}: ${id}`);
+      failed.push({ ...group[j], error: 'Invalid reservation ID returned from API' });
+    }
+  }
+
+  // If we got fewer IDs than expected, mark the missing ones as failures
+  if (reservationIds.length < group.length) {
+    console.warn(`[RESERVATIONS] ⚠️ Expected ${group.length} reservations but only got ${reservationIds.length} IDs`);
+    for (let j = reservationIds.length; j < group.length; j++) {
+      failed.push({ ...group[j], error: 'No reservation ID returned from API' });
+    }
+  }
+
+  return { created, failed };
+}
+
+/**
+ * Create reservation groups via API (for pre-provided customer IDs path)
  */
 async function createReservationGroups(
   groups: ReservationData[][],
@@ -1113,114 +1197,79 @@ async function createReservationGroups(
   const failures: any[] = [];
 
   for (let i = 0; i < groups.length; i++) {
-    const group = groups[i];
-
     try {
-      const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
-      const fetchOpts: RequestInit = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
-          AccessToken: accessToken,
-          Client: 'Mews Sandbox Manager',
-          ServiceId: serviceId,
-          Reservations: group.map(r => {
-            const reservation: any = {
-              State: 'Confirmed',
-              StartUtc: r.checkInUtc.toISOString(),
-              EndUtc: r.checkOutUtc.toISOString(),
-              CustomerId: r.customerId,
-              RequestedCategoryId: r.resourceCategoryId,
-              RateId: r.rateId,
-              PersonCounts: [{
-                AgeCategoryId: adultAgeCategoryId,
-                Count: r.adultCount
-              }]
-            };
-
-            // Add voucher code if available for this rate
-            const voucherCode = vouchersByRate.get(r.rateId);
-            if (voucherCode) {
-              reservation.VoucherCode = voucherCode;
-            }
-
-            return reservation;
-          })
-        })
-      };
-      const contextStr = 'reservations/add';
-
-      const response = logId
-        ? await fetchWithRateLimitAndLog(url, accessToken, fetchOpts, contextStr, {
-            unifiedLogId: logId,
-            group: 'reservations',
-          })
-        : await fetchWithRateLimit(url, accessToken, fetchOpts, contextStr);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-
-        // Handle "no availability" errors gracefully - this is expected and not a critical failure
-        if (response.status === 403 &&
-            errorData.Message &&
-            errorData.Message.toLowerCase().includes('no availability')) {
-          console.log(`[RESERVATIONS] ℹ️ Group ${i} skipped: No availability for selected dates (expected for some date ranges)`);
-          console.log(`[RESERVATIONS] ℹ️ Continuing with remaining groups...`);
-          // Mark these reservations as skipped, not failed
-          group.forEach(r => {
-            failures.push({
-              ...r,
-              error: 'No availability for selected dates',
-              skipped: true
-            });
-          });
-          continue; // Skip to next group without throwing
-        }
-
-        // For other errors, log and throw
-        console.error(`[RESERVATIONS] Reservation API error for group ${i}:`, {
-          status: response.status,
-          statusText: response.statusText,
-          groupSize: group.length,
-          errorData: errorData
-        });
-        throw new Error(`Reservation API failed: ${response.status} - ${errorData.Message || errorData.error || JSON.stringify(errorData)}`);
-      }
-
-      const data = await response.json();
-      const reservationIds = data.Reservations?.map((r: any) => r.Reservation?.Id) || [];
-
-      // Validate and store reservations with desired states for later state transitions
-      for (let j = 0; j < reservationIds.length; j++) {
-        const id = reservationIds[j];
-        // Only add valid reservation IDs
-        if (id && typeof id === 'string' && id.trim() !== '') {
-          createdReservations.push({
-            id: id,
-            desiredState: group[j].desiredState
-          });
-        } else {
-          console.warn(`[RESERVATIONS] ⚠️ Invalid reservation ID at index ${j} in group ${i}: ${id}`);
-          failures.push({ ...group[j], error: 'Invalid reservation ID returned from API' });
-        }
-      }
-
-      // If we got fewer IDs than expected, mark the missing ones as failures
-      if (reservationIds.length < group.length) {
-        console.warn(`[RESERVATIONS] ⚠️ Expected ${group.length} reservations but only got ${reservationIds.length} IDs`);
-        for (let j = reservationIds.length; j < group.length; j++) {
-          failures.push({ ...group[j], error: 'No reservation ID returned from API' });
-        }
-      }
-
+      const result = await sendReservationGroup(groups[i], i, serviceId, accessToken, adultAgeCategoryId, vouchersByRate, logId);
+      createdReservations.push(...result.created);
+      failures.push(...result.failed);
     } catch (error) {
       console.error(`[RESERVATIONS] Group ${i} failed:`, error);
-      failures.push(...group.map(r => ({ ...r, error: (error as Error).message })));
+      failures.push(...groups[i].map(r => ({ ...r, error: (error as Error).message })));
     }
   }
 
   return { createdReservations, failures };
+}
+
+/**
+ * Create reservation groups with interleaved JIT customer creation.
+ * For each group, creates any needed customers before sending reservations.
+ */
+async function createReservationGroupsWithCustomers(
+  groups: ReservationData[][],
+  customerProfiles: SampleCustomer[],
+  serviceId: string,
+  accessToken: string,
+  adultAgeCategoryId: string,
+  vouchersByRate: Map<string, string>,
+  language: SupportedLanguage,
+  logId?: string
+): Promise<{ createdReservations: any[]; failures: any[]; customerPool: Map<number, string> }> {
+  const customerPool = new Map<number, string>(); // customerIndex → Mews customer ID
+  const createdReservations: any[] = [];
+  const failures: any[] = [];
+
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
+
+    // Step 1: Create any new customers needed for this group
+    for (const reservation of group) {
+      if (!customerPool.has(reservation.customerIndex)) {
+        try {
+          const profile = customerProfiles[reservation.customerIndex];
+          const customerId = await createSingleCustomer(profile, accessToken, language, logId);
+          customerPool.set(reservation.customerIndex, customerId);
+        } catch (error) {
+          console.error(`[CUSTOMERS] Failed to create customer for index ${reservation.customerIndex}:`, error);
+        }
+      }
+    }
+
+    // Step 2: Assign customer IDs and filter out reservations with failed customers
+    const validGroup: ReservationData[] = [];
+    for (const reservation of group) {
+      const customerId = customerPool.get(reservation.customerIndex);
+      if (customerId) {
+        reservation.customerId = customerId;
+        validGroup.push(reservation);
+      } else {
+        failures.push({ ...reservation, error: 'Customer creation failed' });
+      }
+    }
+
+    if (validGroup.length === 0) continue;
+
+    // Step 3: Send reservation group to API
+    try {
+      const result = await sendReservationGroup(validGroup, i, serviceId, accessToken, adultAgeCategoryId, vouchersByRate, logId);
+      createdReservations.push(...result.created);
+      failures.push(...result.failed);
+    } catch (error) {
+      console.error(`[RESERVATIONS] Group ${i} failed:`, error);
+      failures.push(...validGroup.map(r => ({ ...r, error: (error as Error).message })));
+    }
+  }
+
+  return { createdReservations, failures, customerPool };
 }
 
 /**
