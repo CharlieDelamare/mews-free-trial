@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { UnifiedLog, EnvironmentLog, ResetLog, DemoFillerLog } from '@/types/unified-log';
+import type { UnifiedLog, EnvironmentLog, ResetLog, DemoFillerLog, CloseBillsLog } from '@/types/unified-log';
 import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
 import { CopyButton } from '@/components/CopyButton';
 import { Pagination } from '@/components/Pagination';
@@ -19,6 +19,8 @@ function getLogTypeLabel(type: UnifiedLog['logType']) {
       return { label: 'Sandbox Reset', color: 'bg-purple-100 text-purple-800' };
     case 'demo_filler':
       return { label: 'Sandbox Filler', color: 'bg-orange-100 text-orange-800' };
+    case 'close_bills':
+      return { label: 'Close Bills', color: 'bg-amber-100 text-amber-800' };
   }
 }
 
@@ -181,6 +183,7 @@ export default function LogsPage() {
                     {log.logType === 'environment' && <EnvironmentContent log={log} />}
                     {log.logType === 'reset' && <ResetContent log={log} />}
                     {log.logType === 'demo_filler' && <DemoFillerContent log={log} />}
+                    {log.logType === 'close_bills' && <CloseBillsContent log={log as CloseBillsLog} />}
                   </div>
                 );
               })}
@@ -379,6 +382,54 @@ function DemoFillerContent({ log }: { log: DemoFillerLog }) {
           <div className="flex items-center gap-2 text-yellow-700">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
             <p className="text-xs font-medium">Creating reservations...</p>
+          </div>
+        </div>
+      )}
+
+      {log.status === 'failed' && log.errorMessage && (
+        <div className="border-t border-gray-200 pt-3 mt-3">
+          <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
+          <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">{log.errorMessage}</pre>
+        </div>
+      )}
+
+      <ApiCallLogs logId={log.id} />
+    </>
+  );
+}
+
+function CloseBillsContent({ log }: { log: CloseBillsLog }) {
+  const details = log.operationDetails;
+  const totalBills = details?.totalBills ?? log.totalItems;
+
+  return (
+    <>
+      <div className="border-t border-gray-200 pt-3 mt-3">
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600">Bills closed:</span>
+            <span className="font-medium text-gray-800">{log.successCount} / {totalBills}</span>
+          </div>
+          {log.failureCount > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-red-600">Failed:</span>
+              <span className="font-medium text-red-800">{log.failureCount}</span>
+            </div>
+          )}
+          {log.completedAt && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Completed:</span>
+              <span className="font-medium text-gray-800">{formatDate(log.completedAt)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {log.status === 'processing' && (
+        <div className="border-t border-gray-200 pt-3 mt-3">
+          <div className="flex items-center gap-2 text-yellow-700">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+            <p className="text-xs font-medium">Closing bills...</p>
           </div>
         </div>
       )}

@@ -6,12 +6,15 @@ import type {
   EnvironmentLog,
   ResetLog,
   DemoFillerLog,
+  CloseBillsLog,
   CreateEnvironmentLogInput,
   CreateResetLogInput,
   CreateDemoFillerLogInput,
+  CreateCloseBillsLogInput,
   EnvironmentSetupStats,
   ResetOperationDetails,
   DemoFillerDetails,
+  CloseBillsDetails,
 } from '@/types/unified-log';
 
 // === Create Functions ===
@@ -94,6 +97,29 @@ export async function createDemoFillerLog(input: CreateDemoFillerLogInput): Prom
   }
 }
 
+/**
+ * Create a close bills log entry
+ */
+export async function createCloseBillsLog(input: CreateCloseBillsLogInput): Promise<CloseBillsLog> {
+  try {
+    const created = await prisma.unifiedLog.create({
+      data: {
+        logType: 'close_bills',
+        status: 'processing',
+        enterpriseId: input.enterpriseId,
+        accessTokenId: input.accessTokenId,
+        totalItems: 0,
+        successCount: 0,
+        failureCount: 0,
+      },
+    });
+    return created as unknown as CloseBillsLog;
+  } catch (error) {
+    console.error('[UNIFIED-LOGGER] Failed to create close bills log:', (error as Error).message);
+    throw new Error(`Database error: Failed to create close bills log - ${(error as Error).message}`);
+  }
+}
+
 // === Update Functions ===
 
 /**
@@ -110,7 +136,7 @@ export async function updateUnifiedLog(
     currentStep?: number;
     successCount?: number;
     failureCount?: number;
-    operationDetails?: EnvironmentSetupStats | ResetOperationDetails | DemoFillerDetails;
+    operationDetails?: EnvironmentSetupStats | ResetOperationDetails | DemoFillerDetails | CloseBillsDetails;
   }
 ): Promise<UnifiedLog> {
   try {

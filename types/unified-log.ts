@@ -1,7 +1,7 @@
 // TypeScript types for unified logging system
 
 // === Core Types ===
-export type LogType = 'environment' | 'reset' | 'demo_filler';
+export type LogType = 'environment' | 'reset' | 'demo_filler' | 'close_bills';
 export type LogStatus = 'building' | 'processing' | 'completed' | 'failed';
 
 // === operationDetails Types ===
@@ -75,6 +75,15 @@ export interface DemoFillerDetails {
   [key: string]: any; // Index signature for Prisma Json compatibility
 }
 
+/** Operation details for close bills logs */
+export interface CloseBillsDetails {
+  totalBills?: number;
+  billsClosed?: number;
+  billsCloseFailed?: number;
+  errors?: string[];
+  [key: string]: any; // Index signature for Prisma Json compatibility
+}
+
 // === Base Log Interface ===
 export interface BaseLog {
   id: string;
@@ -130,8 +139,18 @@ export interface DemoFillerLog extends BaseLog {
   operationDetails?: DemoFillerDetails | null;
 }
 
+/** Close bills operation log */
+export interface CloseBillsLog extends BaseLog {
+  logType: 'close_bills';
+  accessTokenId?: number | null;
+  totalItems: number;
+  successCount: number;
+  failureCount: number;
+  operationDetails?: CloseBillsDetails | null;
+}
+
 /** Discriminated union of all log types */
-export type UnifiedLog = EnvironmentLog | ResetLog | DemoFillerLog;
+export type UnifiedLog = EnvironmentLog | ResetLog | DemoFillerLog | CloseBillsLog;
 
 // === Type Guards ===
 
@@ -145,6 +164,10 @@ export function isResetLog(log: UnifiedLog): log is ResetLog {
 
 export function isDemoFillerLog(log: UnifiedLog): log is DemoFillerLog {
   return log.logType === 'demo_filler';
+}
+
+export function isCloseBillsLog(log: UnifiedLog): log is CloseBillsLog {
+  return log.logType === 'close_bills';
 }
 
 // === Input Types for Creating Logs ===
@@ -183,6 +206,12 @@ export interface CreateDemoFillerLogInput {
   totalItems: number;
 }
 
+/** Input for creating a close bills log */
+export interface CreateCloseBillsLogInput {
+  enterpriseId: string;
+  accessTokenId: number;
+}
+
 // === Update Types ===
 
 /** Partial update for environment logs */
@@ -212,6 +241,16 @@ export interface UpdateDemoFillerLogInput {
   errorMessage?: string;
   completedAt?: Date;
   operationDetails?: DemoFillerDetails;
+}
+
+/** Partial update for close bills logs */
+export interface UpdateCloseBillsLogInput {
+  status?: LogStatus;
+  successCount?: number;
+  failureCount?: number;
+  errorMessage?: string;
+  completedAt?: Date;
+  operationDetails?: CloseBillsDetails;
 }
 
 // === API Response Types ===
