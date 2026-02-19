@@ -26,6 +26,7 @@ interface TransformedLog {
   loginUrl?: string;
   loginEmail?: string;
   loginPassword?: string;
+  signInUrl?: string | null;
   requestorEmail?: string | null;
   durationDays?: number | null;
   salesforceAccountId?: string | null;
@@ -77,6 +78,7 @@ export async function GET(request: NextRequest) {
         loginUrl: log.loginUrl || undefined,
         loginEmail: log.loginEmail || undefined,
         loginPassword: log.loginPassword || undefined,
+        signInUrl: log.signInUrl,
         requestorEmail: log.requestorEmail,
         durationDays: log.durationDays,
         salesforceAccountId: log.salesforceAccountId,
