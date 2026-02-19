@@ -8,6 +8,7 @@ const mainLinks = [
   { href: '/create', label: 'Create' },
   { href: '/reset', label: 'Reset' },
   { href: '/fill', label: 'Fill' },
+  { href: '/close-bills', label: 'Close Bills' },
 ];
 
 export function Navbar() {
