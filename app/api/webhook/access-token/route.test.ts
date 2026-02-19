@@ -336,6 +336,41 @@ describe('POST /api/webhook/access-token', () => {
         status: 'processing',
       });
 
+      // Should send Zapier notification immediately (before background work)
+      expect(mockSendZapierNotification).toHaveBeenCalledWith(
+        'environment_ready',
+        expect.objectContaining({
+          status: 'success',
+          propertyName: 'Test Hotel',
+          customerName: 'John Doe',
+          customerEmail: 'john@example.com',
+          requestorEmail: 'requestor@example.com',
+          loginUrl: 'https://app.mews-demo.com',
+          loginEmail: 'john@example.com',
+          loginPassword: 'Sample123',
+          signInUrl: 'https://app.mews-demo.com/signin/abc123',
+          enterpriseId: 'ent-1',
+        })
+      );
+
+      // Notification should NOT include customer/reservation counts (not yet created)
+      const notificationPayload = mockSendZapierNotification.mock.calls[0][1];
+      expect(notificationPayload.customersCreated).toBeUndefined();
+      expect(notificationPayload.reservationsCreated).toBeUndefined();
+
+      // Should send sandbox ready email immediately (before background work)
+      expect(mockSendSandboxReadyEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customerEmail: 'john@example.com',
+          customerName: 'John Doe',
+          propertyName: 'Test Hotel',
+          loginUrl: 'https://app.mews-demo.com',
+          loginEmail: 'john@example.com',
+          loginPassword: 'Sample123',
+          signInUrl: 'https://app.mews-demo.com/signin/abc123',
+        })
+      );
+
       // Should trigger background work
       expect(mockRunInBackground).toHaveBeenCalledTimes(1);
     });
@@ -375,6 +410,16 @@ describe('POST /api/webhook/access-token', () => {
       });
 
       await POST(request);
+
+      // Zapier notification and email should still have been sent (before background work)
+      expect(mockSendZapierNotification).toHaveBeenCalledWith(
+        'environment_ready',
+        expect.objectContaining({
+          status: 'success',
+          propertyName: 'Test Hotel',
+        })
+      );
+      expect(mockSendSandboxReadyEmail).toHaveBeenCalledTimes(1);
 
       // Wait for the background work to complete
       expect(capturedPromise).not.toBeNull();

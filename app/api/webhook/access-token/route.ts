@@ -271,6 +271,38 @@ export async function POST(request: NextRequest) {
         status: 'processing'
       });
 
+      // Send Zapier notification and email immediately when build completes (building → processing)
+      // Re-fetch log to ensure we have latest data (including signInUrl saved by create-trial)
+      const freshLog = await findEnvironmentLogByPropertyName(enterpriseName, false) || log;
+
+      await sendZapierNotification('environment_ready', {
+        status: 'success',
+        propertyName: freshLog.propertyName,
+        customerName: freshLog.customerName,
+        customerEmail: freshLog.customerEmail,
+        requestorEmail: freshLog.requestorEmail || undefined,
+        loginUrl: freshLog.loginUrl,
+        loginEmail: freshLog.loginEmail,
+        loginPassword: freshLog.loginPassword,
+        signInUrl: freshLog.signInUrl || undefined,
+        enterpriseId: newToken.enterpriseId,
+        enterpriseName: newToken.enterpriseName,
+        receivedAt: newToken.receivedAt.toISOString(),
+        tokenId: newToken.id,
+      });
+
+      await sendSandboxReadyEmail({
+        customerEmail: freshLog.customerEmail,
+        customerName: freshLog.customerName,
+        requestorEmail: freshLog.requestorEmail || undefined,
+        propertyName: freshLog.propertyName,
+        loginUrl: freshLog.loginUrl,
+        loginEmail: freshLog.loginEmail,
+        loginPassword: freshLog.loginPassword,
+        signInUrl: freshLog.signInUrl ?? undefined,
+        durationDays: freshLog.durationDays ?? undefined,
+      });
+
       // Start full environment setup in the background
       const backgroundWork = (async () => {
         try {
@@ -318,41 +350,6 @@ export async function POST(request: NextRequest) {
           } catch (taskError) {
             console.error('[WEBHOOK-SETUP] Task creation failed (non-blocking):', (taskError as Error).message);
           }
-
-          // Re-fetch the log to get the latest data (including signInUrl saved by create-trial)
-          const freshLog = await findEnvironmentLogByPropertyName(enterpriseName, false) || log;
-
-          // Send Zapier notification
-          await sendZapierNotification('environment_ready', {
-            status: 'success',
-            propertyName: freshLog.propertyName,
-            customerName: freshLog.customerName,
-            customerEmail: freshLog.customerEmail,
-            requestorEmail: freshLog.requestorEmail || undefined,
-            loginUrl: freshLog.loginUrl,
-            loginEmail: freshLog.loginEmail,
-            loginPassword: freshLog.loginPassword,
-            signInUrl: freshLog.signInUrl || undefined,
-            enterpriseId: newToken.enterpriseId,
-            enterpriseName: newToken.enterpriseName,
-            receivedAt: newToken.receivedAt.toISOString(),
-            tokenId: newToken.id,
-            customersCreated: result.totalCustomers,
-            reservationsCreated: result.totalReservations
-          });
-
-          // Send email with login credentials to customer and requestor
-          await sendSandboxReadyEmail({
-            customerEmail: freshLog.customerEmail,
-            customerName: freshLog.customerName,
-            requestorEmail: freshLog.requestorEmail || undefined,
-            propertyName: freshLog.propertyName,
-            loginUrl: freshLog.loginUrl,
-            loginEmail: freshLog.loginEmail,
-            loginPassword: freshLog.loginPassword,
-            signInUrl: freshLog.signInUrl ?? undefined,
-            durationDays: freshLog.durationDays ?? undefined,
-          });
 
           // Update status to completed
           await updateUnifiedLog(log.id, { status: 'completed', completedAt: new Date() });
