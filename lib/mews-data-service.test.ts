@@ -38,8 +38,8 @@ describe('fetchMewsData', () => {
   const defaultResponses = {
     'services/getAll': {
       Services: [
-        { Id: 'svc-1', Name: 'Accommodation', Ordering: 1, Data: { Discriminator: 'Bookable' } },
-        { Id: 'svc-2', Name: 'Spa', Ordering: 2, Data: { Discriminator: 'Additional' } },
+        { Id: 'svc-1', Name: 'Accommodation', IsActive: true, Ordering: 1, Data: { Discriminator: 'Bookable' } },
+        { Id: 'svc-2', Name: 'Spa', IsActive: true, Ordering: 2, Data: { Discriminator: 'Additional' } },
       ],
     },
     'rates/getAll': {
@@ -191,7 +191,7 @@ describe('fetchMewsData', () => {
       ...defaultResponses,
       'services/getAll': {
         Services: [
-          { Id: 'svc-2', Name: 'Spa', Ordering: 1, Data: { Discriminator: 'Additional' } },
+          { Id: 'svc-2', Name: 'Spa', IsActive: true, Ordering: 1, Data: { Discriminator: 'Additional' } },
         ],
       },
     });
@@ -293,9 +293,9 @@ describe('fetchBookableServices', () => {
       ok: true,
       json: async () => ({
         Services: [
-          { Id: 'svc-3', Name: 'Extra Service', Ordering: 3, Data: { Discriminator: 'Additional' } },
-          { Id: 'svc-1', Name: 'Accommodation', Ordering: 1, Data: { Discriminator: 'Bookable' } },
-          { Id: 'svc-2', Name: 'Events', Ordering: 2, Data: { Discriminator: 'Bookable' } },
+          { Id: 'svc-3', Name: 'Extra Service', IsActive: true, Ordering: 3, Data: { Discriminator: 'Additional' } },
+          { Id: 'svc-1', Name: 'Accommodation', IsActive: true, Ordering: 1, Data: { Discriminator: 'Bookable' } },
+          { Id: 'svc-2', Name: 'Events', IsActive: true, Ordering: 2, Data: { Discriminator: 'Bookable' } },
         ],
       }),
       text: async () => '',
