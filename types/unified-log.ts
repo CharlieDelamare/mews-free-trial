@@ -109,6 +109,7 @@ export interface EnvironmentLog extends BaseLog {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
+  signInUrl?: string | null;
   requestorEmail?: string | null;
   durationDays?: number | null;
   roomCount?: number | null;
@@ -182,6 +183,7 @@ export interface CreateEnvironmentLogInput {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
+  signInUrl?: string | null;
   status?: LogStatus;
   requestorEmail?: string | null;
   durationDays?: number | null;
@@ -219,6 +221,7 @@ export interface UpdateEnvironmentLogInput {
   status?: LogStatus;
   enterpriseId?: string;
   timezone?: string;
+  signInUrl?: string;
   errorMessage?: string;
   completedAt?: Date;
   operationDetails?: EnvironmentSetupStats;

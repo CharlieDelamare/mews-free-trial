@@ -120,6 +120,37 @@ describe('sendZapierNotification', () => {
       expect(callBody.slackMessage).toContain('API timeout');
     });
 
+    test('includes signInUrl in environment_ready message when provided', async () => {
+      (global.fetch as any).mockResolvedValue({ ok: true });
+
+      await sendZapierNotification('environment_ready', {
+        status: 'success',
+        propertyName: 'Test Hotel',
+        customerName: 'John Doe',
+        loginUrl: 'https://app.mews-demo.com',
+        loginEmail: 'john@example.com',
+        loginPassword: 'Sample123',
+        signInUrl: 'https://app.mews-demo.com/signin/abc123',
+      });
+
+      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
+      expect(callBody.slackMessage).toContain('Sign-in URL (passwordless)');
+      expect(callBody.slackMessage).toContain('signin/abc123');
+    });
+
+    test('omits signInUrl from environment_ready message when not provided', async () => {
+      (global.fetch as any).mockResolvedValue({ ok: true });
+
+      await sendZapierNotification('environment_ready', {
+        status: 'success',
+        propertyName: 'Test Hotel',
+        customerName: 'John Doe',
+      });
+
+      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
+      expect(callBody.slackMessage).not.toContain('Sign-in URL');
+    });
+
     test('formats access_token_no_match message', async () => {
       (global.fetch as any).mockResolvedValue({ ok: true });
 

@@ -328,6 +328,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Extract SignInUrl from Mews API response and save to the log
+    if (result?.SignInUrl) {
+      try {
+        await updateUnifiedLog(log.id, { signInUrl: result.SignInUrl });
+        console.log('[CREATE-TRIAL] SignInUrl saved:', result.SignInUrl);
+      } catch (dbError) {
+        console.error('[CREATE-TRIAL] Failed to save SignInUrl:', (dbError as Error).message);
+        // Non-blocking: don't fail the request if we can't save the SignInUrl
+      }
+    }
+
     // Note: The Mews API may not reliably return an enterpriseId in the response.
     // The webhook will backfill the correct enterpriseId when it arrives.
     // Return immediately - Slack notification will be sent when access token webhook is received

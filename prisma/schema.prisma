@@ -147,6 +147,7 @@ model UnifiedLog {
   loginUrl            String?
   loginEmail          String?
   loginPassword       String?
+  signInUrl           String?   // Passwordless sign-in URL from Mews addSample API
   requestorEmail      String?
   durationDays        Int?
   roomCount           Int?

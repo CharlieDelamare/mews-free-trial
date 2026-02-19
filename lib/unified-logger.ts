@@ -131,6 +131,7 @@ export async function updateUnifiedLog(
     status?: LogStatus;
     enterpriseId?: string;
     timezone?: string;
+    signInUrl?: string;
     errorMessage?: string;
     completedAt?: Date;
     currentStep?: number;

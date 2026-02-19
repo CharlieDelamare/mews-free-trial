@@ -328,6 +328,7 @@ export async function POST(request: NextRequest) {
             loginUrl: log.loginUrl,
             loginEmail: log.loginEmail,
             loginPassword: log.loginPassword,
+            signInUrl: log.signInUrl || undefined,
             enterpriseId: newToken.enterpriseId,
             enterpriseName: newToken.enterpriseName,
             receivedAt: newToken.receivedAt.toISOString(),
@@ -345,6 +346,7 @@ export async function POST(request: NextRequest) {
             loginUrl: log.loginUrl,
             loginEmail: log.loginEmail,
             loginPassword: log.loginPassword,
+            signInUrl: log.signInUrl ?? undefined,
             durationDays: log.durationDays ?? undefined,
           });
 

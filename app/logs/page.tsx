@@ -38,7 +38,11 @@ function formatRelativeTime(date: Date): string {
 }
 
 function buildLoginDetailsText(log: EnvironmentLog): string {
-  return `Login URL: ${log.loginUrl}\nEmail: ${log.loginEmail}\nPassword: ${log.loginPassword}`;
+  let text = `Login URL: ${log.loginUrl}\nEmail: ${log.loginEmail}\nPassword: ${log.loginPassword}`;
+  if (log.signInUrl) {
+    text += `\nSign-in URL (passwordless): ${log.signInUrl}`;
+  }
+  return text;
 }
 
 export default function LogsPage() {
