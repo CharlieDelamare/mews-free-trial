@@ -8,6 +8,7 @@ import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
 import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
 import { getMewsClientToken } from '@/lib/config';
 import { runInBackground } from '@/lib/background';
+import { flushApiCallLogs } from '@/lib/api-call-logger';
 
 // Disable caching for GET endpoint - webhook debug data needs to be fresh
 export const dynamic = 'force-dynamic';
@@ -367,6 +368,13 @@ export async function POST(request: NextRequest) {
             });
           } catch (updateError) {
             console.error('[WEBHOOK-SETUP] Failed to update log status to failed:', updateError);
+          }
+        } finally {
+          // Ensure all buffered API call logs are written to DB before function exits
+          try {
+            await flushApiCallLogs();
+          } catch (flushError) {
+            console.error('[WEBHOOK-SETUP] Failed to flush API call logs:', flushError);
           }
         }
       })();

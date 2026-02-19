@@ -4,6 +4,7 @@ import { resolveAccessToken } from '@/lib/reservations';
 import { resetEnvironment } from '@/lib/reset-service';
 import type { ResetOperationRequest, ResetOperationResponse } from '@/types/reset';
 import { runInBackground } from '@/lib/background';
+import { flushApiCallLogs } from '@/lib/api-call-logger';
 
 /**
  * POST /api/reset-environment
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResetOper
           `[RESET-ENVIRONMENT] ❌ Reset failed for ${tokenRecord.enterpriseId}:`,
           error
         );
+      })
+      .finally(() => {
+        flushApiCallLogs().catch(err => console.error('[RESET-ENVIRONMENT] Failed to flush API call logs:', err));
       });
     runInBackground(resetWork);
 

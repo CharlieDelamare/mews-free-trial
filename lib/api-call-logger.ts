@@ -7,7 +7,7 @@
  * Features:
  * - Automatic token redaction (ClientToken, AccessToken)
  * - Response body truncation (max 10KB)
- * - Batched database writes (fire-and-forget)
+ * - Batched database writes with backpressure (max 3 concurrent DB writes)
  * - Drop-in replacement for fetch() via loggedFetch()
  * - Composition with existing rate limiter via fetchWithRateLimitAndLog()
  */
@@ -52,8 +52,9 @@ interface ApiCallLogEntry {
 
 const SENSITIVE_KEYS = new Set(['ClientToken', 'AccessToken', 'Token', 'client_token', 'access_token']);
 const MAX_BODY_SIZE = 10 * 1024; // 10KB
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 50;
 const FLUSH_INTERVAL_MS = 2000;
+const MAX_INFLIGHT_WRITES = 3;
 
 // === Token Redaction ===
 
@@ -110,6 +111,8 @@ export function extractEndpoint(url: string): string {
 class ApiCallLogBuffer {
   private buffer: ApiCallLogEntry[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private inflightCount = 0;
+  private inflightPromises: Promise<void>[] = [];
 
   add(entry: ApiCallLogEntry): void {
     this.buffer.push(entry);
@@ -129,8 +132,18 @@ class ApiCallLogBuffer {
     const entries = this.buffer.splice(0);
     if (entries.length === 0) return;
 
-    // Fire-and-forget database write
-    prisma.apiCallLog
+    // Drop batch if too many concurrent writes to protect connection pool
+    if (this.inflightCount >= MAX_INFLIGHT_WRITES) {
+      console.warn(
+        `[API-CALL-LOG] Dropping ${entries.length} log entries: ` +
+        `${this.inflightCount} DB writes in-flight (max ${MAX_INFLIGHT_WRITES})`
+      );
+      return;
+    }
+
+    this.inflightCount++;
+
+    const writePromise = prisma.apiCallLog
       .createMany({
         data: entries.map(e => ({
           unifiedLogId: e.unifiedLogId,
@@ -149,7 +162,22 @@ class ApiCallLogBuffer {
       })
       .catch(err => {
         console.error(`[API-CALL-LOG] Failed to persist ${entries.length} log entries:`, err.message);
+      })
+      .finally(() => {
+        this.inflightCount--;
       });
+
+    this.inflightPromises.push(writePromise as Promise<void>);
+  }
+
+  /**
+   * Flush remaining buffer and wait for all in-flight DB writes to settle.
+   * Call this before the serverless function exits.
+   */
+  async drain(): Promise<void> {
+    this.flush();
+    await Promise.allSettled(this.inflightPromises);
+    this.inflightPromises = [];
   }
 }
 
@@ -198,14 +226,16 @@ export async function loggedFetch(
     const response = await fetch(url, options);
     const durationMs = Date.now() - startTime;
 
-    // Clone response to read body without consuming original
+    // Only read response body on errors (saves memory/IO for 300+ successful calls)
     let responseBodyStr: string | null = null;
-    try {
-      const cloned = response.clone();
-      const text = await cloned.text();
-      responseBodyStr = truncateBody(text);
-    } catch {
-      responseBodyStr = '[failed to read response body]';
+    if (!response.ok) {
+      try {
+        const cloned = response.clone();
+        const text = await cloned.text();
+        responseBodyStr = truncateBody(text);
+      } catch {
+        responseBodyStr = '[failed to read response body]';
+      }
     }
 
     logBuffer.add({
@@ -278,9 +308,9 @@ export async function fetchWithRateLimitAndLog(
 }
 
 /**
- * Force flush the log buffer. Call this before the process exits
- * or when the background work completes to ensure all entries are persisted.
+ * Flush remaining log entries and wait for all in-flight DB writes to complete.
+ * Call this before the serverless function exits to ensure data is persisted.
  */
-export function flushApiCallLogs(): void {
-  logBuffer.flush();
+export async function flushApiCallLogs(): Promise<void> {
+  await logBuffer.drain();
 }
