@@ -12,7 +12,9 @@ const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A4
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
 
 /**
- * Fetch bills from Mews API
+ * Fetch bills from Mews API across the past year using multiple 90-day windows.
+ * The Mews API limits UpdatedUtc ranges to ~90 days per request, so we make
+ * sequential requests and deduplicate by bill ID.
  */
 export async function getBills(
   accessToken: string,
@@ -20,46 +22,73 @@ export async function getBills(
   logId?: string
 ): Promise<{ bills: Bill[]; error?: string }> {
   try {
-    // Calculate a wide time range to get all bills
-    // Start: 3 months ago (max allowed by Mews API is 3M1D), End: now
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3);
+    const now = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
+    const WINDOW_DAYS = 90;
+    const allBills = new Map<string, Bill>();
     const url = `${MEWS_API_URL}/api/connector/v1/bills/getAll`;
-    const fetchOptions: RequestInit = {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager',
-        UpdatedUtc: {
-          StartUtc: startDate.toISOString(),
-          EndUtc: endDate.toISOString()
-        },
-        ...(states && { States: states }),
-        Limitation: { Count: 1000 }
-      })
-    };
+    let windowCount = 0;
 
-    const response = logId
-      ? await loggedFetch(url, fetchOptions, {
-          unifiedLogId: logId,
-          group: 'bills',
-          endpoint: 'bills/getAll',
-        })
-      : await fetch(url, fetchOptions);
+    let windowEnd = now;
+    while (windowEnd > oneYearAgo) {
+      const windowStart = new Date(windowEnd);
+      windowStart.setDate(windowStart.getDate() - WINDOW_DAYS);
+      if (windowStart < oneYearAgo) windowStart.setTime(oneYearAgo.getTime());
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Failed to fetch bills: ${response.status} - ${errorData.Message || response.statusText}`
+      windowCount++;
+      console.log(
+        `[BILL-SERVICE] Fetching bills window ${windowCount}: ${windowStart.toISOString()} to ${windowEnd.toISOString()}`
       );
+
+      const fetchOptions: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Mews Sandbox Manager',
+          UpdatedUtc: {
+            StartUtc: windowStart.toISOString(),
+            EndUtc: windowEnd.toISOString()
+          },
+          ...(states && { States: states }),
+          Limitation: { Count: 1000 }
+        })
+      };
+
+      try {
+        const response = logId
+          ? await loggedFetch(url, fetchOptions, {
+              unifiedLogId: logId,
+              group: 'bills',
+              endpoint: 'bills/getAll',
+            })
+          : await fetch(url, fetchOptions);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.warn(
+            `[BILL-SERVICE] Window ${windowCount} failed: ${response.status} - ${errorData.Message || response.statusText}`
+          );
+        } else {
+          const data = await response.json();
+          const bills: Bill[] = data.Bills || [];
+          for (const bill of bills) {
+            allBills.set(bill.Id, bill);
+          }
+          console.log(`[BILL-SERVICE] Window ${windowCount}: found ${bills.length} bills (${allBills.size} unique total)`);
+        }
+      } catch (windowError) {
+        console.warn(`[BILL-SERVICE] Window ${windowCount} error:`, windowError);
+      }
+
+      windowEnd = windowStart;
     }
 
-    const data = await response.json();
-    return { bills: data.Bills || [] };
+    console.log(`[BILL-SERVICE] Fetched ${allBills.size} unique bills across ${windowCount} windows`);
+    return { bills: Array.from(allBills.values()) };
   } catch (error) {
     console.error('[BILL-SERVICE] Error fetching bills:', error);
     return {
