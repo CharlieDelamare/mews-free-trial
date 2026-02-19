@@ -180,6 +180,9 @@ export default function LogsPage() {
                         </div>
                         <h2 className="text-lg font-semibold text-gray-800">{displayName}</h2>
                         <p className="text-xs text-gray-600 mt-0.5">{formatDate(log.timestamp)}</p>
+                        {'requestorEmail' in log && log.requestorEmail && (
+                          <p className="text-xs text-gray-500 mt-0.5">Requested by {log.requestorEmail}</p>
+                        )}
                       </div>
                       <StatusBadge status={log.status} />
                     </div>
