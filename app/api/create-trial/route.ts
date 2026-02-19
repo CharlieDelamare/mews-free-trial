@@ -331,7 +331,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Extract SignInUrl from Mews API response and save to the log
     if (result?.SignInUrl) {
       try {
-        await updateUnifiedLog(log.id, { signInUrl: result.SignInUrl });
+        await updateUnifiedLog(log.id, {
+          signInUrl: result.SignInUrl,
+          loginUrl: result.SignInUrl,
+        });
         console.log('[CREATE-TRIAL] SignInUrl saved:', result.SignInUrl);
       } catch (dbError) {
         console.error('[CREATE-TRIAL] Failed to save SignInUrl:', (dbError as Error).message);
@@ -346,7 +349,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       success: true,
       message: 'Trial environment is being created. You will receive the login details shortly.',
       propertyName,
-      status: 'building'
+      status: 'building',
+      signInUrl: result?.SignInUrl || null,
     });
 
   } catch (error) {

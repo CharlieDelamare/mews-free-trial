@@ -221,6 +221,7 @@ export interface UpdateEnvironmentLogInput {
   status?: LogStatus;
   enterpriseId?: string;
   timezone?: string;
+  loginUrl?: string;
   signInUrl?: string;
   errorMessage?: string;
   completedAt?: Date;

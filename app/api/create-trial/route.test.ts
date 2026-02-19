@@ -357,6 +357,7 @@ describe('POST /api/create-trial', () => {
       expect(data.message).toBe('Trial environment is being created. You will receive the login details shortly.');
       expect(data.propertyName).toBe('Test Hotel');
       expect(data.status).toBe('building');
+      expect(data.signInUrl).toBeNull();
     });
 
     test('saves SignInUrl when present in Mews API response', async () => {
@@ -383,7 +384,9 @@ describe('POST /api/create-trial', () => {
       expect(data.success).toBe(true);
       expect(mockUpdateUnifiedLog).toHaveBeenCalledWith('test-log-id', {
         signInUrl: 'https://app.mews-demo.com/signin/abc123',
+        loginUrl: 'https://app.mews-demo.com/signin/abc123',
       });
+      expect(data.signInUrl).toBe('https://app.mews-demo.com/signin/abc123');
     });
 
     test('does not call updateUnifiedLog for signInUrl when SignInUrl is absent', async () => {
@@ -403,10 +406,12 @@ describe('POST /api/create-trial', () => {
         json: async () => ({ enterpriseId: '123' }),
       });
 
-      await POST(request);
+      const response = await POST(request);
+      const data = await response.json();
 
       // updateUnifiedLog should NOT have been called (no signInUrl to save)
       expect(mockUpdateUnifiedLog).not.toHaveBeenCalled();
+      expect(data.signInUrl).toBeNull();
     });
 
     test('handles Mews API error response', async () => {
