@@ -356,6 +356,16 @@ export async function POST(request: NextRequest) {
             enterpriseId: newToken.enterpriseId,
             error: (error as Error).message
           });
+          // Update log status to 'failed' so it doesn't stay stuck in 'processing'
+          try {
+            await updateUnifiedLog(log.id, {
+              status: 'failed',
+              errorMessage: `Setup failed: ${(error as Error).message}`,
+              completedAt: new Date()
+            });
+          } catch (updateError) {
+            console.error('[WEBHOOK-SETUP] Failed to update log status to failed:', updateError);
+          }
         }
       })();
       runInBackground(backgroundWork);
