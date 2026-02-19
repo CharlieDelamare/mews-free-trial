@@ -305,6 +305,7 @@ describe('POST /api/webhook/access-token', () => {
         loginUrl: 'https://app.mews-demo.com',
         loginEmail: 'john@example.com',
         loginPassword: 'Sample123',
+        signInUrl: 'https://app.mews-demo.com/signin/abc123',
       });
 
       const request = createMockRequest({

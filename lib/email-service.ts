@@ -13,6 +13,7 @@ interface SandboxReadyEmailParams {
   loginUrl: string;
   loginEmail: string;
   loginPassword: string;
+  signInUrl?: string;
   durationDays?: number;
 }
 
@@ -66,7 +67,13 @@ function buildSandboxReadyHtml(params: SandboxReadyEmailParams): string {
                       <tr>
                         <td style="padding:4px 0;color:#6b7280;font-size:13px;">Password</td>
                         <td style="padding:4px 0;color:#111827;font-size:13px;font-family:monospace;">${params.loginPassword}</td>
-                      </tr>
+                      </tr>${params.signInUrl ? `
+                      <tr>
+                        <td style="padding:4px 0;color:#6b7280;font-size:13px;">Sign-in</td>
+                        <td style="padding:4px 0;">
+                          <a href="${params.signInUrl}" style="color:#2563eb;font-size:13px;text-decoration:none;">Sign in without password</a>
+                        </td>
+                      </tr>` : ''}
                     </table>
                   </td>
                 </tr>
@@ -75,7 +82,7 @@ function buildSandboxReadyHtml(params: SandboxReadyEmailParams): string {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding-bottom:24px;">
-                    <a href="${params.loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#2563eb;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">
+                    <a href="${params.signInUrl || params.loginUrl}" style="display:inline-block;padding:12px 32px;background-color:#2563eb;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">
                       Log In to Your Sandbox
                     </a>
                   </td>

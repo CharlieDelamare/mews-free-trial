@@ -359,6 +359,56 @@ describe('POST /api/create-trial', () => {
       expect(data.status).toBe('building');
     });
 
+    test('saves SignInUrl when present in Mews API response', async () => {
+      const request = createMockRequest({
+        firstName: 'John',
+        lastName: 'Doe',
+        customerEmail: 'john@example.com',
+        propertyName: 'Test Hotel',
+        propertyCountry: 'United Kingdom',
+        preferredLanguage: 'English (UK)',
+        propertyType: 'hotel',
+        durationDays: 30,
+      });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ SignInUrl: 'https://app.mews-demo.com/signin/abc123' }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(mockUpdateUnifiedLog).toHaveBeenCalledWith('test-log-id', {
+        signInUrl: 'https://app.mews-demo.com/signin/abc123',
+      });
+    });
+
+    test('does not call updateUnifiedLog for signInUrl when SignInUrl is absent', async () => {
+      const request = createMockRequest({
+        firstName: 'John',
+        lastName: 'Doe',
+        customerEmail: 'john@example.com',
+        propertyName: 'Test Hotel',
+        propertyCountry: 'United Kingdom',
+        preferredLanguage: 'English (UK)',
+        propertyType: 'hotel',
+        durationDays: 30,
+      });
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ enterpriseId: '123' }),
+      });
+
+      await POST(request);
+
+      // updateUnifiedLog should NOT have been called (no signInUrl to save)
+      expect(mockUpdateUnifiedLog).not.toHaveBeenCalled();
+    });
+
     test('handles Mews API error response', async () => {
       const request = createMockRequest({
         firstName: 'John',

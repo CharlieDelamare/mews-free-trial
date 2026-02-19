@@ -20,6 +20,7 @@ export interface ZapierNotificationData {
   loginUrl?: string;
   loginEmail?: string;
   loginPassword?: string;
+  signInUrl?: string;
   requestorEmail?: string;
   reservationsCanceled?: number;
   customerCreated?: boolean;
@@ -76,7 +77,7 @@ function formatEnvironmentReady(data: Partial<ZapierNotificationData>): string {
 *Login Credentials:*
 • URL: <${data.loginUrl || 'https://app.mews-demo.com'}|${data.loginUrl || 'https://app.mews-demo.com'}>
 • Email: \`${data.loginEmail || 'N/A'}\`
-• Password: \`${data.loginPassword || 'N/A'}\`
+• Password: \`${data.loginPassword || 'N/A'}\`${data.signInUrl ? `\n• Sign-in URL (passwordless): <${data.signInUrl}|Sign in without password>` : ''}
 
 *Enterprise Details:*
 • Enterprise ID: ${data.enterpriseId || 'N/A'}
@@ -113,7 +114,7 @@ Sandbox *${data.propertyName || 'Property'}* has been manually added and fully c
 *Login Credentials:*
 • URL: <${data.loginUrl || 'https://app.mews-demo.com'}|${data.loginUrl || 'https://app.mews-demo.com'}>
 • Email: \`${data.loginEmail || 'N/A'}\`
-• Password: \`${data.loginPassword || 'N/A'}\`
+• Password: \`${data.loginPassword || 'N/A'}\`${data.signInUrl ? `\n• Sign-in URL (passwordless): <${data.signInUrl}|Sign in without password>` : ''}
 
 *Operations Completed:*
 • :wastebasket: Reservations canceled: ${data.reservationsCanceled || 0}
