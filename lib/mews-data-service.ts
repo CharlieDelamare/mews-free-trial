@@ -32,6 +32,7 @@ export interface MewsData {
 
 interface MewsService {
   Id: string;
+  IsActive: boolean;
   Name: string;
   Ordering: number;
   Data: {
@@ -138,7 +139,7 @@ export async function fetchMewsData(
       console.log(`[MEWS-DATA] Using provided service ID: ${serviceId}`);
     } else {
       const services = await fetchServices(clientToken, accessToken, options?.logId);
-      const bookableService = services.find((s: MewsService) => s.Data.Discriminator === 'Bookable');
+      const bookableService = services.find((s: MewsService) => s.IsActive && s.Data.Discriminator === 'Bookable');
 
       if (!bookableService) {
         throw new Error('No bookable service found');
@@ -165,7 +166,7 @@ export async function fetchAllMewsData(
 ): Promise<MewsData[]> {
   try {
     const services = await fetchServices(clientToken, accessToken, options?.logId);
-    const bookableServices = services.filter((s: MewsService) => s.Data.Discriminator === 'Bookable');
+    const bookableServices = services.filter((s: MewsService) => s.IsActive && s.Data.Discriminator === 'Bookable');
 
     if (bookableServices.length === 0) {
       throw new Error('No bookable services found');
@@ -795,7 +796,7 @@ export async function fetchBookableServices(
 ): Promise<Array<{ id: string; name: string; ordering: number }>> {
   const services = await fetchServices(clientToken, accessToken);
   return services
-    .filter((s: MewsService) => s.Data.Discriminator === 'Bookable')
+    .filter((s: MewsService) => s.IsActive && s.Data.Discriminator === 'Bookable')
     .map((s: MewsService) => ({ id: s.Id, name: s.Name, ordering: s.Ordering }))
     .sort((a, b) => a.ordering - b.ordering || a.name.localeCompare(b.name));
 }
