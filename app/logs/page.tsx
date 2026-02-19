@@ -290,13 +290,13 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
             <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
             <p className="text-xs font-medium">
               {log.status === 'building' && `Creating ${log.propertyType} for ${log.durationDays || 30} days`}
-              {log.status === 'processing' && 'Setting up customers and reservations. Login details will appear when ready.'}
+              {log.status === 'processing' && 'Setting up customers and reservations...'}
             </p>
           </div>
         </div>
       )}
 
-      {log.status === 'completed' && (
+      {(log.status === 'completed' || log.status === 'processing') && (
         <div className="border-t border-gray-200 pt-3 mt-3">
           <CopyButton
             text={buildLoginDetailsText(log)}
