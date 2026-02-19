@@ -11,6 +11,7 @@ const mockFetchMewsData = vi.fn();
 const mockUpdateBestPriceRate = vi.fn();
 const mockFetchTimezoneFromConfiguration = vi.fn();
 const mockRunInBackground = vi.fn();
+const mockSendSandboxReadyEmail = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -54,6 +55,14 @@ vi.mock('@/lib/background', () => ({
   runInBackground: (...args: any[]) => mockRunInBackground(...args),
 }));
 
+vi.mock('@/lib/email-service', () => ({
+  sendSandboxReadyEmail: (...args: any[]) => mockSendSandboxReadyEmail(...args),
+}));
+
+vi.mock('@/lib/task-service', () => ({
+  createOnboardingTasks: vi.fn().mockResolvedValue({ successCount: 0, totalTasks: 0 }),
+}));
+
 import { prisma } from '@/lib/prisma';
 
 describe('POST /api/webhook/access-token', () => {
@@ -93,6 +102,7 @@ describe('POST /api/webhook/access-token', () => {
       successCount: 50,
       failureCount: 0,
     });
+    mockSendSandboxReadyEmail.mockResolvedValue(undefined);
   });
 
   describe('Action Routing', () => {
@@ -327,6 +337,57 @@ describe('POST /api/webhook/access-token', () => {
 
       // Should trigger background work
       expect(mockRunInBackground).toHaveBeenCalledTimes(1);
+    });
+
+    test('updates log to failed when background setup throws', async () => {
+      mockFindEnvironmentLogByPropertyName.mockResolvedValue({
+        id: 'log-1',
+        propertyName: 'Test Hotel',
+        customerName: 'John Doe',
+        customerEmail: 'john@example.com',
+        requestorEmail: 'requestor@example.com',
+        loginUrl: 'https://app.mews-demo.com',
+        loginEmail: 'john@example.com',
+        loginPassword: 'Sample123',
+        durationDays: 30,
+      });
+
+      // Capture the background work promise so we can await it
+      let capturedPromise: Promise<unknown> | null = null;
+      mockRunInBackground.mockImplementation((promise: Promise<unknown>) => {
+        capturedPromise = promise;
+      });
+
+      // Make reservation creation fail
+      mockCreateReservationsForEnvironment.mockRejectedValue(
+        new Error('Reservation creation exploded')
+      );
+
+      const request = createMockRequest({
+        Action: 'IntegrationCreated',
+        Data: {
+          Enterprise: { Id: 'ent-1', Name: 'Test Hotel' },
+          AccessToken: 'test-token',
+          CreatedUtc: '2024-01-01T00:00:00Z',
+          IsEnabled: true,
+        },
+      });
+
+      await POST(request);
+
+      // Wait for the background work to complete
+      expect(capturedPromise).not.toBeNull();
+      await capturedPromise;
+
+      // Should have updated log to 'processing' first, then to 'failed'
+      expect(mockUpdateUnifiedLog).toHaveBeenCalledWith('log-1', {
+        enterpriseId: 'ent-1',
+        status: 'processing',
+      });
+      expect(mockUpdateUnifiedLog).toHaveBeenCalledWith('log-1', expect.objectContaining({
+        status: 'failed',
+        errorMessage: expect.stringContaining('Reservation creation exploded'),
+      }));
     });
 
     test('stores token without notifications when no matching log found', async () => {

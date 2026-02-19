@@ -8,7 +8,7 @@
 import { prisma } from './prisma';
 import { fetchMewsData, MewsData } from './mews-data-service';
 import { getSampleCustomers, SampleCustomer } from './sample-customers';
-import { updateEnvironmentReservationStats, createDemoFillerLog, updateUnifiedLog } from './unified-logger';
+import { updateEnvironmentReservationStats, updateEnvironmentCustomerStats, createDemoFillerLog, updateUnifiedLog } from './unified-logger';
 import { fromZonedTime } from 'date-fns-tz';
 import { addDays, set, isSameDay, startOfDay } from 'date-fns';
 import { fetchWithRateLimit } from './mews-rate-limiter';
@@ -590,6 +590,20 @@ async function createCustomersOnDemand(
     }
   });
 
+  // Update unified log customer stats to 'processing'
+  if (logId) {
+    try {
+      await updateEnvironmentCustomerStats(logId, {
+        status: 'processing',
+        total: count,
+        success: 0,
+        failed: 0
+      });
+    } catch (error) {
+      console.error('[CUSTOMERS] Failed to update unified log customer stats:', error);
+    }
+  }
+
   try {
     log.customers('Starting customer creation (inline)', {
     count,
@@ -628,6 +642,20 @@ async function createCustomersOnDemand(
       }
     });
 
+    // Update unified log customer stats to 'completed'
+    if (logId) {
+      try {
+        await updateEnvironmentCustomerStats(logId, {
+          status: 'completed',
+          total: count,
+          success: customerIds.length,
+          failed: count - customerIds.length
+        });
+      } catch (error) {
+        console.error('[CUSTOMERS] Failed to update unified log customer stats:', error);
+      }
+    }
+
     return customerIds;
 
   } catch (error) {
@@ -639,6 +667,21 @@ async function createCustomersOnDemand(
         completedAt: new Date()
       }
     });
+
+    // Update unified log customer stats to 'failed'
+    if (logId) {
+      try {
+        await updateEnvironmentCustomerStats(logId, {
+          status: 'failed',
+          total: count,
+          success: 0,
+          failed: count
+        });
+      } catch (updateError) {
+        console.error('[CUSTOMERS] Failed to update unified log customer stats:', updateError);
+      }
+    }
+
     throw error;
   }
 }

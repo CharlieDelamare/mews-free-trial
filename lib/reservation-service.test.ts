@@ -32,6 +32,7 @@ vi.mock('./prisma', () => ({
 
 vi.mock('./unified-logger', () => ({
   updateEnvironmentReservationStats: vi.fn().mockResolvedValue(undefined),
+  updateEnvironmentCustomerStats: vi.fn().mockResolvedValue(undefined),
   createDemoFillerLog: vi.fn().mockResolvedValue({ id: 'test-log' }),
   updateUnifiedLog: vi.fn().mockResolvedValue({}),
 }));
