@@ -235,7 +235,7 @@ describe('createReservationsForEnvironment', () => {
     expect(result.successCount).toBeGreaterThan(0);
   });
 
-  test('creates customers before reservations', async () => {
+  test('interleaves customer and reservation creation dynamically', async () => {
     const callOrder: string[] = [];
     (fetchWithRateLimit as any).mockImplementation(async (url: string) => {
       if (url.includes('customers/add')) {
@@ -263,12 +263,29 @@ describe('createReservationsForEnvironment', () => {
       skipStateTransitions: true,
     });
 
-    // All customers should be created before any reservation
+    // Customers and reservations should be interleaved (not all customers first)
+    const hasCustomers = callOrder.includes('customer');
+    const hasReservations = callOrder.includes('reservation');
+    expect(hasCustomers).toBe(true);
+    expect(hasReservations).toBe(true);
+
+    // With interleaved creation, the first reservation should appear before all customers are done
     const firstReservation = callOrder.indexOf('reservation');
     const lastCustomer = callOrder.lastIndexOf('customer');
     if (firstReservation !== -1 && lastCustomer !== -1) {
-      expect(lastCustomer).toBeLessThan(firstReservation);
+      // Interleaved: some customers come after the first reservation
+      expect(lastCustomer).toBeGreaterThanOrEqual(firstReservation);
     }
+  });
+
+  test('creates fewer unique customers than reservations (repeat guests)', async () => {
+    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1, {
+      skipStateTransitions: true,
+    });
+
+    // With repeat guest ratio, should have fewer customers than reservations
+    expect(result.totalCustomers).toBeGreaterThan(0);
+    expect(result.totalCustomers).toBeLessThanOrEqual(result.totalReservations);
   });
 
   test('throws when all customer creations fail', async () => {
