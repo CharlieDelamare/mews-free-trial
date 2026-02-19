@@ -4,6 +4,7 @@ import { resolveAccessToken } from '@/lib/reservations';
 import { closeBillsForEnvironment } from '@/lib/bill-service';
 import { createCloseBillsLog, updateUnifiedLog } from '@/lib/unified-logger';
 import { runInBackground } from '@/lib/background';
+import { flushApiCallLogs } from '@/lib/api-call-logger';
 
 interface CloseBillsRequest {
   enterpriseId: string;
@@ -110,6 +111,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CloseBill
             completedAt: new Date()
           }).catch(err => console.error('[CLOSE-BILLS] Failed to update log:', err));
         }
+      })
+      .finally(() => {
+        flushApiCallLogs().catch(err => console.error('[CLOSE-BILLS] Failed to flush API call logs:', err));
       });
     runInBackground(closeBillsWork);
 

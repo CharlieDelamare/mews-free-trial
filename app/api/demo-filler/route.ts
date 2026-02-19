@@ -5,6 +5,7 @@ import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { createDemoFillerLog, updateUnifiedLog } from '@/lib/unified-logger';
 import { log, logError } from '@/lib/force-log';
 import { runInBackground } from '@/lib/background';
+import { flushApiCallLogs } from '@/lib/api-call-logger';
 
 interface DemoFillerRequest {
   enterpriseId: string;
@@ -247,6 +248,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
             completedAt: new Date()
           }).catch(err => console.error('[DEMO-FILLER] Failed to update log:', err));
         }
+      })
+      .finally(() => {
+        flushApiCallLogs().catch(err => console.error('[DEMO-FILLER] Failed to flush API call logs:', err));
       });
     runInBackground(reservationWork);
 

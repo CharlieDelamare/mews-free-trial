@@ -2,16 +2,19 @@
   "buildCommand": "prisma migrate resolve --rolled-back 20260131135815_init && prisma migrate deploy && next build",
   "functions": {
     "app/api/webhook/access-token/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
     },
     "app/api/add-environment/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
     },
     "app/api/demo-filler/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
     },
     "app/api/reset-environment/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
+    },
+    "app/api/close-bills/route.ts": {
+      "maxDuration": 300
     }
   }
 }
