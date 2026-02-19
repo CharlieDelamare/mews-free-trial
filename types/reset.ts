@@ -85,6 +85,21 @@ export interface OrderItem {
     NetValue?: number;
     TaxValues?: any[];
   };
+  ConsumedUtc?: string;
+  [key: string]: any;
+}
+
+export interface PaymentItem {
+  Id: string;
+  BillId: string;
+  AccountId?: string;
+  Amount: {
+    Currency: string;
+    GrossValue: number;
+    NetValue?: number;
+  };
+  State?: string;
+  Type?: string;
   [key: string]: any;
 }
 

@@ -3,7 +3,7 @@
  * Handles all bill-related operations for environment reset
  */
 
-import type { Bill, OrderItem, BillCloseResult, CloseBillsResult } from '@/types/reset';
+import type { Bill, OrderItem, PaymentItem, BillCloseResult, CloseBillsResult } from '@/types/reset';
 import { fetchTimezoneFromConfiguration } from './timezone-service';
 import { loggedFetch } from './api-call-logger';
 
@@ -151,6 +151,63 @@ export async function getOrderItems(
 }
 
 /**
+ * Get existing payment items for specific bills
+ */
+export async function getPaymentItems(
+  accessToken: string,
+  billIds: string[],
+  logId?: string
+): Promise<{ items: PaymentItem[]; error?: string }> {
+  if (billIds.length === 0) {
+    return { items: [] };
+  }
+
+  try {
+    const url = `${MEWS_API_URL}/api/connector/v1/payments/getAll`;
+    const fetchOptions: RequestInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: MEWS_CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Mews Sandbox Manager',
+        BillIds: billIds,
+        Limitation: { Count: 1000 }
+      })
+    };
+
+    const response = logId
+      ? await loggedFetch(url, fetchOptions, {
+          unifiedLogId: logId,
+          group: 'bills',
+          endpoint: 'payments/getAll',
+        })
+      : await fetch(url, fetchOptions);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        `Failed to fetch payment items: ${response.status} - ${errorData.Message || response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    const payments: PaymentItem[] = data.Payments || [];
+    // Only include charged (settled) payments, not canceled/failed ones
+    const activePayments = payments.filter(
+      (p: PaymentItem) => !p.State || p.State === 'Charged'
+    );
+    return { items: activePayments };
+  } catch (error) {
+    console.error('[BILL-SERVICE] Error fetching payment items:', error);
+    return {
+      items: [],
+      error: error instanceof Error ? error.message : 'Unknown error fetching payment items'
+    };
+  }
+}
+
+/**
  * Calculate bill total from order items and extract currency
  */
 export function calculateBillTotal(orderItems: OrderItem[]): {
@@ -176,6 +233,25 @@ export function calculateBillTotal(orderItems: OrderItem[]): {
   }
 
   return { total, currency };
+}
+
+/**
+ * Check if any order item has a ConsumedUtc within the past 5 days or in the future.
+ * Bills with such items should be skipped during closure.
+ */
+function hasRecentOrFutureItems(orderItems: OrderItem[]): boolean {
+  const fiveDaysAgo = new Date();
+  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+  for (const item of orderItems) {
+    if (item.ConsumedUtc) {
+      const consumed = new Date(item.ConsumedUtc);
+      if (consumed >= fiveDaysAgo) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**
@@ -296,9 +372,11 @@ export async function closeBill(
  * 2. Fetch all open bills
  * 3. For each bill:
  *    a. Get order items
- *    b. Calculate total
- *    c. If total != 0: Post payment to account (positive or negative)
- *    d. Close bill (always, even if total = 0)
+ *    b. Skip if any order item was consumed within the past 5 days or in the future
+ *    c. Get existing payment items
+ *    d. Calculate net balance (order items + existing payments)
+ *    e. If net balance != 0: Post payment to account
+ *    f. Close bill (always, even if net balance = 0)
  */
 export async function closeBillsForEnvironment(
   accessToken: string,
@@ -360,19 +438,44 @@ export async function closeBillsForEnvironment(
         continue;
       }
 
-      // Step 2: Calculate total
-      const { total } = calculateBillTotal(items);
-      result.totalAmount = total;
+      // Step 2: Skip bills with recently consumed or future order items
+      if (hasRecentOrFutureItems(items)) {
+        result.error = 'Skipped: bill has order items consumed within the past 5 days or in the future';
+        results.push(result);
+        console.log(`[BILL-SERVICE] Skipping bill ${bill.Id}: has recent or future consumed items`);
+        continue;
+      }
+
+      // Step 3: Get existing payment items for this bill
+      const { items: paymentItems, error: paymentsError } = await getPaymentItems(accessToken, [bill.Id], logId);
+
+      if (paymentsError) {
+        result.error = `Failed to get payment items: ${paymentsError}`;
+        results.push(result);
+        failureCount++;
+        continue;
+      }
+
+      // Step 4: Calculate net balance (order items + existing payments)
+      const { total: orderTotal } = calculateBillTotal(items);
+      let existingPaymentTotal = 0;
+      for (const payment of paymentItems) {
+        if (payment.Amount && typeof payment.Amount.GrossValue === 'number') {
+          existingPaymentTotal += payment.Amount.GrossValue;
+        }
+      }
+      const netBalance = orderTotal + existingPaymentTotal;
+      result.totalAmount = netBalance;
       result.currency = currency;
 
-      console.log(`[BILL-SERVICE] Bill ${bill.Id}: Total ${total} ${currency}`);
+      console.log(`[BILL-SERVICE] Bill ${bill.Id}: Order items ${orderTotal}, existing payments ${existingPaymentTotal}, net balance ${netBalance} ${currency}`);
 
-      // Step 3: Post payment if needed (total != 0)
-      if (total !== 0) {
+      // Step 5: Post payment if needed (net balance != 0)
+      if (netBalance !== 0) {
         const { success: paymentSuccess, error: paymentError } = await addExternalPayment(
           accessToken,
           bill.AccountId,
-          total,
+          netBalance,
           currency,
           bill.Id,
           logId
@@ -386,13 +489,13 @@ export async function closeBillsForEnvironment(
         }
 
         result.paymentPosted = true;
-        console.log(`[BILL-SERVICE] Posted payment for account ${bill.AccountId}: ${total} ${currency}`);
+        console.log(`[BILL-SERVICE] Posted payment for account ${bill.AccountId}: ${netBalance} ${currency}`);
       } else {
         console.log(`[BILL-SERVICE] Skipping payment for bill ${bill.Id} (zero balance)`);
         result.paymentPosted = false;
       }
 
-      // Step 4: Close bill (always, even if total = 0)
+      // Step 6: Close bill (always, even if net balance = 0)
       const { success: closeSuccess, error: closeError } = await closeBill(
         accessToken,
         bill.Id,
