@@ -179,9 +179,11 @@ async function cancelReservationsInBatches(
 export async function resetEnvironment(
   accessToken: string,
   enterpriseId: string,
-  accessTokenId: number
+  accessTokenId: number,
+  options?: { deadlineMs?: number }
 ): Promise<ResetResult> {
   const startTime = Date.now();
+  const deadlineMs = options?.deadlineMs;
   const details: ResetOperationDetails = {
     errors: []
   };
@@ -371,6 +373,7 @@ export async function resetEnvironment(
             logId: log.id,
             mewsData: serviceData,
             customerIds: sharedCustomerIds,
+            deadlineMs,
           }
         );
 
