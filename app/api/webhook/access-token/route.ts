@@ -319,17 +319,20 @@ export async function POST(request: NextRequest) {
             console.error('[WEBHOOK-SETUP] Task creation failed (non-blocking):', (taskError as Error).message);
           }
 
+          // Re-fetch the log to get the latest data (including signInUrl saved by create-trial)
+          const freshLog = await findEnvironmentLogByPropertyName(enterpriseName, false) || log;
+
           // Send Zapier notification
           await sendZapierNotification('environment_ready', {
             status: 'success',
-            propertyName: log.propertyName,
-            customerName: log.customerName,
-            customerEmail: log.customerEmail,
-            requestorEmail: log.requestorEmail || undefined,
-            loginUrl: log.loginUrl,
-            loginEmail: log.loginEmail,
-            loginPassword: log.loginPassword,
-            signInUrl: log.signInUrl || undefined,
+            propertyName: freshLog.propertyName,
+            customerName: freshLog.customerName,
+            customerEmail: freshLog.customerEmail,
+            requestorEmail: freshLog.requestorEmail || undefined,
+            loginUrl: freshLog.loginUrl,
+            loginEmail: freshLog.loginEmail,
+            loginPassword: freshLog.loginPassword,
+            signInUrl: freshLog.signInUrl || undefined,
             enterpriseId: newToken.enterpriseId,
             enterpriseName: newToken.enterpriseName,
             receivedAt: newToken.receivedAt.toISOString(),
@@ -340,15 +343,15 @@ export async function POST(request: NextRequest) {
 
           // Send email with login credentials to customer and requestor
           await sendSandboxReadyEmail({
-            customerEmail: log.customerEmail,
-            customerName: log.customerName,
-            requestorEmail: log.requestorEmail || undefined,
-            propertyName: log.propertyName,
-            loginUrl: log.loginUrl,
-            loginEmail: log.loginEmail,
-            loginPassword: log.loginPassword,
-            signInUrl: log.signInUrl ?? undefined,
-            durationDays: log.durationDays ?? undefined,
+            customerEmail: freshLog.customerEmail,
+            customerName: freshLog.customerName,
+            requestorEmail: freshLog.requestorEmail || undefined,
+            propertyName: freshLog.propertyName,
+            loginUrl: freshLog.loginUrl,
+            loginEmail: freshLog.loginEmail,
+            loginPassword: freshLog.loginPassword,
+            signInUrl: freshLog.signInUrl ?? undefined,
+            durationDays: freshLog.durationDays ?? undefined,
           });
 
           // Update status to completed
