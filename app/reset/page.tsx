@@ -134,14 +134,14 @@ export default function ResetSandboxPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+      <main className="min-h-screen py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Sandbox</h1>
+            <h1 className="text-3xl font-bold text-mews-night mb-2">Reset Sandbox</h1>
             <p className="text-gray-600">Reset an existing sandbox</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 space-y-6">
             {/* Sandbox Dropdown */}
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -193,7 +193,7 @@ export default function ResetSandboxPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || resetting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-mews-coral text-white hover:brightness-90'
               }`}
             >
               {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
@@ -226,7 +226,7 @@ export default function ResetSandboxPage() {
                   value={manualToken}
                   onChange={(e) => setManualToken(e.target.value)}
                   placeholder="Paste access token here"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent"
                 />
               </div>
               {manualAddMessage && (
@@ -292,7 +292,7 @@ export default function ResetSandboxPage() {
           </button>
           <button
             onClick={handleResetConfirm}
-            className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-mews-coral text-white font-semibold rounded-lg hover:brightness-90 transition-colors"
           >
             Yes, Reset Sandbox
           </button>

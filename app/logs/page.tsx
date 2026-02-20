@@ -14,7 +14,7 @@ const ITEMS_PER_PAGE = 20;
 function getLogTypeLabel(type: UnifiedLog['logType']) {
   switch (type) {
     case 'environment':
-      return { label: 'New Sandbox', color: 'bg-blue-100 text-blue-800' };
+      return { label: 'New Sandbox', color: 'bg-mews-light-indigo text-indigo-800' };
     case 'reset':
       return { label: 'Sandbox Reset', color: 'bg-purple-100 text-purple-800' };
     case 'demo_filler':
@@ -108,17 +108,17 @@ export default function LogsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8 px-4">
+    <main className="min-h-screen py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">Logs</h1>
+            <h1 className="text-2xl font-bold text-mews-night">Logs</h1>
             <div className="flex items-center gap-3">
               {isPolling && (
-                <span className="flex items-center gap-1.5 text-xs text-blue-600">
+                <span className="flex items-center gap-1.5 text-xs text-mews-pink">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-mews-pink opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-mews-pink"></span>
                   </span>
                   Auto-updating
                 </span>
@@ -140,7 +140,7 @@ export default function LogsPage() {
 
           {loading && (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-mews-pink"></div>
               <p className="mt-4 text-gray-600">Loading logs...</p>
             </div>
           )}
@@ -154,7 +154,7 @@ export default function LogsPage() {
           {!loading && !error && logs.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               <p className="text-lg">No sandboxes created yet.</p>
-              <Link href="/" className="mt-4 inline-block text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/" className="mt-4 inline-block text-mews-pink hover:text-mews-pink-hover font-medium">
                 Create your first sandbox &rarr;
               </Link>
             </div>

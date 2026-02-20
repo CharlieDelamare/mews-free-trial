@@ -1,12 +1,12 @@
 'use client';
 
 const statusConfig: Record<string, { badge: string; label: string }> = {
-  building: { badge: 'bg-blue-200 text-blue-800', label: '🏗️ Building' },
-  processing: { badge: 'bg-yellow-200 text-yellow-800', label: '⏳ Processing' },
-  Updating: { badge: 'bg-yellow-200 text-yellow-800', label: '⏳ Processing' },
-  completed: { badge: 'bg-green-200 text-green-800', label: '✅ Completed' },
-  failed: { badge: 'bg-red-200 text-red-800', label: '❌ Failed' },
-  failure: { badge: 'bg-red-200 text-red-800', label: '❌ Failed' },
+  building: { badge: 'bg-mews-blue text-blue-800', label: '🏗️ Building' },
+  processing: { badge: 'bg-yellow-100 text-yellow-800', label: '⏳ Processing' },
+  Updating: { badge: 'bg-yellow-100 text-yellow-800', label: '⏳ Processing' },
+  completed: { badge: 'bg-mews-green text-green-800', label: '✅ Completed' },
+  failed: { badge: 'bg-red-100 text-red-800', label: '❌ Failed' },
+  failure: { badge: 'bg-red-100 text-red-800', label: '❌ Failed' },
 };
 
 export function StatusBadge({ status }: { status: string }) {
@@ -20,10 +20,10 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function getStatusCardStyle(status: string): string {
   const cardStyles: Record<string, string> = {
-    building: 'bg-blue-50 border-blue-200',
+    building: 'bg-mews-blue/30 border-blue-200',
     processing: 'bg-yellow-50 border-yellow-200',
     Updating: 'bg-yellow-50 border-yellow-200',
-    completed: 'bg-green-50 border-green-200',
+    completed: 'bg-mews-green/50 border-green-200',
     failed: 'bg-red-50 border-red-200',
     failure: 'bg-red-50 border-red-200',
   };

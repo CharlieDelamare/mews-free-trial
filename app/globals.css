@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --mews-night: #1C1D24;
+    --mews-deep-blue: #172135;
+    --mews-linen: #F8F5F2;
+    --mews-light-indigo: #EFEFFF;
+    --mews-blue: #D6E2FC;
+    --mews-green: #E6F5F0;
+    --mews-coral: #FF5A65;
+    --mews-indigo: #B3B2FB;
+    --mews-pink: #FF83DA;
+    --mews-pink-hover: #E874C3;
+    --mews-pink-light: #F7BCF1;
+    --mews-yellow: #EFF258;
+  }
+}
+
 /* Reset native dialog browser defaults for custom styling */
 dialog {
   border: none;

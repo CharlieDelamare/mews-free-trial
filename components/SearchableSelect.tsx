@@ -127,7 +127,7 @@ export default function SearchableSelect({
     }
   };
 
-  const defaultClasses = "w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+  const defaultClasses = "w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent";
   const inputClasses = className || defaultClasses;
 
   return (
@@ -175,9 +175,9 @@ export default function SearchableSelect({
                 aria-selected={option.value === value}
                 className={`px-4 py-2 text-sm cursor-pointer ${
                   index === highlightedIndex
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-mews-night text-white'
                     : option.value === value
-                    ? 'bg-blue-50 text-gray-900'
+                    ? 'bg-mews-light-indigo text-gray-900'
                     : 'text-gray-900 hover:bg-gray-100'
                 }`}
                 onMouseDown={(e) => {

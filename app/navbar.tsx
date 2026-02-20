@@ -37,27 +37,27 @@ export function Navbar() {
   const linkClasses = (path: string) =>
     `block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
       isActive(path)
-        ? 'text-blue-600 bg-blue-50'
-        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+        ? 'text-mews-pink bg-mews-pink-light/20'
+        : 'text-gray-700 hover:text-mews-pink hover:bg-gray-50'
     }`;
 
   return (
     <>
       {/* Top bar */}
-      <nav aria-label="Main navigation" className="bg-white border-b border-gray-200">
+      <nav aria-label="Main navigation" className="bg-mews-night">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
             <button
               type="button"
               onClick={() => setOpen(true)}
               aria-label="Open menu"
-              className="p-2 -ml-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-md text-gray-400 hover:text-white transition-colors"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
               </svg>
             </button>
-            <span className="ml-4 text-sm sm:text-base md:text-xl font-bold text-gray-900 truncate">
+            <span className="ml-4 text-sm sm:text-base md:text-xl font-bold text-white truncate">
               Mews Sandbox Manager
             </span>
           </div>
@@ -82,12 +82,12 @@ export function Navbar() {
       >
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-4 h-16 border-b border-gray-200">
-          <span className="text-lg font-bold text-gray-900">Menu</span>
+          <span className="text-lg font-bold text-mews-night">Menu</span>
           <button
             type="button"
             onClick={close}
             aria-label="Close menu"
-            className="p-2 -mr-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="p-2 -mr-2 rounded-md text-gray-600 hover:text-mews-night hover:bg-gray-100 transition-colors"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

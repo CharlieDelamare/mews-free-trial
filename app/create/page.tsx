@@ -26,7 +26,7 @@ export default function SandboxCreationPage() {
 
   const CHEVRON_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E")`;
   const selectStyle = { backgroundImage: CHEVRON_SVG } as const;
-  const selectClasses = "w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_12px_center]";
+  const selectClasses = "w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_12px_center]";
 
   // Check if requestor is an admin (gets auto-populated test data and special treatment for duration and Salesforce ID)
   const isAdmin = isAdminEmail(formData.requestorEmail);
@@ -83,14 +83,14 @@ export default function SandboxCreationPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+    <main className="min-h-screen py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Sandbox Manager</h1>
+          <h1 className="text-3xl font-bold text-mews-night mb-2">Mews Sandbox Manager</h1>
           <p className="text-gray-600">Create a demo sandbox environment</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 space-y-6">
             {/* Requestor Email */}
             <div>
               <label htmlFor="requestorEmail" className="block text-sm font-medium text-gray-700 mb-1">Your Email (Requestor) *</label>
@@ -102,7 +102,7 @@ export default function SandboxCreationPage() {
                 onChange={handleChange}
                 required
                 placeholder="your.email@company.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent"
               />
             </div>
 
@@ -120,7 +120,7 @@ export default function SandboxCreationPage() {
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent"
                 />
               </div>
               <div>
@@ -135,7 +135,7 @@ export default function SandboxCreationPage() {
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent"
                 />
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function SandboxCreationPage() {
                 placeholder="customer@hotel.com"
                 data-1p-ignore
                 autoComplete="off"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent"
               />
             </div>
 
@@ -189,7 +189,7 @@ export default function SandboxCreationPage() {
                 onChange={handleChange}
                 required
                 placeholder="Hotel Grand Example"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent"
               />
             </div>
 
@@ -264,14 +264,14 @@ export default function SandboxCreationPage() {
                 onChange={handleChange}
                 required={!isAdmin}
                 placeholder="001..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-pink focus:border-transparent"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 px-4 bg-mews-pink text-white font-semibold rounded-lg hover:bg-mews-pink-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Creating Sandbox... (this may take a few minutes)' : 'Create Sandbox'}
             </button>

@@ -7,6 +7,25 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        mews: {
+          night: 'var(--mews-night)',
+          'deep-blue': 'var(--mews-deep-blue)',
+          linen: 'var(--mews-linen)',
+          'light-indigo': 'var(--mews-light-indigo)',
+          blue: 'var(--mews-blue)',
+          green: 'var(--mews-green)',
+          coral: 'var(--mews-coral)',
+          indigo: 'var(--mews-indigo)',
+          pink: 'var(--mews-pink)',
+          'pink-hover': 'var(--mews-pink-hover)',
+          'pink-light': 'var(--mews-pink-light)',
+          yellow: 'var(--mews-yellow)',
+        },
+      },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+      },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-in',
       },
