@@ -193,7 +193,7 @@ export default function ResetSandboxPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || resetting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-mews-coral text-white hover:brightness-90'
+                  : 'bg-mews-pink text-white hover:bg-mews-pink-hover'
               }`}
             >
               {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
@@ -280,7 +280,7 @@ export default function ResetSandboxPage() {
           <li>Close all open bills (with automatic payments)</li>
           <li>Create fresh sample reservations for the next 7 days</li>
         </ul>
-        <p className="text-sm text-red-600 mb-6">
+        <p className="text-sm text-mews-pink mb-6">
           <strong>Note:</strong> Checked-in guests (Started reservations) will NOT be affected.
         </p>
         <div className="flex gap-3">
@@ -292,7 +292,7 @@ export default function ResetSandboxPage() {
           </button>
           <button
             onClick={handleResetConfirm}
-            className="flex-1 py-2 px-4 bg-mews-coral text-white font-semibold rounded-lg hover:brightness-90 transition-colors"
+            className="flex-1 py-2 px-4 bg-mews-pink text-white font-semibold rounded-lg hover:bg-mews-pink-hover transition-colors"
           >
             Yes, Reset Sandbox
           </button>

@@ -14,13 +14,13 @@ const ITEMS_PER_PAGE = 20;
 function getLogTypeLabel(type: UnifiedLog['logType']) {
   switch (type) {
     case 'environment':
-      return { label: 'New Sandbox', color: 'bg-mews-light-indigo text-indigo-800' };
+      return { label: 'New Sandbox', color: 'bg-mews-light-indigo text-mews-night' };
     case 'reset':
-      return { label: 'Sandbox Reset', color: 'bg-purple-100 text-purple-800' };
+      return { label: 'Sandbox Reset', color: 'bg-mews-pink-light text-mews-night' };
     case 'demo_filler':
-      return { label: 'Sandbox Filler', color: 'bg-orange-100 text-orange-800' };
+      return { label: 'Sandbox Filler', color: 'bg-mews-blue text-mews-deep-blue' };
     case 'close_bills':
-      return { label: 'Close Bills', color: 'bg-amber-100 text-amber-800' };
+      return { label: 'Close Bills', color: 'bg-mews-green text-mews-night' };
   }
 }
 

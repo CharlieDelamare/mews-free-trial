@@ -191,7 +191,7 @@ export default function CloseBillsPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || closing
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-mews-coral text-white hover:brightness-90'
+                  : 'bg-mews-pink text-white hover:bg-mews-pink-hover'
               }`}
             >
               {closing ? 'Closing Bills...' : 'Close Bills'}
@@ -287,7 +287,7 @@ export default function CloseBillsPage() {
           </button>
           <button
             onClick={handleCloseBillsConfirm}
-            className="flex-1 py-2 px-4 bg-mews-coral text-white font-semibold rounded-lg hover:brightness-90 transition-colors"
+            className="flex-1 py-2 px-4 bg-mews-pink text-white font-semibold rounded-lg hover:bg-mews-pink-hover transition-colors"
           >
             Yes, Close Bills
           </button>
