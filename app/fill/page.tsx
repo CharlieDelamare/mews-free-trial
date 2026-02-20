@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import SearchableSelect from '@/components/SearchableSelect';
 
 interface Environment {
   enterpriseId: string;
@@ -212,30 +213,26 @@ export default function SandboxFillerPage() {
                 Loading sandboxes...
               </div>
             ) : (
-              <select
+              <SearchableSelect
                 id="selectedEnvironment"
                 name="selectedEnvironment"
                 value={sandboxFillerData.selectedEnvironment}
-                onChange={(e) => {
-                  const newEnterpriseId = e.target.value;
-                  setDemoFillerData(prev => ({ ...prev, selectedEnvironment: newEnterpriseId }));
+                onChange={(val) => {
+                  setDemoFillerData(prev => ({ ...prev, selectedEnvironment: val }));
                   setServices([]);
                   setSelectedServiceId('');
-                  if (newEnterpriseId) {
-                    fetchServicesForEnvironment(newEnterpriseId);
+                  if (val) {
+                    fetchServicesForEnvironment(val);
                   }
                 }}
+                options={environments.map((env) => ({
+                  value: env.enterpriseId,
+                  label: `${env.propertyName || env.enterpriseName} (${env.enterpriseId})`
+                }))}
+                placeholder="-- Select a sandbox --"
                 required
-                className={selectClasses}
-                style={selectStyle}
-              >
-                <option value="">-- Select a sandbox --</option>
-                {environments.map((env) => (
-                  <option key={env.enterpriseId} value={env.enterpriseId}>
-                    {env.propertyName || env.enterpriseName} ({env.enterpriseId})
-                  </option>
-                ))}
-              </select>
+                className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 pr-10 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             )}
             {!environmentsLoading && environments.length === 0 && (
               <p className="text-sm text-gray-500 mt-2">
