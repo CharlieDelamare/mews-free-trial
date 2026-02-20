@@ -333,7 +333,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       try {
         await updateUnifiedLog(log.id, {
           signInUrl: result.SignInUrl,
-          loginUrl: result.SignInUrl,
         });
         console.log('[CREATE-TRIAL] SignInUrl saved:', result.SignInUrl);
       } catch (dbError) {

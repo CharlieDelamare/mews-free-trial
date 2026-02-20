@@ -384,7 +384,6 @@ describe('POST /api/create-trial', () => {
       expect(data.success).toBe(true);
       expect(mockUpdateUnifiedLog).toHaveBeenCalledWith('test-log-id', {
         signInUrl: 'https://app.mews-demo.com/signin/abc123',
-        loginUrl: 'https://app.mews-demo.com/signin/abc123',
       });
       expect(data.signInUrl).toBe('https://app.mews-demo.com/signin/abc123');
     });
