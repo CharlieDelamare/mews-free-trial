@@ -261,6 +261,93 @@ describe('fetchMewsData', () => {
     expect(result.vouchersByRate.size).toBe(0);
   });
 
+  test('excludes voucher codes with expired validity period', async () => {
+    mockFetchSequence({
+      ...defaultResponses,
+      'vouchers/getAll': {
+        Vouchers: [{ Id: 'v1', Name: 'Expired Voucher', IsActive: true, AssignedRateIds: ['rate-2'] }],
+        VoucherAssignments: [
+          { VoucherId: 'v1', RateId: 'rate-2', UpdatedUtc: '2024-01-01' },
+        ],
+        VoucherCodes: null,
+      },
+      'voucherCodes/getAll': {
+        VoucherCodes: [
+          {
+            Id: 'vc1',
+            VoucherId: 'v1',
+            Value: 'EXPIRED2023',
+            IsActive: true,
+            ValidityStartUtc: '2023-01-01T00:00:00Z',
+            ValidityEndUtc: '2023-12-31T23:59:59Z',
+          },
+        ],
+      },
+    });
+
+    const result = await fetchMewsData('client-token', 'access-token');
+
+    expect(result.vouchersByRate.size).toBe(0);
+  });
+
+  test('excludes voucher codes with future validity start', async () => {
+    mockFetchSequence({
+      ...defaultResponses,
+      'vouchers/getAll': {
+        Vouchers: [{ Id: 'v1', Name: 'Future Voucher', IsActive: true, AssignedRateIds: ['rate-2'] }],
+        VoucherAssignments: [
+          { VoucherId: 'v1', RateId: 'rate-2', UpdatedUtc: '2024-01-01' },
+        ],
+        VoucherCodes: null,
+      },
+      'voucherCodes/getAll': {
+        VoucherCodes: [
+          {
+            Id: 'vc1',
+            VoucherId: 'v1',
+            Value: 'FUTURE2099',
+            IsActive: true,
+            ValidityStartUtc: '2099-01-01T00:00:00Z',
+            ValidityEndUtc: '2099-12-31T23:59:59Z',
+          },
+        ],
+      },
+    });
+
+    const result = await fetchMewsData('client-token', 'access-token');
+
+    expect(result.vouchersByRate.size).toBe(0);
+  });
+
+  test('keeps voucher codes with null validity (no restriction)', async () => {
+    mockFetchSequence({
+      ...defaultResponses,
+      'vouchers/getAll': {
+        Vouchers: [{ Id: 'v1', Name: 'Open Voucher', IsActive: true, AssignedRateIds: ['rate-2'] }],
+        VoucherAssignments: [
+          { VoucherId: 'v1', RateId: 'rate-2', UpdatedUtc: '2024-01-01' },
+        ],
+        VoucherCodes: null,
+      },
+      'voucherCodes/getAll': {
+        VoucherCodes: [
+          {
+            Id: 'vc1',
+            VoucherId: 'v1',
+            Value: 'OPEN_CODE',
+            IsActive: true,
+            ValidityStartUtc: null,
+            ValidityEndUtc: null,
+          },
+        ],
+      },
+    });
+
+    const result = await fetchMewsData('client-token', 'access-token');
+
+    expect(result.vouchersByRate.get('rate-2')).toBe('OPEN_CODE');
+  });
+
   test('uses loggedFetch when logId is provided', async () => {
     (loggedFetch as any).mockImplementation(async (url: string) => {
       for (const [key, value] of Object.entries(defaultResponses)) {
