@@ -27,7 +27,10 @@
     "app/**/*.tsx",
     "lib/**/*.ts",
     "lib/**/*.tsx",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
+    "types/**/*.ts",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "tests", ".next"]
+  "exclude": ["node_modules", "tests", ".next", "**/*.test.ts", "**/*.test.tsx"]
 }
