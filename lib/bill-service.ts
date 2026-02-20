@@ -413,11 +413,12 @@ export async function closeBill(
  * 2. Fetch all open bills
  * 3. For each bill:
  *    a. Get order items
- *    b. Skip if any order item was consumed within the past 5 days or in the future
- *    c. Get existing payment items
- *    d. Calculate net balance (order items + existing payments)
- *    e. If net balance != 0: Post payment to account
- *    f. Close bill (always, even if net balance = 0)
+ *    b. Skip if bill has no order items (empty bill)
+ *    c. Skip if any order item was consumed within the past 5 days or in the future
+ *    d. Get existing payment items
+ *    e. Calculate net balance (order items + existing payments)
+ *    f. If net balance != 0: Post payment to account
+ *    g. Close bill (always, even if net balance = 0)
  */
 export async function closeBillsForEnvironment(
   accessToken: string,
@@ -485,7 +486,15 @@ export async function closeBillsForEnvironment(
         continue;
       }
 
-      // Step 2: Skip bills with recently consumed or future order items
+      // Step 2: Skip bills with no order items (empty bills)
+      if (items.length === 0) {
+        result.error = 'Skipped: bill has no order items';
+        results.push(result);
+        console.log(`[BILL-SERVICE] Skipping bill ${bill.Id}: no order items`);
+        continue;
+      }
+
+      // Step 3: Skip bills with recently consumed or future order items
       if (hasRecentOrFutureItems(items)) {
         result.error = 'Skipped: bill has order items consumed within the past 5 days or in the future';
         results.push(result);
@@ -493,7 +502,7 @@ export async function closeBillsForEnvironment(
         continue;
       }
 
-      // Step 3: Get existing payment items for this bill
+      // Step 4: Get existing payment items for this bill
       const { items: paymentItems, error: paymentsError } = await getPaymentItems(accessToken, [bill.Id], logId);
 
       if (paymentsError) {
@@ -503,7 +512,7 @@ export async function closeBillsForEnvironment(
         continue;
       }
 
-      // Step 4: Calculate net balance (order items + existing payments)
+      // Step 5: Calculate net balance (order items + existing payments)
       const { total: orderTotal } = calculateBillTotal(items);
       let existingPaymentTotal = 0;
       for (const payment of paymentItems) {
@@ -517,7 +526,7 @@ export async function closeBillsForEnvironment(
 
       console.log(`[BILL-SERVICE] Bill ${bill.Id}: Order items ${orderTotal}, existing payments ${existingPaymentTotal}, net balance ${netBalance} ${currency}`);
 
-      // Step 5: Post payment if needed (net balance != 0)
+      // Step 6: Post payment if needed (net balance != 0)
       if (netBalance !== 0) {
         const { success: paymentSuccess, error: paymentError, alreadyClosed: paymentBillClosed } = await addExternalPayment(
           accessToken,
@@ -554,6 +563,8 @@ export async function closeBillsForEnvironment(
 
       // Step 6: Close bill (always, even if net balance = 0)
       const { success: closeSuccess, error: closeError, alreadyClosed } = await closeBill(
+      // Step 7: Close bill (always, even if net balance = 0)
+      const { success: closeSuccess, error: closeError } = await closeBill(
         accessToken,
         bill.Id,
         logId
