@@ -570,12 +570,30 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
     // Log response structure for debugging
     console.log('[MEWS-DATA] Vouchers response structure:', {
       hasVouchers: data.Vouchers !== null,
+      vouchersCount: data.Vouchers?.length || 0,
       hasAssignments: data.VoucherAssignments !== null,
       assignmentsCount: data.VoucherAssignments?.length || 0
     });
 
-    // Return VoucherAssignments (the new structure we need)
-    return data.VoucherAssignments || [];
+    const allAssignments = data.VoucherAssignments || [];
+
+    // Filter out assignments whose parent voucher is inactive
+    const activeVoucherIds = new Set(
+      (data.Vouchers || [])
+        .filter((v: MewsVoucher) => v.IsActive)
+        .map((v: MewsVoucher) => v.Id)
+    );
+
+    const filteredAssignments = allAssignments.filter(
+      (a: MewsVoucherAssignment) => activeVoucherIds.has(a.VoucherId)
+    );
+
+    const excludedCount = allAssignments.length - filteredAssignments.length;
+    if (excludedCount > 0) {
+      console.log(`[MEWS-DATA] Filtered out ${excludedCount} assignment(s) from inactive voucher(s)`);
+    }
+
+    return filteredAssignments;
 
   } catch (error) {
     console.error('[MEWS-DATA] Error fetching voucher assignments:', error);

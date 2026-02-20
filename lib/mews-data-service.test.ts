@@ -348,6 +348,54 @@ describe('fetchMewsData', () => {
     expect(result.vouchersByRate.get('rate-2')).toBe('OPEN_CODE');
   });
 
+  test('excludes voucher assignments from inactive vouchers', async () => {
+    mockFetchSequence({
+      ...defaultResponses,
+      'vouchers/getAll': {
+        Vouchers: [
+          { Id: 'v1', Name: 'Active Voucher', IsActive: true, AssignedRateIds: ['rate-1'] },
+          { Id: 'v2', Name: 'Inactive Voucher', IsActive: false, AssignedRateIds: ['rate-2'] },
+        ],
+        VoucherAssignments: [
+          { VoucherId: 'v1', RateId: 'rate-1', UpdatedUtc: '2024-01-01' },
+          { VoucherId: 'v2', RateId: 'rate-2', UpdatedUtc: '2024-01-01' },
+        ],
+        VoucherCodes: null,
+      },
+      'voucherCodes/getAll': {
+        VoucherCodes: [
+          { Id: 'vc1', VoucherId: 'v1', Value: 'ACTIVE_CODE', IsActive: true, ValidityStartUtc: null, ValidityEndUtc: null },
+          { Id: 'vc2', VoucherId: 'v2', Value: 'INACTIVE_CODE', IsActive: true, ValidityStartUtc: null, ValidityEndUtc: null },
+        ],
+      },
+    });
+
+    const result = await fetchMewsData('client-token', 'access-token');
+
+    expect(result.vouchersByRate.get('rate-1')).toBe('ACTIVE_CODE');
+    expect(result.vouchersByRate.has('rate-2')).toBe(false);
+    expect(result.vouchersByRate.size).toBe(1);
+  });
+
+  test('returns no voucher mappings when all vouchers are inactive', async () => {
+    mockFetchSequence({
+      ...defaultResponses,
+      'vouchers/getAll': {
+        Vouchers: [
+          { Id: 'v1', Name: 'Disabled Voucher', IsActive: false, AssignedRateIds: ['rate-1'] },
+        ],
+        VoucherAssignments: [
+          { VoucherId: 'v1', RateId: 'rate-1', UpdatedUtc: '2024-01-01' },
+        ],
+        VoucherCodes: null,
+      },
+    });
+
+    const result = await fetchMewsData('client-token', 'access-token');
+
+    expect(result.vouchersByRate.size).toBe(0);
+  });
+
   test('uses loggedFetch when logId is provided', async () => {
     (loggedFetch as any).mockImplementation(async (url: string) => {
       for (const [key, value] of Object.entries(defaultResponses)) {
