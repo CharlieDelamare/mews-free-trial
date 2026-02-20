@@ -78,6 +78,8 @@ interface MewsVoucherCode {
   VoucherId: string;
   Value: string;
   IsActive: boolean;
+  ValidityStartUtc: string | null;
+  ValidityEndUtc: string | null;
 }
 
 interface MewsVoucherAssignment {
@@ -621,6 +623,32 @@ async function fetchVoucherCodes(
 }
 
 /**
+ * Check if a voucher code is currently valid based on its validity period.
+ * A voucher code is valid if:
+ * - ValidityStartUtc is null (no start restriction) OR ValidityStartUtc <= now
+ * - ValidityEndUtc is null (no end restriction) OR ValidityEndUtc >= now
+ */
+function isVoucherCodeCurrentlyValid(voucherCode: MewsVoucherCode): boolean {
+  const now = new Date();
+
+  if (voucherCode.ValidityStartUtc) {
+    const start = new Date(voucherCode.ValidityStartUtc);
+    if (start > now) {
+      return false;
+    }
+  }
+
+  if (voucherCode.ValidityEndUtc) {
+    const end = new Date(voucherCode.ValidityEndUtc);
+    if (end < now) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Map voucher codes to rates using VoucherAssignments
  * @param assignments - VoucherAssignment array mapping VoucherId to RateId
  * @param voucherCodes - VoucherCode array with code values
@@ -629,10 +657,17 @@ async function fetchVoucherCodes(
 function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCodes: MewsVoucherCode[]): Map<string, string> {
   const rateToCodeMap = new Map<string, string>();
 
-  // Filter active voucher codes only
-  const activeVoucherCodes = voucherCodes.filter((vc: MewsVoucherCode) => vc.IsActive);
+  // Filter to active voucher codes with a valid date range
+  const activeVoucherCodes = voucherCodes.filter((vc: MewsVoucherCode) => {
+    if (!vc.IsActive) return false;
+    if (!isVoucherCodeCurrentlyValid(vc)) {
+      console.log(`[MEWS-DATA] Excluding voucher code "${vc.Value}" — outside validity period (start: ${vc.ValidityStartUtc}, end: ${vc.ValidityEndUtc})`);
+      return false;
+    }
+    return true;
+  });
 
-  console.log(`[MEWS-DATA] Processing ${activeVoucherCodes.length} active voucher codes with ${assignments.length} assignments`);
+  console.log(`[MEWS-DATA] Processing ${activeVoucherCodes.length} active/valid voucher codes with ${assignments.length} assignments`);
 
   // For each active voucher code, find its rate assignments
   for (const voucherCode of activeVoucherCodes) {

@@ -836,12 +836,24 @@ function generateReservationData(
     throw new Error('No usable rates available. All rates are private with no voucher codes.');
   }
 
+  // Split rates into public and private pools for weighted distribution
+  const publicRates = usableRates.filter(r => r.isPublic);
+  const privateRates = usableRates.filter(r => !r.isPublic);
+  const hasPublicRates = publicRates.length > 0;
+  const hasPrivateRates = privateRates.length > 0;
+
   console.log(`[RESERVATIONS] Using ${usableRates.length}/${rates.length} rates for reservation distribution:`);
+  console.log(`[RESERVATIONS]   Public rates: ${publicRates.length}, Private rates: ${privateRates.length}`);
+  if (hasPrivateRates) {
+    console.log(`[RESERVATIONS]   Private rates will be used for ~20% of reservations`);
+  }
   usableRates.forEach(r => {
     console.log(`[RESERVATIONS]   - ${r.name} (${r.isPublic ? 'Public' : 'Private'})`);
   });
 
   let globalIndex = 0;
+  let privateRateIndex = 0;
+  let publicRateIndex = 0;
 
   // Generate reservations per category to meet each category's target
   for (const target of categoryTargets) {
@@ -869,8 +881,22 @@ function generateReservationData(
         envData.timezone
       );
 
-      // Assign rate via round-robin across usable rates
-      const rateId = usableRates[globalIndex % usableRates.length].id;
+      // Assign rate: use private rates for ~20% of reservations (every 5th), public for the rest
+      // If only private rates exist (no public), use all private rates
+      // If only public rates exist (no private), use all public rates
+      let rateId: string;
+      if (!hasPublicRates) {
+        // All rates are private — use them all via round-robin
+        rateId = privateRates[globalIndex % privateRates.length].id;
+      } else if (hasPrivateRates && globalIndex % 5 === 0) {
+        // Use a private rate (~20% of reservations)
+        rateId = privateRates[privateRateIndex % privateRates.length].id;
+        privateRateIndex++;
+      } else {
+        // Use a public rate (~80% of reservations)
+        rateId = publicRates[publicRateIndex % publicRates.length].id;
+        publicRateIndex++;
+      }
 
       // Determine desired state using tracker to enforce limits
       const desiredState = stateTracker.determineState(checkInDate, checkOutDate, today);
