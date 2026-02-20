@@ -12,6 +12,15 @@ const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A4
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
 
 /**
+ * Check if a Mews API error indicates that the bill is already closed.
+ * Mews returns "Invalid BillId." when attempting to close or post payment to
+ * a bill that is no longer open.
+ */
+function isAlreadyClosedError(errorMessage: string): boolean {
+  return errorMessage.includes('Invalid BillId');
+}
+
+/**
  * Fetch bills from Mews API across the past year using multiple 90-day windows.
  * The Mews API limits UpdatedUtc ranges to ~90 days per request, so we make
  * sequential requests and deduplicate by bill ID.
@@ -264,7 +273,7 @@ export async function addExternalPayment(
   currency: string,
   billId?: string,
   logId?: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; alreadyClosed?: boolean }> {
   try {
     const payload = {
       ClientToken: MEWS_CLIENT_TOKEN,
@@ -298,17 +307,33 @@ export async function addExternalPayment(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.Message || response.statusText || '';
+
+      // Mews returns "Invalid BillId." when the bill is already closed
+      if (billId && isAlreadyClosedError(errorMessage)) {
+        console.log(`[BILL-SERVICE] Bill ${billId} is already closed, skipping payment`);
+        return { success: true, alreadyClosed: true };
+      }
+
       throw new Error(
-        `Failed to add payment: ${response.status} - ${errorData.Message || response.statusText}`
+        `Failed to add payment: ${response.status} - ${errorMessage}`
       );
     }
 
     return { success: true };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error adding payment';
+
+    // Also catch already-closed errors that propagated as exceptions
+    if (billId && isAlreadyClosedError(errorMessage)) {
+      console.log(`[BILL-SERVICE] Bill ${billId} is already closed, skipping payment`);
+      return { success: true, alreadyClosed: true };
+    }
+
     console.error('[BILL-SERVICE] Error adding payment:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error adding payment'
+      error: errorMessage
     };
   }
 }
@@ -320,7 +345,7 @@ export async function closeBill(
   accessToken: string,
   billId: string,
   logId?: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; alreadyClosed?: boolean }> {
   try {
     const payload = {
       ClientToken: MEWS_CLIENT_TOKEN,
@@ -349,17 +374,33 @@ export async function closeBill(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.Message || response.statusText || '';
+
+      // Mews returns "Invalid BillId." when the bill is already closed
+      if (isAlreadyClosedError(errorMessage)) {
+        console.log(`[BILL-SERVICE] Bill ${billId} is already closed, treating as success`);
+        return { success: true, alreadyClosed: true };
+      }
+
       throw new Error(
-        `Failed to close bill: ${response.status} - ${errorData.Message || response.statusText}`
+        `Failed to close bill: ${response.status} - ${errorMessage}`
       );
     }
 
     return { success: true };
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error closing bill';
+
+    // Also catch already-closed errors that propagated as exceptions
+    if (isAlreadyClosedError(errorMessage)) {
+      console.log(`[BILL-SERVICE] Bill ${billId} is already closed, treating as success`);
+      return { success: true, alreadyClosed: true };
+    }
+
     console.error('[BILL-SERVICE] Error closing bill:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error closing bill'
+      error: errorMessage
     };
   }
 }
@@ -414,14 +455,20 @@ export async function closeBillsForEnvironment(
     };
   }
 
-  console.log(`[BILL-SERVICE] Found ${bills.length} open bills to close`);
+  // Defensive filter: only process bills that are actually Open
+  const openBills = bills.filter(bill => !bill.State || bill.State === 'Open');
+  if (openBills.length !== bills.length) {
+    console.log(`[BILL-SERVICE] Filtered out ${bills.length - openBills.length} non-open bills from results`);
+  }
+
+  console.log(`[BILL-SERVICE] Found ${openBills.length} open bills to close`);
 
   const results: BillCloseResult[] = [];
   let successCount = 0;
   let failureCount = 0;
 
   // Process each bill
-  for (const bill of bills) {
+  for (const bill of openBills) {
     const result: BillCloseResult = {
       billId: bill.Id,
       accountId: bill.AccountId,
@@ -481,7 +528,7 @@ export async function closeBillsForEnvironment(
 
       // Step 6: Post payment if needed (net balance != 0)
       if (netBalance !== 0) {
-        const { success: paymentSuccess, error: paymentError } = await addExternalPayment(
+        const { success: paymentSuccess, error: paymentError, alreadyClosed: paymentBillClosed } = await addExternalPayment(
           accessToken,
           bill.AccountId,
           netBalance,
@@ -497,6 +544,16 @@ export async function closeBillsForEnvironment(
           continue;
         }
 
+        // If the bill was already closed, skip the close step entirely
+        if (paymentBillClosed) {
+          result.success = true;
+          result.paymentPosted = false;
+          successCount++;
+          results.push(result);
+          console.log(`[BILL-SERVICE] ✓ Bill ${bill.Id} was already closed (detected during payment)`);
+          continue;
+        }
+
         result.paymentPosted = true;
         console.log(`[BILL-SERVICE] Posted payment for account ${bill.AccountId}: ${netBalance} ${currency}`);
       } else {
@@ -504,6 +561,8 @@ export async function closeBillsForEnvironment(
         result.paymentPosted = false;
       }
 
+      // Step 6: Close bill (always, even if net balance = 0)
+      const { success: closeSuccess, error: closeError, alreadyClosed } = await closeBill(
       // Step 7: Close bill (always, even if net balance = 0)
       const { success: closeSuccess, error: closeError } = await closeBill(
         accessToken,
@@ -520,7 +579,11 @@ export async function closeBillsForEnvironment(
 
       result.success = true;
       successCount++;
-      console.log(`[BILL-SERVICE] ✓ Successfully closed bill ${bill.Id}`);
+      if (alreadyClosed) {
+        console.log(`[BILL-SERVICE] ✓ Bill ${bill.Id} was already closed`);
+      } else {
+        console.log(`[BILL-SERVICE] ✓ Successfully closed bill ${bill.Id}`);
+      }
     } catch (error) {
       result.error = error instanceof Error ? error.message : 'Unknown error processing bill';
       failureCount++;
@@ -535,7 +598,7 @@ export async function closeBillsForEnvironment(
   );
 
   return {
-    totalBills: bills.length,
+    totalBills: openBills.length,
     successCount,
     failureCount,
     details: results
