@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 
 const mainLinks = [
   { href: '/create', label: 'Create' },
+  { href: '/extend', label: 'Extend' },
+  { href: '/save', label: 'Save' },
   { href: '/reset', label: 'Reset' },
   { href: '/fill', label: 'Fill' },
   { href: '/close-bills', label: 'Close Bills' },
