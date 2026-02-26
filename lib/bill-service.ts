@@ -563,8 +563,6 @@ export async function closeBillsForEnvironment(
 
       // Step 6: Close bill (always, even if net balance = 0)
       const { success: closeSuccess, error: closeError, alreadyClosed } = await closeBill(
-      // Step 7: Close bill (always, even if net balance = 0)
-      const { success: closeSuccess, error: closeError } = await closeBill(
         accessToken,
         bill.Id,
         logId
