@@ -27,7 +27,7 @@ function isAlreadyClosedError(errorMessage: string): boolean {
  */
 export async function getBills(
   accessToken: string,
-  states?: string[],
+  state?: string,
   logId?: string
 ): Promise<{ bills: Bill[]; error?: string }> {
   try {
@@ -62,7 +62,7 @@ export async function getBills(
             StartUtc: windowStart.toISOString(),
             EndUtc: windowEnd.toISOString()
           },
-          ...(states && { States: states }),
+          ...(state && { State: state }),
           Limitation: { Count: 1000 }
         })
       };
@@ -443,7 +443,7 @@ export async function closeBillsForEnvironment(
   console.log(`[BILL-SERVICE] Using currency: ${currency}`);
 
   // Fetch all open bills
-  const { bills, error: fetchError } = await getBills(accessToken, ['Open'], logId);
+  const { bills, error: fetchError } = await getBills(accessToken, 'Open', logId);
 
   if (fetchError) {
     console.error('[BILL-SERVICE] Failed to fetch bills:', fetchError);
@@ -561,10 +561,8 @@ export async function closeBillsForEnvironment(
         result.paymentPosted = false;
       }
 
-      // Step 6: Close bill (always, even if net balance = 0)
-      const { success: closeSuccess, error: closeError, alreadyClosed } = await closeBill(
       // Step 7: Close bill (always, even if net balance = 0)
-      const { success: closeSuccess, error: closeError } = await closeBill(
+      const { success: closeSuccess, error: closeError, alreadyClosed } = await closeBill(
         accessToken,
         bill.Id,
         logId
