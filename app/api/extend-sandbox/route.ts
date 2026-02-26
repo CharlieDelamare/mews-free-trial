@@ -61,6 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ExtendSan
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        Client: 'Mews Sandbox Manager',
         AccessToken: accessToken,
         EnterpriseId: enterpriseId,
         NewExpirationUtc: newExpirationUtc,
