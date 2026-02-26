@@ -4,8 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const mainLinks = [
+const sandboxLinks = [
   { href: '/create', label: 'Create' },
+  { href: '/extend', label: 'Extend' },
+  { href: '/save', label: 'Save' },
+];
+
+const operationLinks = [
   { href: '/reset', label: 'Reset' },
   { href: '/fill', label: 'Fill' },
   { href: '/close-bills', label: 'Close Bills' },
@@ -97,12 +102,26 @@ export function Navbar() {
 
         {/* Main nav links */}
         <nav className="flex-1 flex flex-col px-3 py-4">
-          <div className="space-y-1">
-            {mainLinks.map(({ href, label }) => (
-              <Link key={href} href={href} onClick={close} className={linkClasses(href)}>
-                {label}
-              </Link>
-            ))}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 mb-1">Sandboxes</p>
+            <div className="space-y-1">
+              {sandboxLinks.map(({ href, label }) => (
+                <Link key={href} href={href} onClick={close} className={linkClasses(href)}>
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 mb-1">Operations</p>
+            <div className="space-y-1">
+              {operationLinks.map(({ href, label }) => (
+                <Link key={href} href={href} onClick={close} className={linkClasses(href)}>
+                  {label}
+                </Link>
+              ))}
+            </div>
           </div>
 
           {/* Logs pinned to bottom */}
