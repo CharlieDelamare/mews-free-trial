@@ -37,6 +37,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<SaveSandb
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        Client: 'Mews Sandbox Manager',
         AccessToken: accessToken,
         EnterpriseId: enterpriseId,
       }),
