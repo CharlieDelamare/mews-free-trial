@@ -123,7 +123,7 @@ export default function ExtendSandboxPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+      <main className="min-h-screen bg-mews-linen py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Extend Sandbox</h1>
@@ -177,7 +177,7 @@ export default function ExtendSandboxPage() {
                   setResult(null);
                 }}
                 min={minDate}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Must be a future date. The sandbox will expire at the start of this day (UTC).
@@ -191,7 +191,7 @@ export default function ExtendSandboxPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || !newExpirationDate || submitting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-success-600 text-white hover:bg-success-700'
               }`}
             >
               {submitting ? 'Extending...' : 'Extend Sandbox'}
@@ -201,8 +201,8 @@ export default function ExtendSandboxPage() {
             {result && (
               <div className={`p-4 rounded-lg text-sm ${
                 result.type === 'success'
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
+                  ? 'bg-success-50 text-success-700 border border-success-100'
+                  : 'bg-error-50 text-error-700 border border-error-100'
               }`}>
                 {result.text}
               </div>
@@ -220,7 +220,7 @@ export default function ExtendSandboxPage() {
         ref={dialogRef}
         onClose={handleDialogClose}
         aria-labelledby="extend-dialog-title"
-        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-black/50"
+        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-gray-900/50"
       >
         <h2 id="extend-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
           Confirm Extend Sandbox
@@ -239,7 +239,7 @@ export default function ExtendSandboxPage() {
           </button>
           <button
             onClick={handleExtendConfirm}
-            className="flex-1 py-2 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-success-600 text-white font-semibold rounded-lg hover:bg-success-700 transition-colors"
           >
             Yes, Extend
           </button>

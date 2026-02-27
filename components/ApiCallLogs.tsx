@@ -27,11 +27,11 @@ function formatDuration(ms: number): string {
 }
 
 function StatusDot({ statusCode, success }: { statusCode: number | null; success: boolean }) {
-  let color = 'bg-green-500';
+  let color = 'bg-success-500';
   if (!success || (statusCode && statusCode >= 400)) {
-    color = statusCode && statusCode >= 500 ? 'bg-red-500' : 'bg-red-400';
+    color = statusCode && statusCode >= 500 ? 'bg-error-500' : 'bg-error-400';
   } else if (statusCode && statusCode >= 300) {
-    color = 'bg-yellow-500';
+    color = 'bg-warning-500';
   }
   return <span className={`inline-block w-2 h-2 rounded-full ${color} flex-shrink-0`} />;
 }
@@ -89,14 +89,14 @@ function ApiCallRow({
         onClick={onToggle}
         className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer text-xs font-mono transition-colors ${
           isExpanded ? 'bg-gray-100' : 'hover:bg-gray-50'
-        } ${!call.success ? 'bg-red-50 hover:bg-red-100' : ''}`}
+        } ${!call.success ? 'bg-error-50 hover:bg-error-100' : ''}`}
       >
         <span className="text-gray-400 w-16 flex-shrink-0">{formatTime(call.timestamp)}</span>
         <StatusDot statusCode={call.statusCode} success={call.success} />
         <span className="flex-1 truncate text-gray-700">{call.endpoint}</span>
         <span
           className={`w-8 text-right flex-shrink-0 ${
-            call.statusCode && call.statusCode >= 400 ? 'text-red-600 font-medium' : 'text-gray-500'
+            call.statusCode && call.statusCode >= 400 ? 'text-error-600 font-medium' : 'text-gray-500'
           }`}
         >
           {call.statusCode || 'ERR'}
@@ -121,7 +121,7 @@ function ApiCallRow({
                 <h4 className="text-gray-400 mb-1 text-[10px] uppercase tracking-wider">
                   Request Body
                 </h4>
-                <pre className="overflow-x-auto whitespace-pre-wrap text-green-300 max-h-48 overflow-y-auto">
+                <pre className="overflow-x-auto whitespace-pre-wrap text-success-300 max-h-48 overflow-y-auto">
                   {formatJson(detail.requestBody)}
                 </pre>
               </div>
@@ -131,14 +131,14 @@ function ApiCallRow({
                 </h4>
                 <pre
                   className={`overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto ${
-                    call.success ? 'text-blue-300' : 'text-red-300'
+                    call.success ? 'text-info-300' : 'text-error-300'
                   }`}
                 >
                   {formatJson(detail.responseBody)}
                 </pre>
               </div>
               {call.errorMessage && (
-                <div className="mt-2 text-red-400 border-t border-gray-700 pt-2">
+                <div className="mt-2 text-error-300 border-t border-gray-700 pt-2">
                   {call.errorMessage}
                 </div>
               )}
@@ -236,7 +236,7 @@ export function ApiCallLogs({ logId }: { logId: string }) {
           )}
 
           {error && (
-            <div className="text-xs text-red-600 py-2">{error}</div>
+            <div className="text-xs text-error-600 py-2">{error}</div>
           )}
 
           {!loading && apiCalls.length === 0 && !error && (
@@ -247,9 +247,9 @@ export function ApiCallLogs({ logId }: { logId: string }) {
             <>
               {/* Summary bar */}
               <div className="flex items-center gap-3 text-[10px] mb-2 px-1">
-                <span className="text-green-600 font-medium">{successCount} succeeded</span>
+                <span className="text-success-600 font-medium">{successCount} succeeded</span>
                 {failureCount > 0 && (
-                  <span className="text-red-600 font-medium">{failureCount} failed</span>
+                  <span className="text-error-600 font-medium">{failureCount} failed</span>
                 )}
                 <span className="text-gray-400">{formatDuration(totalDurationMs)} total</span>
               </div>

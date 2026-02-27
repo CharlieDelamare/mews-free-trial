@@ -134,7 +134,7 @@ export default function ResetSandboxPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+      <main className="min-h-screen bg-mews-linen py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Sandbox</h1>
@@ -193,7 +193,7 @@ export default function ResetSandboxPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || resetting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-error-600 text-white hover:bg-error-700'
               }`}
             >
               {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
@@ -208,7 +208,7 @@ export default function ResetSandboxPage() {
 
       {/* Manual Add Environment Modal */}
       {showManualAdd && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
+        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
               Add existing environment
@@ -226,11 +226,11 @@ export default function ResetSandboxPage() {
                   value={manualToken}
                   onChange={(e) => setManualToken(e.target.value)}
                   placeholder="Paste access token here"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               {manualAddMessage && (
-                <p className={`text-sm ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-sm ${manualAddMessage.type === 'success' ? 'text-success-600' : 'text-error-600'}`}>
                   {manualAddMessage.text}
                 </p>
               )}
@@ -267,7 +267,7 @@ export default function ResetSandboxPage() {
         ref={dialogRef}
         onClose={handleDialogClose}
         aria-labelledby="reset-dialog-title"
-        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-black/50"
+        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-gray-900/50"
       >
         <h2 id="reset-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
           Confirm Sandbox Reset
@@ -280,7 +280,7 @@ export default function ResetSandboxPage() {
           <li>Close all open bills (with automatic payments)</li>
           <li>Create fresh sample reservations for the next 7 days</li>
         </ul>
-        <p className="text-sm text-red-600 mb-6">
+        <p className="text-sm text-error-600 mb-6">
           <strong>Note:</strong> Checked-in guests (Started reservations) will NOT be affected.
         </p>
         <div className="flex gap-3">
@@ -292,7 +292,7 @@ export default function ResetSandboxPage() {
           </button>
           <button
             onClick={handleResetConfirm}
-            className="flex-1 py-2 px-4 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-error-600 text-white font-semibold rounded-lg hover:bg-error-700 transition-colors"
           >
             Yes, Reset Sandbox
           </button>

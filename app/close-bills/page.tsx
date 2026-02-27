@@ -132,7 +132,7 @@ export default function CloseBillsPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+      <main className="min-h-screen bg-mews-linen py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Close Bills</h1>
@@ -191,7 +191,7 @@ export default function CloseBillsPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || closing
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-amber-600 text-white hover:bg-amber-700'
+                  : 'bg-warning-600 text-white hover:bg-warning-700'
               }`}
             >
               {closing ? 'Closing Bills...' : 'Close Bills'}
@@ -206,7 +206,7 @@ export default function CloseBillsPage() {
 
       {/* Manual Add Environment Modal */}
       {showManualAdd && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
+        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
               Add existing environment
@@ -224,11 +224,11 @@ export default function CloseBillsPage() {
                   value={manualToken}
                   onChange={(e) => setManualToken(e.target.value)}
                   placeholder="Paste access token here"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               {manualAddMessage && (
-                <p className={`text-sm ${manualAddMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-sm ${manualAddMessage.type === 'success' ? 'text-success-600' : 'text-error-600'}`}>
                   {manualAddMessage.text}
                 </p>
               )}
@@ -265,7 +265,7 @@ export default function CloseBillsPage() {
         ref={dialogRef}
         onClose={handleDialogClose}
         aria-labelledby="close-bills-dialog-title"
-        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-black/50"
+        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-gray-900/50"
       >
         <h2 id="close-bills-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
           Confirm Close Bills
@@ -287,7 +287,7 @@ export default function CloseBillsPage() {
           </button>
           <button
             onClick={handleCloseBillsConfirm}
-            className="flex-1 py-2 px-4 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-warning-600 text-white font-semibold rounded-lg hover:bg-warning-700 transition-colors"
           >
             Yes, Close Bills
           </button>

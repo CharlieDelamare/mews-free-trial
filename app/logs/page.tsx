@@ -14,13 +14,13 @@ const ITEMS_PER_PAGE = 20;
 function getLogTypeLabel(type: UnifiedLog['logType']) {
   switch (type) {
     case 'environment':
-      return { label: 'New Sandbox', color: 'bg-blue-100 text-blue-800' };
+      return { label: 'New Sandbox', color: 'bg-info-100 text-info-700' };
     case 'reset':
-      return { label: 'Sandbox Reset', color: 'bg-purple-100 text-purple-800' };
+      return { label: 'Sandbox Reset', color: 'bg-primary-100 text-primary-700' };
     case 'demo_filler':
-      return { label: 'Sandbox Filler', color: 'bg-orange-100 text-orange-800' };
+      return { label: 'Sandbox Filler', color: 'bg-warning-50 text-warning-700' };
     case 'close_bills':
-      return { label: 'Close Bills', color: 'bg-amber-100 text-amber-800' };
+      return { label: 'Close Bills', color: 'bg-warning-100 text-warning-700' };
   }
 }
 
@@ -108,23 +108,23 @@ export default function LogsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-8 px-4">
+    <main className="min-h-screen bg-mews-linen py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">Logs</h1>
             <div className="flex items-center gap-3">
               {isPolling && (
-                <span className="flex items-center gap-1.5 text-xs text-blue-600">
+                <span className="flex items-center gap-1.5 text-xs text-primary-600">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
                   </span>
                   Auto-updating
                 </span>
               )}
               {!isPolling && lastFetchedAt && (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-500">
                   Updated {formatRelativeTime(lastFetchedAt)}
                 </span>
               )}
@@ -140,21 +140,21 @@ export default function LogsPage() {
 
           {loading && (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
               <p className="mt-4 text-gray-600">Loading logs...</p>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800">{error}</p>
+            <div className="bg-error-50 border border-error-100 rounded-lg p-4 mb-6">
+              <p className="text-error-700">{error}</p>
             </div>
           )}
 
           {!loading && !error && logs.length === 0 && (
             <div className="text-center py-12 text-gray-500">
               <p className="text-lg">No sandboxes created yet.</p>
-              <Link href="/" className="mt-4 inline-block text-blue-600 hover:text-blue-700 font-medium">
+              <Link href="/" className="mt-4 inline-block text-primary-600 hover:text-info-700 font-medium">
                 Create your first sandbox &rarr;
               </Link>
             </div>
@@ -223,7 +223,7 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
                 {log.operationDetails.customers
                   ? `${log.operationDetails.customers.success} / ${log.operationDetails.customers.total}`
                   : 'Pending'}
-                {log.operationDetails.customers?.status === 'processing' && <span className="text-yellow-600 ml-1">⏳</span>}
+                {log.operationDetails.customers?.status === 'processing' && <span className="text-warning-600 ml-1">⏳</span>}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -232,7 +232,7 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
                 {log.operationDetails.reservations
                   ? `${log.operationDetails.reservations.success} / ${log.operationDetails.reservations.total}`
                   : 'Pending'}
-                {log.operationDetails.reservations?.status === 'processing' && <span className="text-yellow-600 ml-1">⏳</span>}
+                {log.operationDetails.reservations?.status === 'processing' && <span className="text-warning-600 ml-1">⏳</span>}
               </span>
             </div>
 
@@ -252,14 +252,14 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
             {log.operationDetails.reservations?.failures && log.operationDetails.reservations.failures.length > 0 && (
               <div className="mt-3 pt-2 border-t border-gray-200">
                 <details className="text-xs">
-                  <summary className="cursor-pointer text-orange-600 font-medium hover:text-orange-700">
+                  <summary className="cursor-pointer text-warning-600 font-medium hover:text-warning-700">
                     ⚠️ {log.operationDetails.reservations.failures.length} reservation{log.operationDetails.reservations.failures.length !== 1 ? 's' : ''}{' '}
                     {log.operationDetails.reservations.failures.every(f => f.skipped) ? 'skipped' : 'failed'}
                   </summary>
                   <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
                     {log.operationDetails.reservations.failures.map((failure, idx) => (
-                      <div key={idx} className="bg-orange-50 rounded p-2 text-gray-700">
-                        <div className="font-medium text-orange-800">
+                      <div key={idx} className="bg-warning-50 rounded p-2 text-gray-700">
+                        <div className="font-medium text-warning-700">
                           {failure.skipped ? '⏭️ Skipped' : '❌ Failed'}
                         </div>
                         <div className="mt-0.5">{failure.error}</div>
@@ -278,7 +278,7 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
             )}
 
             {(log.operationDetails.customers?.status === 'failed' || log.operationDetails.reservations?.status === 'failed') && (
-              <div className="text-xs text-red-600 flex items-center gap-1 mt-2">
+              <div className="text-xs text-error-600 flex items-center gap-1 mt-2">
                 <span>⚠️</span>
                 <span>Setup encountered errors</span>
               </div>
@@ -289,8 +289,8 @@ function EnvironmentContent({ log }: { log: EnvironmentLog }) {
 
       {(log.status === 'building' || log.status === 'processing') && (
         <div className="border-t border-gray-200 pt-3 mt-3">
-          <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-blue-700' : 'text-yellow-700'}`}>
-            <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-blue-700' : 'border-yellow-700'}`}></div>
+          <div className={`flex items-center gap-2 ${log.status === 'building' ? 'text-info-700' : 'text-warning-700'}`}>
+            <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${log.status === 'building' ? 'border-info-700' : 'border-warning-700'}`}></div>
             <p className="text-xs font-medium">
               {log.status === 'building' && `Creating ${log.propertyType} for ${log.durationDays || 30} days`}
               {log.status === 'processing' && 'Setting up customers and reservations...'}
@@ -341,8 +341,8 @@ function ResetContent({ log }: { log: ResetLog }) {
 
       {log.status === 'processing' && (
         <div className="border-t border-gray-200 pt-3 mt-3">
-          <div className="flex items-center gap-2 text-yellow-700">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+          <div className="flex items-center gap-2 text-warning-700">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning-700"></div>
             <p className="text-xs font-medium">Resetting sandbox...</p>
           </div>
         </div>
@@ -371,8 +371,8 @@ function DemoFillerContent({ log }: { log: DemoFillerLog }) {
           </div>
           {log.failureCount > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-red-600">Failed:</span>
-              <span className="font-medium text-red-800">{log.failureCount}</span>
+              <span className="text-error-600">Failed:</span>
+              <span className="font-medium text-error-700">{log.failureCount}</span>
             </div>
           )}
           {log.completedAt && (
@@ -386,8 +386,8 @@ function DemoFillerContent({ log }: { log: DemoFillerLog }) {
 
       {log.status === 'processing' && (
         <div className="border-t border-gray-200 pt-3 mt-3">
-          <div className="flex items-center gap-2 text-yellow-700">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+          <div className="flex items-center gap-2 text-warning-700">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning-700"></div>
             <p className="text-xs font-medium">Creating reservations...</p>
           </div>
         </div>
@@ -419,8 +419,8 @@ function CloseBillsContent({ log }: { log: CloseBillsLog }) {
           </div>
           {log.failureCount > 0 && (
             <div className="flex items-center justify-between">
-              <span className="text-red-600">Failed:</span>
-              <span className="font-medium text-red-800">{log.failureCount}</span>
+              <span className="text-error-600">Failed:</span>
+              <span className="font-medium text-error-700">{log.failureCount}</span>
             </div>
           )}
           {log.completedAt && (
@@ -434,8 +434,8 @@ function CloseBillsContent({ log }: { log: CloseBillsLog }) {
 
       {log.status === 'processing' && (
         <div className="border-t border-gray-200 pt-3 mt-3">
-          <div className="flex items-center gap-2 text-yellow-700">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-700"></div>
+          <div className="flex items-center gap-2 text-warning-700">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning-700"></div>
             <p className="text-xs font-medium">Closing bills...</p>
           </div>
         </div>
