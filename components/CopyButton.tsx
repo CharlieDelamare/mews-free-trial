@@ -20,7 +20,7 @@ export function CopyButton({ text, label = 'Copy', toastMessage = 'Copied!', cla
   return (
     <button
       onClick={handleCopy}
-      className={className || 'text-blue-600 hover:text-blue-700 text-sm font-medium px-3 py-1.5 rounded hover:bg-blue-50 transition-colors'}
+      className={className || 'text-primary-600 hover:text-primary-700 text-sm font-medium px-3 py-1.5 rounded hover:bg-primary-50 transition-colors'}
     >
       {label}
     </button>

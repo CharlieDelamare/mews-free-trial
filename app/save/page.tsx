@@ -111,7 +111,7 @@ export default function SaveSandboxPage() {
 
   return (
     <>
-      <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white py-12 px-4">
+      <main className="min-h-screen bg-mews-linen py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Save Sandbox</h1>
@@ -152,7 +152,7 @@ export default function SaveSandboxPage() {
             </div>
 
             {/* Warning */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+            <div className="bg-warning-50 border border-warning-100 rounded-lg p-4 text-sm text-warning-700">
               <strong>Note:</strong> This will permanently cancel the expiration timer. The sandbox will remain active indefinitely and will not be automatically deleted.
             </div>
 
@@ -163,7 +163,7 @@ export default function SaveSandboxPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || submitting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-primary-600 text-white hover:bg-primary-700'
               }`}
             >
               {submitting ? 'Saving...' : 'Save Sandbox'}
@@ -173,8 +173,8 @@ export default function SaveSandboxPage() {
             {result && (
               <div className={`p-4 rounded-lg text-sm ${
                 result.type === 'success'
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
+                  ? 'bg-success-50 text-success-700 border border-success-100'
+                  : 'bg-error-50 text-error-700 border border-error-100'
               }`}>
                 {result.text}
               </div>
@@ -192,7 +192,7 @@ export default function SaveSandboxPage() {
         ref={dialogRef}
         onClose={handleDialogClose}
         aria-labelledby="save-dialog-title"
-        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-black/50"
+        className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-gray-900/50"
       >
         <h2 id="save-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
           Confirm Save Sandbox
@@ -213,7 +213,7 @@ export default function SaveSandboxPage() {
           </button>
           <button
             onClick={handleSaveConfirm}
-            className="flex-1 py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors"
           >
             Yes, Save Sandbox
           </button>

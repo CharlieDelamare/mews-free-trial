@@ -42,8 +42,8 @@ export function Navbar() {
   const linkClasses = (path: string) =>
     `block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
       isActive(path)
-        ? 'text-blue-600 bg-blue-50'
-        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+        ? 'text-primary-600 bg-primary-50'
+        : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
     }`;
 
   return (
@@ -71,7 +71,7 @@ export function Navbar() {
 
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-gray-900/50 transition-opacity duration-300 ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={close}
@@ -103,7 +103,7 @@ export function Navbar() {
         {/* Main nav links */}
         <nav className="flex-1 flex flex-col px-3 py-4">
           <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 mb-1">Sandboxes</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 mb-1">Sandboxes</p>
             <div className="space-y-1">
               {sandboxLinks.map(({ href, label }) => (
                 <Link key={href} href={href} onClick={close} className={linkClasses(href)}>
@@ -114,7 +114,7 @@ export function Navbar() {
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 mb-1">Operations</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 mb-1">Operations</p>
             <div className="space-y-1">
               {operationLinks.map(({ href, label }) => (
                 <Link key={href} href={href} onClick={close} className={linkClasses(href)}>
