@@ -305,9 +305,6 @@ export async function POST(request: NextRequest) {
 
       // Start full environment setup in the background
       const backgroundWork = (async () => {
-        const bgStartTime = Date.now();
-        // Leave 50s buffer for finalization (DB updates, notifications, email)
-        const deadlineMs = bgStartTime + 750_000;
         try {
           // Fetch timezone and language from configuration API
           const timezoneResult = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, newToken.accessToken, log.id);
@@ -337,7 +334,7 @@ export async function POST(request: NextRequest) {
             newToken.accessToken,
             newToken.enterpriseId,
             newToken.id,
-            { operationType: 'automatic', logId: log.id, languageCode, deadlineMs }
+            { operationType: 'automatic', logId: log.id, languageCode }
           );
 
           // Create onboarding tasks

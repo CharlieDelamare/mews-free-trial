@@ -208,11 +208,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
     });
 
     // Run reservation creation in background
-    // skipStateTransitions keeps all reservations in Confirmed state
     const reservationWork = createReservationsForEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id, {
       dateRange: { start, end },
       reservationCount,
-      skipStateTransitions: true,
       operationType: 'demo_filler',
       logId: logId || undefined,
       serviceId
