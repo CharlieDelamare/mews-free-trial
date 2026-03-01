@@ -281,23 +281,6 @@ These 3 files must be fixed first — without them, no component can reference d
 - [ ] **Line 284:** `bg-gray-200 text-gray-700`
 - [ ] **Line 290:** `bg-amber-600 text-white hover:bg-amber-700`
 
-### `lib/email-service.ts` (HTML email template)
-
-- [ ] **Line 31:** **Hardcoded hex** `background-color:#f4f6f8`
-- [ ] **Line 31:** **Non-brand font** `font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,...`
-- [ ] **Line 32:** **Hardcoded hex** `background-color:#f4f6f8`
-- [ ] **Line 35:** **Hardcoded hex** `background-color:#ffffff`, `rgba(0,0,0,0.1)`
-- [ ] **Line 38:** **Hardcoded hex** `background-color:#2563eb` (email header blue)
-- [ ] **Line 39:** **Hardcoded hex** `color:#ffffff`
-- [ ] **Lines 45, 48:** **Hardcoded hex** `color:#374151`
-- [ ] **Line 52:** **Hardcoded hex** `background-color:#f9fafb`, `border:1px solid #e5e7eb`
-- [ ] **Line 55:** **Hardcoded hex** `color:#111827`
-- [ ] **Lines 58, 64, 68:** **Hardcoded hex** `color:#6b7280`
-- [ ] **Lines 60, 74:** **Hardcoded hex** `color:#2563eb` (link blue)
-- [ ] **Lines 65, 69:** **Non-brand font** `font-family:monospace`
-
-*Note: Email templates commonly require inline styles and system font stacks for client compatibility. These may be acceptable exceptions.*
-
 ---
 
 ## Summary by Violation Type
@@ -315,7 +298,6 @@ These 3 files must be fixed first — without them, no component can reference d
 | Non-brand font (`font-mono`) | `ApiCallLogs.tsx`, `logs/page.tsx` | 3 | **MEDIUM** |
 | Semantic color mismatches | `StatusBadge.tsx`, `Toast.tsx` | 10 | **MEDIUM** |
 | Accessibility: gray-400/gray-500 text on white | 7+ locations across 6 files | 7+ | **MEDIUM** |
-| Hardcoded hex in email template | `email-service.ts` | ~15 | **LOW** (email exception) |
 
 **Total non-compliant files: 18** (every UI file in the project)
 **Total violation instances: ~400+**

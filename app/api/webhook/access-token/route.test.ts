@@ -11,7 +11,6 @@ const mockFetchMewsData = vi.fn();
 const mockUpdateBestPriceRate = vi.fn();
 const mockFetchTimezoneFromConfiguration = vi.fn();
 const mockRunInBackground = vi.fn();
-const mockSendSandboxReadyEmail = vi.fn();
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -53,10 +52,6 @@ vi.mock('@/lib/config', () => ({
 
 vi.mock('@/lib/background', () => ({
   runInBackground: (...args: any[]) => mockRunInBackground(...args),
-}));
-
-vi.mock('@/lib/email-service', () => ({
-  sendSandboxReadyEmail: (...args: any[]) => mockSendSandboxReadyEmail(...args),
 }));
 
 vi.mock('@/lib/task-service', () => ({
@@ -102,7 +97,6 @@ describe('POST /api/webhook/access-token', () => {
       successCount: 50,
       failureCount: 0,
     });
-    mockSendSandboxReadyEmail.mockResolvedValue(undefined);
   });
 
   describe('Action Routing', () => {
@@ -358,19 +352,6 @@ describe('POST /api/webhook/access-token', () => {
       expect(notificationPayload.customersCreated).toBeUndefined();
       expect(notificationPayload.reservationsCreated).toBeUndefined();
 
-      // Should send sandbox ready email immediately (before background work)
-      expect(mockSendSandboxReadyEmail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          customerEmail: 'john@example.com',
-          customerName: 'John Doe',
-          propertyName: 'Test Hotel',
-          loginUrl: 'https://app.mews-demo.com',
-          loginEmail: 'john@example.com',
-          loginPassword: 'Sample123',
-          signInUrl: 'https://app.mews-demo.com/signin/abc123',
-        })
-      );
-
       // Should trigger background work
       expect(mockRunInBackground).toHaveBeenCalledTimes(1);
     });
@@ -411,7 +392,7 @@ describe('POST /api/webhook/access-token', () => {
 
       await POST(request);
 
-      // Zapier notification and email should still have been sent (before background work)
+      // Zapier notification should still have been sent (before background work)
       expect(mockSendZapierNotification).toHaveBeenCalledWith(
         'environment_ready',
         expect.objectContaining({
@@ -419,7 +400,6 @@ describe('POST /api/webhook/access-token', () => {
           propertyName: 'Test Hotel',
         })
       );
-      expect(mockSendSandboxReadyEmail).toHaveBeenCalledTimes(1);
 
       // Wait for the background work to complete
       expect(capturedPromise).not.toBeNull();

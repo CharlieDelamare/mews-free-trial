@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByPropertyName, updateUnifiedLog } from '@/lib/unified-logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
-import { sendSandboxReadyEmail } from '@/lib/email-service';
 import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
 import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
 import { getMewsClientToken } from '@/lib/config';
@@ -289,18 +288,6 @@ export async function POST(request: NextRequest) {
         enterpriseName: newToken.enterpriseName,
         receivedAt: newToken.receivedAt.toISOString(),
         tokenId: newToken.id,
-      });
-
-      await sendSandboxReadyEmail({
-        customerEmail: freshLog.customerEmail,
-        customerName: freshLog.customerName,
-        requestorEmail: freshLog.requestorEmail || undefined,
-        propertyName: freshLog.propertyName,
-        loginUrl: freshLog.loginUrl,
-        loginEmail: freshLog.loginEmail,
-        loginPassword: freshLog.loginPassword,
-        signInUrl: freshLog.signInUrl ?? undefined,
-        durationDays: freshLog.durationDays ?? undefined,
       });
 
       // Start full environment setup in the background
