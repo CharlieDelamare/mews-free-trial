@@ -31,9 +31,9 @@
   --neutral-800: #2E2F36;
   --neutral-900: #1C1D24;
 
-  /* Typography — uses --font-inter set by next/font in layout.tsx */
-  --font-heading: 'Axiforma', var(--font-inter, 'Inter'), sans-serif;
-  --font-subheading: 'Axiforma', var(--font-inter, 'Inter'), sans-serif;
+  /* Typography — Inter is the sole web font, loaded via next/font in layout.tsx */
+  --font-heading: var(--font-inter, 'Inter'), sans-serif;
+  --font-subheading: var(--font-inter, 'Inter'), sans-serif;
   --font-body: var(--font-inter, 'Inter'), sans-serif;
 }
 
