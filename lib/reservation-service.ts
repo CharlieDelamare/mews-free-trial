@@ -49,6 +49,8 @@ interface ReservationData {
   checkInUtc: Date;
   checkOutUtc: Date;
   adultCount: number;
+  isOptional?: boolean;     // Mark as Optional state reservation
+  releasedUtc?: Date;       // For Optional reservations: release date in the past
 }
 
 interface CategoryTarget {
@@ -379,9 +381,11 @@ export async function createReservationsForEnvironment(
     // Update unified log if logId provided (for automatic type only)
     if (logId && operationType === 'automatic') {
       try {
-        // All reservations are in Confirmed state
+        // Count reservations by state
+        const optionalCount = createdReservations.filter((r: any) => r.isOptional).length;
         const byState: Record<string, number> = {
-          Confirmed: createdReservations.length
+          Confirmed: createdReservations.length - optionalCount,
+          ...(optionalCount > 0 && { Optional: optionalCount })
         };
 
         // Format failures for logging (only include essential info)
@@ -880,7 +884,18 @@ function generateReservationData(
   // Shuffle reservations to avoid clustering by stay length
   const shuffled = shuffleArray(reservations);
 
-  console.log(`[RESERVATIONS] Generated and shuffled ${shuffled.length} total reservations`);
+  // Mark 2-3 reservations as Optional with a past ReleasedUtc (yesterday)
+  const yesterday = new Date();
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  yesterday.setUTCHours(14, 0, 0, 0);
+
+  const optionalCount = Math.min(3, shuffled.length);
+  for (let i = 0; i < optionalCount; i++) {
+    shuffled[i].isOptional = true;
+    shuffled[i].releasedUtc = yesterday;
+  }
+
+  console.log(`[RESERVATIONS] Generated and shuffled ${shuffled.length} total reservations (${optionalCount} optional with past release date)`);
   return shuffled;
 }
 
@@ -975,7 +990,7 @@ async function sendReservationGroup(
       ServiceId: serviceId,
       Reservations: group.map(r => {
         const reservation: any = {
-          State: 'Confirmed',
+          State: r.isOptional ? 'Optional' : 'Confirmed',
           StartUtc: r.checkInUtc.toISOString(),
           EndUtc: r.checkOutUtc.toISOString(),
           CustomerId: r.customerId,
@@ -986,6 +1001,11 @@ async function sendReservationGroup(
             Count: r.adultCount
           }]
         };
+
+        // Add ReleasedUtc for Optional reservations with past release date
+        if (r.isOptional && r.releasedUtc) {
+          reservation.ReleasedUtc = r.releasedUtc.toISOString();
+        }
 
         // Add voucher code if available for this rate
         const voucherCode = vouchersByRate.get(r.rateId);
@@ -1043,7 +1063,8 @@ async function sendReservationGroup(
     const id = reservationIds[j];
     if (id && typeof id === 'string' && id.trim() !== '') {
       created.push({
-        id: id
+        id: id,
+        isOptional: group[j]?.isOptional || false
       });
     } else {
       console.warn(`[RESERVATIONS] ⚠️ Invalid reservation ID at index ${j} in group ${groupIndex}: ${id}`);
