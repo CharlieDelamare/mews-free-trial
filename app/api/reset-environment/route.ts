@@ -78,9 +78,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResetOper
     );
 
     // Run reset in background
-    const resetWork = resetEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id, {
-      deadlineMs: Date.now() + 750_000 // 750s of 800s budget, leaving 50s for finalization
-    })
+    const resetWork = resetEnvironment(token, tokenRecord.enterpriseId, tokenRecord.id)
       .then(result => {
         console.log(
           `[RESET-ENVIRONMENT] ✅ Reset completed for ${tokenRecord.enterpriseId}:`,

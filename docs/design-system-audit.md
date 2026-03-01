@@ -83,3 +83,23 @@ Tailwind `gray-*` classes are overridden to use the Night Black-derived neutral 
 | Info | Blue-based | Building/informational states |
 | Warning | Yellow-based | Processing/caution states |
 | Error | Coral-based | Failed states, destructive actions |
+---
+
+## Summary by Violation Type
+
+| Category | Files | Instances | Severity |
+|----------|-------|-----------|----------|
+| Missing CSS variable definitions | 3 foundation files | 3 | **CRITICAL** |
+| No font loading (Axiforma/Inter) | `layout.tsx` | 1 | **CRITICAL** |
+| Gradient on page backgrounds | 7 page files | 7 | **HIGH** |
+| Hardcoded hex in inline SVGs | 3 files (`SearchableSelect`, `create/page`, `fill/page`) | 3 | **HIGH** |
+| Non-design-system Tailwind colors | All 15 UI files | ~300+ | **HIGH** |
+| Non-palette colors (purple, amber, orange) | `logs/page`, `save/page`, `close-bills/page` | 6 | **MEDIUM** |
+| `bg-white` instead of design token | 10+ files | ~20 | **MEDIUM** |
+| `bg-black` instead of `--mews-night-black` | 5 files | 7 | **MEDIUM** |
+| Non-brand font (`font-mono`) | `ApiCallLogs.tsx`, `logs/page.tsx` | 3 | **MEDIUM** |
+| Semantic color mismatches | `StatusBadge.tsx`, `Toast.tsx` | 10 | **MEDIUM** |
+| Accessibility: gray-400/gray-500 text on white | 7+ locations across 6 files | 7+ | **MEDIUM** |
+
+**Total non-compliant files: 18** (every UI file in the project)
+**Total violation instances: ~400+**

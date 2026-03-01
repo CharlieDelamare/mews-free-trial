@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByPropertyName, updateUnifiedLog } from '@/lib/unified-logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { sendZapierNotification } from '@/lib/zapier';
-import { sendSandboxReadyEmail } from '@/lib/email-service';
 import { fetchMewsData, updateBestPriceRate } from '@/lib/mews-data-service';
 import { fetchTimezoneFromConfiguration } from '@/lib/timezone-service';
 import { getMewsClientToken } from '@/lib/config';
@@ -291,23 +290,8 @@ export async function POST(request: NextRequest) {
         tokenId: newToken.id,
       });
 
-      await sendSandboxReadyEmail({
-        customerEmail: freshLog.customerEmail,
-        customerName: freshLog.customerName,
-        requestorEmail: freshLog.requestorEmail || undefined,
-        propertyName: freshLog.propertyName,
-        loginUrl: freshLog.loginUrl,
-        loginEmail: freshLog.loginEmail,
-        loginPassword: freshLog.loginPassword,
-        signInUrl: freshLog.signInUrl ?? undefined,
-        durationDays: freshLog.durationDays ?? undefined,
-      });
-
       // Start full environment setup in the background
       const backgroundWork = (async () => {
-        const bgStartTime = Date.now();
-        // Leave 50s buffer for finalization (DB updates, notifications, email)
-        const deadlineMs = bgStartTime + 750_000;
         try {
           // Fetch timezone and language from configuration API
           const timezoneResult = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, newToken.accessToken, log.id);
@@ -337,7 +321,7 @@ export async function POST(request: NextRequest) {
             newToken.accessToken,
             newToken.enterpriseId,
             newToken.id,
-            { operationType: 'automatic', logId: log.id, languageCode, deadlineMs }
+            { operationType: 'automatic', logId: log.id, languageCode }
           );
 
           // Create onboarding tasks

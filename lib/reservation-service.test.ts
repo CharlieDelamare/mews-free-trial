@@ -147,9 +147,7 @@ describe('createReservationsForEnvironment', () => {
   });
 
   test('creates reservation log in database at start', async () => {
-    await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     expect(prisma.reservationCreationLog.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -163,9 +161,7 @@ describe('createReservationsForEnvironment', () => {
   });
 
   test('returns result with success and failure counts', async () => {
-    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     expect(result).toHaveProperty('totalReservations');
     expect(result).toHaveProperty('totalCustomers');
@@ -176,9 +172,7 @@ describe('createReservationsForEnvironment', () => {
   });
 
   test('updates reservation log to completed on success', async () => {
-    await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     expect(prisma.reservationCreationLog.update).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -200,9 +194,7 @@ describe('createReservationsForEnvironment', () => {
     });
 
     await expect(
-      createReservationsForEnvironment('test-token', 'ent-1', 1, {
-        skipStateTransitions: true,
-      })
+      createReservationsForEnvironment('test-token', 'ent-1', 1)
     ).rejects.toThrow();
 
     expect(prisma.reservationCreationLog.update).toHaveBeenCalledWith(
@@ -227,9 +219,7 @@ describe('createReservationsForEnvironment', () => {
       vouchersByRate: new Map(),
     });
 
-    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     // Should have created reservations only for Standard Room category, not Dorm
     expect(result.successCount).toBeGreaterThan(0);
@@ -259,9 +249,7 @@ describe('createReservationsForEnvironment', () => {
       return { ok: true, json: async () => ({}), text: async () => '' };
     });
 
-    await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     // Customers and reservations should be interleaved (not all customers first)
     const hasCustomers = callOrder.includes('customer');
@@ -279,9 +267,7 @@ describe('createReservationsForEnvironment', () => {
   });
 
   test('creates fewer unique customers than reservations (repeat guests)', async () => {
-    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     // With repeat guest ratio, should have fewer customers than reservations
     expect(result.totalCustomers).toBeGreaterThan(0);
@@ -302,9 +288,7 @@ describe('createReservationsForEnvironment', () => {
     });
 
     await expect(
-      createReservationsForEnvironment('test-token', 'ent-1', 1, {
-        skipStateTransitions: true,
-      })
+      createReservationsForEnvironment('test-token', 'ent-1', 1)
     ).rejects.toThrow('Failed to create any customers');
   });
 
@@ -314,7 +298,6 @@ describe('createReservationsForEnvironment', () => {
         start: new Date('2024-02-01'),
         end: new Date('2024-02-08'),
       },
-      skipStateTransitions: true,
     });
 
     expect(result.successCount).toBeGreaterThanOrEqual(0);
@@ -323,7 +306,6 @@ describe('createReservationsForEnvironment', () => {
   test('handles custom reservation count option', async () => {
     const result = await createReservationsForEnvironment('test-token', 'ent-1', 1, {
       reservationCount: 5,
-      skipStateTransitions: true,
     });
 
     // With 5 requested, total should be around 5 (some may fail)
@@ -336,7 +318,6 @@ describe('createReservationsForEnvironment', () => {
     await createReservationsForEnvironment('test-token', 'ent-1', 1, {
       operationType: 'automatic',
       logId: 'test-log-id',
-      skipStateTransitions: true,
     });
 
     // Should update stats at least twice: once for processing, once for completed
@@ -356,7 +337,6 @@ describe('createReservationsForEnvironment', () => {
     await createReservationsForEnvironment('test-token', 'ent-1', 1, {
       operationType: 'demo_filler',
       logId: 'test-log-id',
-      skipStateTransitions: true,
     });
 
     // For demo_filler, the automatic-only stats update should not happen
@@ -367,9 +347,7 @@ describe('createReservationsForEnvironment', () => {
   });
 
   test('fetches environment data from unified log first', async () => {
-    await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     expect(prisma.unifiedLog.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -401,9 +379,7 @@ describe('createReservationsForEnvironment', () => {
       return { ok: true, json: async () => ({}), text: async () => '' };
     });
 
-    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1, {
-      skipStateTransitions: true,
-    });
+    const result = await createReservationsForEnvironment('test-token', 'ent-1', 1);
 
     // Should track failures for missing reservation IDs
     expect(result.failureCount).toBeGreaterThan(0);
