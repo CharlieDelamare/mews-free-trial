@@ -28,12 +28,15 @@ function formatDuration(ms: number): string {
 
 function StatusDot({ statusCode, success }: { statusCode: number | null; success: boolean }) {
   let color = 'bg-success-500';
+  let title = 'Success';
   if (!success || (statusCode && statusCode >= 400)) {
     color = statusCode && statusCode >= 500 ? 'bg-error-500' : 'bg-error-400';
+    title = 'Error';
   } else if (statusCode && statusCode >= 300) {
     color = 'bg-warning-500';
+    title = 'Redirect';
   }
-  return <span className={`inline-block w-2 h-2 rounded-full ${color} flex-shrink-0`} />;
+  return <span className={`inline-block w-2 h-2 rounded-full ${color} flex-shrink-0`} title={title} />;
 }
 
 function formatJson(text: string | null): string {
@@ -91,7 +94,7 @@ function ApiCallRow({
           isExpanded ? 'bg-gray-100' : 'hover:bg-gray-50'
         } ${!call.success ? 'bg-error-50 hover:bg-error-100' : ''}`}
       >
-        <span className="text-gray-400 w-16 flex-shrink-0">{formatTime(call.timestamp)}</span>
+        <span className="text-gray-500 w-16 flex-shrink-0">{formatTime(call.timestamp)}</span>
         <StatusDot statusCode={call.statusCode} success={call.success} />
         <span className="flex-1 truncate text-gray-700">{call.endpoint}</span>
         <span
@@ -101,7 +104,7 @@ function ApiCallRow({
         >
           {call.statusCode || 'ERR'}
         </span>
-        <span className="w-14 text-right text-gray-400 flex-shrink-0">
+        <span className="w-14 text-right text-gray-500 flex-shrink-0">
           {formatDuration(call.durationMs)}
         </span>
         <span className="text-gray-300 flex-shrink-0">{isExpanded ? '▾' : '▸'}</span>
@@ -220,7 +223,7 @@ export function ApiCallLogs({ logId }: { logId: string }) {
         <span className="text-gray-400">{isExpanded ? '▾' : '▸'}</span>
         <span>API Logs</span>
         {hasData === true && (
-          <span className="text-gray-400 font-normal">
+          <span className="text-gray-500 font-normal">
             ({total} call{total !== 1 ? 's' : ''})
           </span>
         )}
@@ -240,7 +243,7 @@ export function ApiCallLogs({ logId }: { logId: string }) {
           )}
 
           {!loading && apiCalls.length === 0 && !error && (
-            <div className="text-xs text-gray-400 py-2">No API calls logged yet.</div>
+            <div className="text-xs text-gray-500 py-2">No API calls logged yet.</div>
           )}
 
           {apiCalls.length > 0 && (
@@ -251,7 +254,7 @@ export function ApiCallLogs({ logId }: { logId: string }) {
                 {failureCount > 0 && (
                   <span className="text-error-600 font-medium">{failureCount} failed</span>
                 )}
-                <span className="text-gray-400">{formatDuration(totalDurationMs)} total</span>
+                <span className="text-gray-500">{formatDuration(totalDurationMs)} total</span>
               </div>
 
               {/* Group filter tabs */}
@@ -303,7 +306,7 @@ export function ApiCallLogs({ logId }: { logId: string }) {
               </div>
 
               {loading && apiCalls.length > 0 && (
-                <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1 px-1">
+                <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-1 px-1">
                   <div className="animate-spin rounded-full h-2 w-2 border-b border-gray-400"></div>
                   Refreshing...
                 </div>
