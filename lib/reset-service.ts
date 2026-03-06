@@ -44,6 +44,7 @@ async function getAllReservationsWithPagination(
 
       // Include reservations starting up to 7 days ago (plus all future ones)
       const sevenDaysAgo = subDays(new Date(), 7);
+      const farFuture = new Date('2099-01-01T00:00:00Z');
 
       const url = `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`;
       const fetchOptions: RequestInit = {
@@ -56,7 +57,8 @@ async function getAllReservationsWithPagination(
           ServiceIds: [serviceId],
           States: states,
           ScheduledStartUtc: {
-            StartUtc: sevenDaysAgo.toISOString()
+            StartUtc: sevenDaysAgo.toISOString(),
+            EndUtc: farFuture.toISOString()
           },
           Limitation: {
             Count: 1000,
