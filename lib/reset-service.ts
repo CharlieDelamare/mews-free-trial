@@ -8,7 +8,7 @@ import { fetchAllMewsData } from './mews-data-service';
 import { createReservationsForEnvironment } from './reservation-service';
 import { closeBillsForEnvironment } from './bill-service';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { startOfDay, addDays } from 'date-fns';
+import { startOfDay, addDays, subDays, addMonths } from 'date-fns';
 import { createResetLog, updateUnifiedLog } from './unified-logger';
 import { fetchTimezoneFromConfiguration } from './timezone-service';
 import { loggedFetch } from './api-call-logger';
@@ -42,6 +42,11 @@ async function getAllReservationsWithPagination(
       pageCount++;
       console.log(`[RESET-SERVICE] Fetching reservations page ${pageCount}...`);
 
+      // Include reservations starting up to 7 days ago through 3 months ahead
+      // (API max window is 3 months for ScheduledStartUtc filter)
+      const sevenDaysAgo = subDays(new Date(), 7);
+      const threeMonthsFromStart = addMonths(sevenDaysAgo, 3);
+
       const url = `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`;
       const fetchOptions: RequestInit = {
         method: 'POST',
@@ -52,6 +57,10 @@ async function getAllReservationsWithPagination(
           Client: 'Mews Sandbox Manager',
           ServiceIds: [serviceId],
           States: states,
+          ScheduledStartUtc: {
+            StartUtc: sevenDaysAgo.toISOString(),
+            EndUtc: threeMonthsFromStart.toISOString()
+          },
           Limitation: {
             Count: 1000,
             ...(cursor && { Cursor: cursor })
