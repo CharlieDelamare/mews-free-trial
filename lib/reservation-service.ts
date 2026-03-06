@@ -50,7 +50,7 @@ interface ReservationData {
   checkOutUtc: Date;
   adultCount: number;
   isOptional?: boolean;     // Mark as Optional state reservation
-  releasedUtc?: Date;       // For Optional reservations: release date in the past
+  releasedUtc?: Date;       // For Optional reservations: release date (must be in the future per Mews API)
 }
 
 interface CategoryTarget {
@@ -884,18 +884,19 @@ function generateReservationData(
   // Shuffle reservations to avoid clustering by stay length
   const shuffled = shuffleArray(reservations);
 
-  // Mark 2-3 reservations as Optional with a past ReleasedUtc (yesterday)
-  const yesterday = new Date();
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-  yesterday.setUTCHours(14, 0, 0, 0);
+  // Mark 2-3 reservations as Optional with a future ReleasedUtc (tomorrow)
+  // Mews API requires release date to be in the future when creating Optional reservations
+  const tomorrow = new Date();
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  tomorrow.setUTCHours(14, 0, 0, 0);
 
   const optionalCount = Math.min(3, shuffled.length);
   for (let i = 0; i < optionalCount; i++) {
     shuffled[i].isOptional = true;
-    shuffled[i].releasedUtc = yesterday;
+    shuffled[i].releasedUtc = tomorrow;
   }
 
-  console.log(`[RESERVATIONS] Generated and shuffled ${shuffled.length} total reservations (${optionalCount} optional with past release date)`);
+  console.log(`[RESERVATIONS] Generated and shuffled ${shuffled.length} total reservations (${optionalCount} optional with future release date)`);
   return shuffled;
 }
 
