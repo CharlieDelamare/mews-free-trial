@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const logId = request.nextUrl.searchParams.get('logId');
     if (!logId) return NextResponse.json({ success: false, error: 'logId is required' }, { status: 400 });
 
-    const log = await prisma.controlCentreLog.findUnique({ where: { id: logId } });
+    const log = await prisma.unifiedLog.findUnique({ where: { id: logId } });
     if (!log) return NextResponse.json({ success: false, error: 'Log not found' }, { status: 404 });
 
     return NextResponse.json({

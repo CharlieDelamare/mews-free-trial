@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const tokenRecord = await prisma.accessToken.findFirst({ where: { accessToken: token, isEnabled: true }, orderBy: { receivedAt: 'desc' } });
     if (!tokenRecord) return NextResponse.json({ success: false, error: 'Access token not found' }, { status: 404 });
 
-    const log = await prisma.controlCentreLog.create({
+    const log = await prisma.unifiedLog.create({
       data: { logType: 'scenario', enterpriseId, status: 'processing' },
     });
 

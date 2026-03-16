@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { addDays } from 'date-fns';
 import { fetchMewsData } from '@/lib/mews-data-service';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import type { ScenarioType, ScenarioConfig } from '@/types/control-centre';
@@ -66,25 +67,27 @@ export async function provisionScenario(
   const config = SCENARIO_CONFIG[scenarioType];
 
   try {
-    await prisma.controlCentreLog.update({
+    await prisma.unifiedLog.update({
       where: { id: logId },
       data: { status: 'processing', totalItems: config.guestCount },
     });
 
     const mewsData = await fetchMewsData(CLIENT_TOKEN, accessToken, { logId });
 
+    const now = new Date();
     const result = await createReservationsForEnvironment(
       accessToken,
       enterpriseId,
       accessTokenId,
       {
-        logId,
+        // No logId — avoids UnifiedLog stat updates which expect an environment log ID
         reservationCount: config.guestCount,
         mewsData,
+        dateRange: { start: now, end: addDays(now, config.dateSpreadDays) },
       }
     );
 
-    await prisma.controlCentreLog.update({
+    await prisma.unifiedLog.update({
       where: { id: logId },
       data: {
         status: 'completed',
@@ -95,7 +98,7 @@ export async function provisionScenario(
       },
     });
   } catch (error) {
-    await prisma.controlCentreLog.update({
+    await prisma.unifiedLog.update({
       where: { id: logId },
       data: {
         status: 'failed',

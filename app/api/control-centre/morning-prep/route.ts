@@ -16,16 +16,16 @@ export async function POST(request: NextRequest) {
     const tokenRecord = await prisma.accessToken.findFirst({ where: { accessToken: token, isEnabled: true }, orderBy: { receivedAt: 'desc' } });
     if (!tokenRecord) return NextResponse.json({ success: false, error: 'Access token not found' }, { status: 404 });
 
-    const log = await prisma.controlCentreLog.create({
+    const log = await prisma.unifiedLog.create({
       data: { logType: 'morning_prep', enterpriseId, status: 'processing' },
     });
 
     const work = morningPrep(token, log.id)
-      .then(result => prisma.controlCentreLog.update({
+      .then(result => prisma.unifiedLog.update({
         where: { id: log.id },
         data: { status: 'completed', completedAt: new Date(), successCount: result.successCount, failureCount: result.failureCount },
       }))
-      .catch(err => prisma.controlCentreLog.update({
+      .catch(err => prisma.unifiedLog.update({
         where: { id: log.id },
         data: { status: 'failed', completedAt: new Date(), errorMessage: err instanceof Error ? err.message : 'Unknown error' },
       }))

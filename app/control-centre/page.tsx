@@ -53,6 +53,8 @@ function ControlCentreContent() {
     fetchEnvironments();
   }, []);
 
+  const STORAGE_KEY = 'controlCentre.enterpriseId';
+
   const fetchEnvironments = async () => {
     setEnvironmentsLoading(true);
     try {
@@ -65,6 +67,11 @@ function ControlCentreContent() {
           return nameA.localeCompare(nameB);
         });
         setEnvironments(sorted);
+        // Restore saved selection if it still exists in the list
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved && sorted.some((e: Environment) => e.enterpriseId === saved)) {
+          setSelectedEnterpriseId(saved);
+        }
       }
     } catch (e) {
       console.error('Failed to fetch environments:', e);
@@ -173,6 +180,7 @@ function ControlCentreContent() {
               onChange={val => {
                 setSelectedEnterpriseId(val);
                 setMetrics(null);
+                localStorage.setItem(STORAGE_KEY, val);
               }}
               options={environments.map(env => ({
                 value: env.enterpriseId,

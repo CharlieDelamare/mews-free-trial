@@ -198,25 +198,6 @@ model ApiCallLog {
   @@index([unifiedLogId, timestamp])
 }
 
-model ControlCentreLog {
-  id             String    @id @default(cuid())
-  logType        String    // 'inspect' | 'morning_prep' | 'auto_checkout' | 'close_overdue_tasks' | 'scenario' | 'doors' | 'import'
-  enterpriseId   String
-  status         String    // 'processing' | 'completed' | 'failed'
-  timestamp      DateTime  @default(now())
-  completedAt    DateTime?
-  errorMessage   String?   @db.Text
-  totalItems     Int?
-  successCount   Int?
-  failureCount   Int?
-  operationDetails Json?
-
-  @@index([enterpriseId])
-  @@index([status])
-  @@index([logType])
-  @@index([timestamp])
-}
-
 model IbeSession {
   id             String    @id @default(cuid())
   enterpriseId   String

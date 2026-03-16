@@ -33,9 +33,9 @@ export async function simulateOtaBooking(
         ClientToken: CLIENT_TOKEN,
         AccessToken: accessToken,
         Client: 'Mews Sandbox Manager',
+        ServiceId: mewsData.serviceId,
         Reservations: [
           {
-            ServiceId: mewsData.serviceId,
             RateId: rate.id,
             RequestedCategoryId: category.id,
             StartUtc: `${params.checkIn}T14:00:00Z`,

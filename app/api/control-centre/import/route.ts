@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const tokenRecord = await prisma.accessToken.findFirst({ where: { accessToken: token, isEnabled: true }, orderBy: { receivedAt: 'desc' } });
     if (!tokenRecord) return NextResponse.json({ success: false, error: 'Access token not found' }, { status: 404 });
 
-    const log = await prisma.controlCentreLog.create({
+    const log = await prisma.unifiedLog.create({
       data: { logType: 'import', enterpriseId, status: 'processing', totalItems: rows.length, successCount: 0, failureCount: 0 },
     });
 
@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
 
         for (const batch of batches) {
           const reservations = batch.map(row => ({
-            ServiceId: mewsData.serviceId,
             RateId: mewsData.rates[0]?.id,
             RequestedCategoryId: mewsData.resourceCategories[0]?.id,
             StartUtc: `${row.CheckIn}T14:00:00Z`,
@@ -55,6 +54,7 @@ export async function POST(request: NextRequest) {
               ClientToken: CLIENT_TOKEN,
               AccessToken: token,
               Client: 'Mews Sandbox Manager',
+              ServiceId: mewsData.serviceId,
               Reservations: reservations,
             }),
           });
@@ -67,18 +67,18 @@ export async function POST(request: NextRequest) {
             failureCount += batch.length;
           }
 
-          await prisma.controlCentreLog.update({
+          await prisma.unifiedLog.update({
             where: { id: log.id },
             data: { successCount, failureCount },
           });
         }
 
-        await prisma.controlCentreLog.update({
+        await prisma.unifiedLog.update({
           where: { id: log.id },
           data: { status: 'completed', completedAt: new Date(), successCount, failureCount },
         });
       } catch (err) {
-        await prisma.controlCentreLog.update({
+        await prisma.unifiedLog.update({
           where: { id: log.id },
           data: { status: 'failed', completedAt: new Date(), errorMessage: err instanceof Error ? err.message : 'Unknown error' },
         });

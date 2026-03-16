@@ -71,14 +71,14 @@ export async function searchIbeAvailability(
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager',
       ServiceId: mewsData.serviceId,
-      StartUtc: `${params.checkIn}T00:00:00Z`,
-      EndUtc: `${params.checkOut}T00:00:00Z`,
+      FirstTimeUnitStartUtc: `${params.checkIn}T00:00:00Z`,
+      LastTimeUnitStartUtc: `${params.checkOut}T00:00:00Z`,
     }),
   });
 
   const data = await res.json();
   const categoryAvailabilities: Array<{
-    ResourceCategoryId: string;
+    CategoryId: string;
     Availabilities: number[];
   }> = data.CategoryAvailabilities || [];
 
@@ -87,7 +87,7 @@ export async function searchIbeAvailability(
   for (const rate of mewsData.rates) {
     for (const cat of mewsData.resourceCategories) {
       const avail = categoryAvailabilities.find(
-        a => a.ResourceCategoryId === cat.id
+        a => a.CategoryId === cat.id
       );
       if (!avail || avail.Availabilities.every(a => a === 0)) continue;
 
@@ -114,6 +114,26 @@ export async function bookIbeReservation(
   // Fetch age category ID for this service
   const mewsData = await fetchMewsData(CLIENT_TOKEN, accessToken, { serviceId: params.serviceId });
 
+  // Create a customer profile first — customers/add requires LastName + OverwriteExisting
+  const customerRes = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ClientToken: CLIENT_TOKEN,
+      AccessToken: accessToken,
+      Client: 'Mews Sandbox Manager',
+      OverwriteExisting: false,
+      FirstName: params.guestFirstName,
+      LastName: params.guestLastName,
+      Email: params.guestEmail,
+    }),
+  });
+  const customerData = await customerRes.json();
+  const customerId: string | undefined = customerData.Customers?.[0]?.Id;
+  if (!customerId) {
+    return { success: false, error: customerData.Message || 'Failed to create customer' };
+  }
+
   const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
   const res = await fetch(url, {
     method: 'POST',
@@ -122,17 +142,15 @@ export async function bookIbeReservation(
       ClientToken: CLIENT_TOKEN,
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager',
+      ServiceId: params.serviceId,
       Reservations: [
         {
-          ServiceId: params.serviceId,
           RateId: params.rateId,
           RequestedCategoryId: params.resourceCategoryId,
           StartUtc: `${params.checkIn}T14:00:00Z`,
           EndUtc: `${params.checkOut}T11:00:00Z`,
           PersonCounts: [{ AgeCategoryId: mewsData.ageCategories.adult, Count: params.guestCount }],
-          BookerEmail: params.guestEmail,
-          BookerFirstName: params.guestFirstName,
-          BookerLastName: params.guestLastName,
+          CustomerId: customerId,
         },
       ],
     }),

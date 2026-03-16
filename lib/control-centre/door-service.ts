@@ -30,7 +30,7 @@ export async function getDoorAssignments(accessToken: string): Promise<DoorsResu
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ...buildAuth(accessToken),
-      IsActive: true,
+      ActivityStates: ['Active'],
       Limitation: { Count: 1000 },
     }),
   });
@@ -38,14 +38,14 @@ export async function getDoorAssignments(accessToken: string): Promise<DoorsResu
   const data = await res.json();
   const tokens: Array<{
     Id: string;
-    ReservationId: string;
+    ServiceOrderId: string;
     Value: string;
     ValidityStartUtc?: string;
     ValidityEndUtc?: string;
   }> = data.ResourceAccessTokens || [];
 
   const assignments: DoorAssignment[] = tokens.map(t => ({
-    reservationId: t.ReservationId,
+    reservationId: t.ServiceOrderId,
     guestName: '',
     roomName: '',
     tokenId: t.Id,
@@ -63,6 +63,25 @@ export async function provisionDoors(
 ): Promise<DoorsProvisionResult> {
   const result: DoorsProvisionResult = { successCount: 0, failureCount: 0, errors: [] };
 
+  // Fetch reservation details to get validity dates
+  const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
+  const serviceIds = services.map(s => s.id);
+
+  const resRes = await fetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...buildAuth(accessToken),
+      ServiceIds: serviceIds,
+      States: ['Confirmed', 'Started'],
+      Limitation: { Count: 1000 },
+    }),
+  });
+  const resData = await resRes.json();
+  const reservations: Array<{ Id: string; ScheduledStartUtc: string; ScheduledEndUtc: string }> =
+    resData.Reservations || [];
+  const reservationMap = new Map(reservations.map(r => [r.Id, r]));
+
   // Batch into groups
   const BATCH_SIZE = 10;
   for (let i = 0; i < reservationIds.length; i += BATCH_SIZE) {
@@ -70,13 +89,33 @@ export async function provisionDoors(
 
     await Promise.allSettled(
       batch.map(async reservationId => {
+        const reservation = reservationMap.get(reservationId);
+        const now = new Date();
+        const validityStart = reservation?.ScheduledStartUtc ?? now.toISOString();
+        const validityEnd = reservation?.ScheduledEndUtc
+          ?? new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString();
+
+        // Generate a random 4-digit PIN
+        const pin = String(Math.floor(1000 + Math.random() * 9000));
+
         const r = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceAccessTokens/add`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...buildAuth(accessToken),
-            ReservationId: reservationId,
-            Type: 'PinCode',
+            ResourceAccessTokenParameters: [{
+              ServiceOrderId: reservationId,
+              Type: 'PinCode',
+              Value: pin,
+              ValidityStartUtc: validityStart,
+              ValidityEndUtc: validityEnd,
+              Permissions: {
+                Bed: { Value: false },
+                Room: { Value: true },
+                Floor: { Value: false },
+                Building: { Value: false },
+              },
+            }],
           }),
         });
         if (r.ok) result.successCount++;
