@@ -9,7 +9,6 @@ import ScenariosTab from '@/components/control-centre/ScenariosTab';
 import IbeTab from '@/components/control-centre/IbeTab';
 import OtaTab from '@/components/control-centre/OtaTab';
 import DoorsTab from '@/components/control-centre/DoorsTab';
-import ImportTab from '@/components/control-centre/ImportTab';
 import type { DashboardMetrics } from '@/types/control-centre';
 
 interface Environment {
@@ -18,7 +17,7 @@ interface Environment {
   propertyName?: string;
 }
 
-type Tab = 'dashboard' | 'operations' | 'scenarios' | 'ibe' | 'ota' | 'doors' | 'import';
+type Tab = 'dashboard' | 'operations' | 'scenarios' | 'ibe' | 'ota' | 'doors';
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -27,7 +26,6 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'ibe', label: 'IBE' },
   { key: 'ota', label: 'OTA' },
   { key: 'doors', label: 'Doors' },
-  { key: 'import', label: 'Import' },
 ];
 
 function ControlCentreContent() {
@@ -222,7 +220,7 @@ function ControlCentreContent() {
                 {activeTab === 'ibe' && <IbeTab enterpriseId={selectedEnterpriseId} />}
                 {activeTab === 'ota' && <OtaTab enterpriseId={selectedEnterpriseId} />}
                 {activeTab === 'doors' && <DoorsTab enterpriseId={selectedEnterpriseId} isEnabled={isDoorsEnabled} />}
-                {activeTab === 'import' && <ImportTab enterpriseId={selectedEnterpriseId} />}
+
               </>
             )}
           </div>

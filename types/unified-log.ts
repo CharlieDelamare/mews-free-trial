@@ -1,7 +1,7 @@
 // TypeScript types for unified logging system
 
 // === Core Types ===
-export type ControlCentreLogType = 'morning_prep' | 'auto_checkout' | 'scenario' | 'doors' | 'import';
+export type ControlCentreLogType = 'morning_prep' | 'auto_checkout' | 'scenario' | 'doors';
 export type LogType = 'environment' | 'reset' | 'demo_filler' | 'close_bills' | ControlCentreLogType;
 export type LogStatus = 'building' | 'processing' | 'completed' | 'failed';
 

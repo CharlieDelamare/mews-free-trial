@@ -25,6 +25,24 @@ export async function simulateOtaBooking(
       return { success: false, channel: params.channel, error: 'No rates or categories available' };
     }
 
+    // Create a customer first — required by reservations/add
+    const customerRes = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ClientToken: CLIENT_TOKEN,
+        AccessToken: accessToken,
+        Client: 'Mews Sandbox Manager',
+        OverwriteExisting: false,
+        LastName: `${OTA_SOURCE_NAMES[params.channel] || params.channel} Guest`,
+      }),
+    });
+    const customerData = await customerRes.json();
+    const customerId: string | undefined = customerData.Customers?.[0]?.Id;
+    if (!customerId) {
+      return { success: false, channel: params.channel, error: customerData.Message || 'Failed to create customer' };
+    }
+
     const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
     const res = await fetch(url, {
       method: 'POST',
@@ -42,6 +60,7 @@ export async function simulateOtaBooking(
             EndUtc: `${params.checkOut}T11:00:00Z`,
             PersonCounts: [{ AgeCategoryId: mewsData.ageCategories.adult, Count: params.guestCount }],
             ChannelName: OTA_SOURCE_NAMES[params.channel] || params.channel,
+            CustomerId: customerId,
           },
         ],
       }),

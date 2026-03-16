@@ -29,8 +29,6 @@ function getLogTypeLabel(type: UnifiedLog['logType']) {
       return { label: 'Scenario', color: 'bg-purple-100 text-purple-700' };
     case 'doors':
       return { label: 'Door Provisioning', color: 'bg-gray-100 text-gray-700' };
-    case 'import':
-      return { label: 'Import', color: 'bg-orange-100 text-orange-700' };
   }
 }
 
@@ -201,7 +199,7 @@ export default function LogsPage() {
                     {log.logType === 'reset' && <ResetContent log={log} />}
                     {log.logType === 'demo_filler' && <DemoFillerContent log={log} />}
                     {log.logType === 'close_bills' && <CloseBillsContent log={log as CloseBillsLog} />}
-                    {(log.logType === 'morning_prep' || log.logType === 'auto_checkout' || log.logType === 'scenario' || log.logType === 'doors' || log.logType === 'import') && (
+                    {(log.logType === 'morning_prep' || log.logType === 'auto_checkout' || log.logType === 'scenario' || log.logType === 'doors') && (
                       <ControlCentreContent log={log as ControlCentreLog} />
                     )}
                   </div>
@@ -435,7 +433,7 @@ function ControlCentreContent({ log }: { log: ControlCentreLog }) {
           )}
           {log.totalItems != null && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">{log.logType === 'import' ? 'Rows imported:' : 'Items processed:'}</span>
+              <span className="text-gray-600">Items processed:</span>
               <span className="font-medium text-gray-800">{log.successCount ?? 0} / {log.totalItems}</span>
             </div>
           )}
