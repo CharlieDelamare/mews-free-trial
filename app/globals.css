@@ -45,6 +45,20 @@
   --roi-slider-teal: var(--mews-indigo); /* Replaces #6BA3B0 / #4d8a96 teal */
   --roi-neutral-border: #d1d5db;     /* Light gray border */
   --roi-white: #ffffff;              /* Pure white (only where --mews-white can't be used inline) */
+
+  /* ROI Calculator slider color variants */
+  --roi-slider-yellow: #EDFE77;
+  --roi-slider-yellow-text: #6B7700;
+  --roi-slider-orange: #EA580C;
+  --roi-slider-orange-text: #C2410C;
+  --roi-slider-purple: #EF89D6;
+  --roi-slider-purple-text: #8B3580;
+  --roi-slider-track-bg: #e5e7eb;
+
+  /* Neutral grays (Tailwind-compatible) */
+  --roi-gray-400: #9ca3af;
+  --roi-gray-500: #6b7280;
+  --roi-gray-700: #374151;
 }
 
 /* Reset native dialog browser defaults for custom styling */

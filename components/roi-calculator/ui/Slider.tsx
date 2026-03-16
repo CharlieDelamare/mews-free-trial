@@ -51,28 +51,28 @@ export default function Slider({
   // Color scheme per slider type
   const colorScheme = {
     yellow: {
-      track: '#EDFE77',
+      track: 'var(--roi-slider-yellow)',
       badgeBg: 'rgba(237,254,119,0.10)',
       badgeBorder: 'rgba(237,254,119,0.25)',
-      badgeText: '#6B7700',
+      badgeText: 'var(--roi-slider-yellow-text)',
       editBorder: 'rgba(237,254,119,0.4)',
       editShadow: 'rgba(237,254,119,0.1)',
       hoverBg: 'rgba(237,254,119,0.16)',
     },
     orange: {
-      track: '#EA580C',
+      track: 'var(--roi-slider-orange)',
       badgeBg: 'rgba(234,88,12,0.08)',
       badgeBorder: 'rgba(234,88,12,0.2)',
-      badgeText: '#C2410C',
+      badgeText: 'var(--roi-slider-orange-text)',
       editBorder: 'rgba(234,88,12,0.4)',
       editShadow: 'rgba(234,88,12,0.1)',
       hoverBg: 'rgba(234,88,12,0.14)',
     },
     purple: {
-      track: '#EF89D6',
+      track: 'var(--roi-slider-purple)',
       badgeBg: 'rgba(239,137,214,0.08)',
       badgeBorder: 'rgba(239,137,214,0.2)',
-      badgeText: '#8B3580',
+      badgeText: 'var(--roi-slider-purple-text)',
       editBorder: 'rgba(239,137,214,0.4)',
       editShadow: 'rgba(239,137,214,0.1)',
       hoverBg: 'rgba(239,137,214,0.14)',
@@ -226,7 +226,7 @@ export default function Slider({
         onChange={(e) => onChange(parseFloat(e.target.value))}
         className="w-full cursor-pointer"
         style={{
-          background: `linear-gradient(to right, ${cs.track} 0%, ${cs.track} ${Math.min(fillPercent, 100)}%, #e5e7eb ${Math.min(fillPercent, 100)}%, #e5e7eb 100%)`,
+          background: `linear-gradient(to right, ${cs.track} 0%, ${cs.track} ${Math.min(fillPercent, 100)}%, var(--roi-slider-track-bg) ${Math.min(fillPercent, 100)}%, var(--roi-slider-track-bg) 100%)`,
           height: '6px',
           borderRadius: '99px',
         }}

@@ -134,7 +134,7 @@ export default function ExportModal({
             style={{
               background: 'rgba(45,44,55,0.05)',
               border: '1px solid rgba(45,44,55,0.08)',
-              color: '#374151',
+              color: 'var(--roi-gray-700)',
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.10)';
@@ -153,7 +153,7 @@ export default function ExportModal({
               background:
                 selectedSections.length === 0 || isExporting
                   ? 'var(--roi-neutral-border)'
-                  : 'linear-gradient(135deg, var(--mews-night-black) 0%, #1a4e8c 100%)',
+                  : 'linear-gradient(135deg, var(--mews-night-black) 0%, var(--mews-deep-blue) 100%)',
               boxShadow:
                 selectedSections.length === 0 || isExporting
                   ? 'none'

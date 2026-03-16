@@ -100,7 +100,7 @@ export default function ModuleCard({
           <div>
             <span
               className={`font-bold tabular-nums ${demoMode ? 'text-2xl' : 'text-xl'}`}
-              style={{ color: enabled ? color : '#9ca3af' }}
+              style={{ color: enabled ? color : 'var(--roi-gray-400)' }}
             >
               {currencySymbol}{savings.toLocaleString()}
             </span>
@@ -118,7 +118,7 @@ export default function ModuleCard({
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group"
             style={{
               background: isActiveDetail ? `${color}10` : 'rgba(45,44,55,0.03)',
-              color: isActiveDetail ? color : '#6b7280',
+              color: isActiveDetail ? color : 'var(--roi-gray-500)',
               border: `1px solid ${isActiveDetail ? `${color}30` : 'rgba(45,44,55,0.06)'}`,
             }}
             onMouseEnter={(e) => {
@@ -132,7 +132,7 @@ export default function ModuleCard({
               if (!isActiveDetail) {
                 (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.03)';
                 (e.currentTarget as HTMLElement).style.borderColor = 'rgba(45,44,55,0.06)';
-                (e.currentTarget as HTMLElement).style.color = '#6b7280';
+                (e.currentTarget as HTMLElement).style.color = 'var(--roi-gray-500)';
               }
             }}
           >
