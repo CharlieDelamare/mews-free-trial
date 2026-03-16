@@ -173,3 +173,25 @@ input[type='checkbox'] { accent-color: var(--mews-indigo); }
 
 /* Misc */
 .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ROI Calculator hero number gradient (replaces teal gradient from source) */
+.gradient-text-teal {
+  background: linear-gradient(135deg, rgba(179,178,251,0.8) 0%, var(--mews-indigo) 50%, rgba(179,178,251,0.6) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ROI Calculator fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+
+/* ROI Calculator scale-in animation (for popovers) */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95) translateX(-50%); }
+  to { opacity: 1; transform: scale(1) translateX(-50%); }
+}
+.animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
