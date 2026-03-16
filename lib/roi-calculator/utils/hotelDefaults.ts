@@ -176,8 +176,8 @@ export function getSmartDefaults(country: string, hotelType: string, usState?: s
   const countryBenchmark = getCountryBenchmark(country);
   // When a U.S. state is selected, overlay state-level data onto the country benchmark
   const stateBenchmark = (country === 'United States' && usState) ? getStateBenchmarkByName(usState) : undefined;
-  const benchmark = stateBenchmark
-    ? { ...countryBenchmark!, average_daily_rate: stateBenchmark.average_daily_rate, hourly_wage: stateBenchmark.hourly_wage, revpar: stateBenchmark.revpar, staff_turnover_rate: stateBenchmark.staff_turnover_rate, occupancy_city: stateBenchmark.occupancy_city }
+  const benchmark = stateBenchmark && countryBenchmark
+    ? { ...countryBenchmark, average_daily_rate: stateBenchmark.average_daily_rate, hourly_wage: stateBenchmark.hourly_wage, revpar: stateBenchmark.revpar, staff_turnover_rate: stateBenchmark.staff_turnover_rate, occupancy_city: stateBenchmark.occupancy_city }
     : countryBenchmark;
   const htBenchmark = getHotelTypeBenchmark(hotelType);
 

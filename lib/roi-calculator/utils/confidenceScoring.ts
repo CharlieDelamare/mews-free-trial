@@ -3,8 +3,8 @@ import type {
   ConfidenceScore,
   ConfidenceStatus,
   FieldConfidence,
+  PriorityInput,
 } from '@/lib/roi-calculator/types/confidence';
-import type { PriorityInput } from '@/lib/roi-calculator/types/confidence';
 
 // ── Build initial confidence map from benchmark defaults ─────────────
 
@@ -24,7 +24,7 @@ export function buildInitialConfidenceMap(
 
 // ── Compute aggregate confidence score ───────────────────────────────
 
-const WEIGHT: Record<string, number> = {
+const WEIGHT: Record<PriorityInput['importance'], number> = {
   critical: 3,
   high: 2,
   medium: 1,
@@ -111,14 +111,14 @@ export const CONFIDENCE_LABELS: Record<ConfidenceScore['level'], {
   'directional': {
     label: 'Directional Estimate',
     description: 'Based primarily on industry benchmarks. Validate key inputs to increase accuracy.',
-    color: '#f59e0b',
-    bgColor: 'rgba(245, 158, 11, 0.08)',
+    color: 'var(--mews-coral)',
+    bgColor: 'rgba(255, 90, 101, 0.1)',
   },
   'indicative': {
     label: 'Indicative Estimate',
     description: 'Some inputs validated. A few key assumptions still need confirmation.',
-    color: '#3b82f6',
-    bgColor: 'rgba(59, 130, 246, 0.08)',
+    color: 'var(--mews-indigo)',
+    bgColor: 'rgba(179, 178, 251, 0.15)',
   },
   'validated': {
     label: 'Validated Estimate',
