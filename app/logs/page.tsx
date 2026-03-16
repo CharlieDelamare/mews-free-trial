@@ -29,6 +29,8 @@ function getLogTypeLabel(type: UnifiedLog['logType']) {
       return { label: 'Scenario', color: 'bg-purple-100 text-purple-700' };
     case 'doors':
       return { label: 'Door Provisioning', color: 'bg-gray-100 text-gray-700' };
+    default:
+      return { label: 'Unknown', color: 'bg-gray-100 text-gray-700' };
   }
 }
 
