@@ -197,3 +197,41 @@ model ApiCallLog {
   @@index([unifiedLogId, group])
   @@index([unifiedLogId, timestamp])
 }
+
+model ControlCentreLog {
+  id             String    @id @default(cuid())
+  logType        String    // 'inspect' | 'morning_prep' | 'auto_checkout' | 'close_overdue_tasks' | 'scenario' | 'doors' | 'import'
+  enterpriseId   String
+  status         String    // 'processing' | 'completed' | 'failed'
+  timestamp      DateTime  @default(now())
+  completedAt    DateTime?
+  errorMessage   String?   @db.Text
+  totalItems     Int?
+  successCount   Int?
+  failureCount   Int?
+  operationDetails Json?
+
+  @@index([enterpriseId])
+  @@index([status])
+  @@index([logType])
+  @@index([timestamp])
+}
+
+model IbeSession {
+  id             String    @id @default(cuid())
+  enterpriseId   String
+  theme          String    // 'luxury' | 'city' | 'resort' | 'conference' | 'budget'
+  reservationId  String?
+  checkIn        String
+  checkOut       String
+  guestCount     Int
+  totalPrice     Float?
+  status         String    // 'searching' | 'booked' | 'failed'
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+  metadata       Json?
+
+  @@index([enterpriseId])
+  @@index([theme])
+  @@index([createdAt])
+}
