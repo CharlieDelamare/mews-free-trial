@@ -31,14 +31,18 @@ export async function getDashboardMetrics(accessToken: string, logId?: string): 
     { Limitation: { Count: 1000 } }
   );
   const resourcesData = await resourcesRes.json();
-  const resources: Array<{ HousekeepingState: string }> = resourcesData.Resources || [];
+  // Filter to Space discriminator only — excludes beds/objects within rooms
+  const resources: Array<{ State: string; Data: { Discriminator: string } }> =
+    (resourcesData.Resources || []).filter(
+      (r: { Data?: { Discriminator?: string } }) => r.Data?.Discriminator === 'Space'
+    );
 
   const rooms: RoomStatusSummary = {
     total: resources.length,
-    clean: resources.filter(r => r.HousekeepingState === 'Clean').length,
-    dirty: resources.filter(r => r.HousekeepingState === 'Dirty').length,
-    inspected: resources.filter(r => r.HousekeepingState === 'Inspected').length,
-    outOfOrder: resources.filter(r => r.HousekeepingState === 'OutOfOrder').length,
+    clean: resources.filter(r => r.State === 'Clean').length,
+    dirty: resources.filter(r => r.State === 'Dirty').length,
+    inspected: resources.filter(r => r.State === 'Inspected').length,
+    outOfOrder: resources.filter(r => r.State === 'OutOfOrder').length,
   };
 
   // 3. Today's arrivals & departures (versioned endpoint with ServiceIds filter)

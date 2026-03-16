@@ -31,7 +31,10 @@ export async function inspectAllRooms(accessToken: string, logId?: string): Prom
     Limitation: { Count: 1000 },
   });
   const data = await res.json();
-  const toInspect: Array<{ Id: string }> = data.Resources || [];
+  // Filter to Space discriminator only — excludes beds/objects within rooms
+  const toInspect: Array<{ Id: string }> = (data.Resources || []).filter(
+    (r: { Data?: { Discriminator?: string } }) => r.Data?.Discriminator === 'Space'
+  );
 
   await Promise.allSettled(
     toInspect.map(async s => {
