@@ -1,7 +1,5 @@
 import { prisma } from './prisma';
-
-// Hardcoded client token for Mews demo environment (fallback)
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
 
 /**
  * Resolves access token from enterpriseId or returns provided token
@@ -54,36 +52,48 @@ export async function fetchReservations(params: {
   serviceId?: string;
   states?: string[];
 }): Promise<{ reservations: any[]; error?: string }> {
-  const apiUrl = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
-  const clientToken = process.env.MEWS_CLIENT_TOKEN || MEWS_CLIENT_TOKEN;
+  const apiUrl = getMewsApiUrl();
+  const clientToken = getMewsClientToken();
+  const PAGE_SIZE = 1000;
 
   try {
     console.log('[RESERVATIONS] Fetching reservations from Mews API...');
-    const response = await fetch(`${apiUrl}/api/connector/v1/reservations/getAll`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ClientToken: clientToken,
-        AccessToken: params.accessToken,
-        Client: 'Mews Sandbox Manager',
-        ServiceIds: params.serviceId ? [params.serviceId] : undefined,
-        States: params.states,
-        Limitation: { Count: 1000 }
-      })
-    });
+    const allReservations: any[] = [];
+    let cursor: string | undefined;
 
-    const data = await response.json();
+    do {
+      const response = await fetch(`${apiUrl}/api/connector/v1/reservations/getAll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: clientToken,
+          AccessToken: params.accessToken,
+          Client: 'Mews Sandbox Manager',
+          ServiceIds: params.serviceId ? [params.serviceId] : undefined,
+          States: params.states,
+          Limitation: {
+            Count: PAGE_SIZE,
+            ...(cursor && { Cursor: cursor })
+          }
+        })
+      });
 
-    if (!response.ok || !data.Reservations) {
-      console.error('[RESERVATIONS] ❌ Failed to fetch reservations:', data);
-      return {
-        reservations: [],
-        error: data.Message || `Failed to fetch reservations: HTTP ${response.status}`
-      };
-    }
+      const data = await response.json();
 
-    console.log(`[RESERVATIONS] ✅ Fetched ${data.Reservations.length} reservations`);
-    return { reservations: data.Reservations };
+      if (!response.ok || !data.Reservations) {
+        console.error('[RESERVATIONS] ❌ Failed to fetch reservations:', data);
+        return {
+          reservations: allReservations,
+          error: data.Message || `Failed to fetch reservations: HTTP ${response.status}`
+        };
+      }
+
+      allReservations.push(...data.Reservations);
+      cursor = data.Cursor && data.Reservations.length === PAGE_SIZE ? data.Cursor : undefined;
+    } while (cursor);
+
+    console.log(`[RESERVATIONS] ✅ Fetched ${allReservations.length} reservations`);
+    return { reservations: allReservations };
   } catch (error) {
     console.error('[RESERVATIONS] ❌ Error fetching reservations:', error);
     return {
@@ -103,8 +113,8 @@ export async function cancelReservation(params: {
   sendEmail?: boolean;
   notes?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const apiUrl = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
-  const clientToken = process.env.MEWS_CLIENT_TOKEN || MEWS_CLIENT_TOKEN;
+  const apiUrl = getMewsApiUrl();
+  const clientToken = getMewsClientToken();
 
   try {
     console.log(`[RESERVATIONS] Canceling reservation: ${params.reservationId}`);

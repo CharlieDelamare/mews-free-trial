@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByPropertyName, updateUnifiedLog } from '@/lib/unified-logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
@@ -32,7 +33,7 @@ interface MewsWebhookPayload {
     AccessToken: string;
     CreatedUtc: string;
     IsEnabled: boolean;
-    Requestor?: any;
+    Requestor?: unknown;
   };
 }
 
@@ -118,6 +119,7 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
 
     return NextResponse.json(
       {
+        success: false,
         error: 'Internal server error processing IntegrationDeleted',
         details: (error as Error).message
       },
@@ -126,11 +128,40 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
   }
 }
 
+
+/**
+ * Verify the webhook secret query parameter using constant-time comparison.
+ * If WEBHOOK_SECRET is not configured, allow all requests (backwards-compatible).
+ */
+function verifyWebhookSecret(request: NextRequest): boolean {
+  const expectedSecret = process.env.WEBHOOK_SECRET;
+  if (!expectedSecret) {
+    return true; // No secret configured, allow all requests
+  }
+
+  const providedSecret = request.nextUrl.searchParams.get('secret') || '';
+  if (providedSecret.length !== expectedSecret.length) {
+    return false;
+  }
+
+  return timingSafeEqual(
+    Buffer.from(providedSecret),
+    Buffer.from(expectedSecret)
+  );
+}
+
 /**
  * POST /api/webhook/access-token
  * Receives access token from hotel creation webhook
  */
 export async function POST(request: NextRequest) {
+  if (!verifyWebhookSecret(request)) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   try {
     const payload: MewsWebhook = await request.json();
 
@@ -145,7 +176,7 @@ export async function POST(request: NextRequest) {
       if (!payload.Data?.Integration?.Id) {
         console.error('[WEBHOOK] Validation failed: Missing Integration.Id');
         return NextResponse.json(
-          { error: 'Missing Integration.Id in IntegrationDeleted payload' },
+          { success: false, error: 'Missing Integration.Id in IntegrationDeleted payload' },
           { status: 400 }
         );
       }
@@ -156,7 +187,7 @@ export async function POST(request: NextRequest) {
     if (payload.Action !== 'IntegrationCreated') {
       console.warn('[WEBHOOK] Unknown action type:', payload.Action);
       return NextResponse.json(
-        { error: `Unsupported webhook action: ${payload.Action}` },
+        { success: false, error: `Unsupported webhook action: ${payload.Action}` },
         { status: 400 }
       );
     }
@@ -172,7 +203,7 @@ export async function POST(request: NextRequest) {
     if (!createdPayload.Data || !createdPayload.Data.AccessToken) {
       console.error('[WEBHOOK] Validation failed: Missing AccessToken');
       return NextResponse.json(
-        { error: 'Missing AccessToken in webhook payload' },
+        { success: false, error: 'Missing AccessToken in webhook payload' },
         { status: 400 }
       );
     }
@@ -180,7 +211,7 @@ export async function POST(request: NextRequest) {
     if (!createdPayload.Data.Enterprise || !createdPayload.Data.Enterprise.Id) {
       console.error('[WEBHOOK] Validation failed: Missing Enterprise data');
       return NextResponse.json(
-        { error: 'Missing Enterprise data in webhook payload' },
+        { success: false, error: 'Missing Enterprise data in webhook payload' },
         { status: 400 }
       );
     }
@@ -256,7 +287,7 @@ export async function POST(request: NextRequest) {
     if (!enterpriseName) {
       console.error('[WEBHOOK] Missing Enterprise.Name in webhook payload');
       return NextResponse.json(
-        { success: false, message: 'Missing enterprise name in webhook' },
+        { success: false, error: 'Missing enterprise name in webhook' },
         { status: 400 }
       );
     }
@@ -385,7 +416,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[Webhook] Error processing access token webhook:', error);
     return NextResponse.json(
-      { error: 'Internal server error processing webhook' },
+      { success: false, error: 'Internal server error processing webhook' },
       { status: 500 }
     );
   }
@@ -413,7 +444,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Webhook] Error retrieving tokens:', error);
     return NextResponse.json(
-      { error: 'Internal server error retrieving tokens' },
+      { success: false, error: 'Internal server error retrieving tokens' },
       { status: 500 }
     );
   }

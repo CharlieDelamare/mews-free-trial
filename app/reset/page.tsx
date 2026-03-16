@@ -182,7 +182,7 @@ export default function ResetSandboxPage() {
                 </p>
               )}
               <p className="text-xs text-gray-500 mt-2">
-                If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
+                If your property isn&apos;t available in the dropdown, please add the &ldquo;Mews Sandbox Manager&rdquo; integration in the Marketplace within Mews.
               </p>
             </div>
 
@@ -190,6 +190,7 @@ export default function ResetSandboxPage() {
             <button
               onClick={handleResetClick}
               disabled={!selectedEnvironment || resetting}
+              aria-busy={resetting}
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || resetting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'

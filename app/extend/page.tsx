@@ -188,6 +188,7 @@ export default function ExtendSandboxPage() {
             <button
               onClick={handleExtendClick}
               disabled={!selectedEnvironment || !newExpirationDate || submitting}
+              aria-busy={submitting}
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || !newExpirationDate || submitting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'

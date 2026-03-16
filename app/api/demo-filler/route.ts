@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveAccessToken } from '@/lib/reservations';
+import { hasActiveOperation } from '@/lib/unified-logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
 import { createDemoFillerLog, updateUnifiedLog } from '@/lib/unified-logger';
 import { log, logError } from '@/lib/force-log';
@@ -178,6 +179,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<DemoFille
           error: 'Access token not found'
         },
         { status: 404 }
+      );
+    }
+
+    // Race condition guard: prevent concurrent demo filler operations
+    if (await hasActiveOperation(tokenRecord.enterpriseId, 'demo_filler')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'A demo filler operation is already in progress for this environment'
+        },
+        { status: 409 }
       );
     }
 

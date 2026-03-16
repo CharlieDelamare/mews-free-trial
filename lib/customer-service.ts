@@ -14,10 +14,7 @@ import { fetchWithRateLimit } from './mews-rate-limiter';
 import { fetchWithRateLimitAndLog } from './api-call-logger';
 import { resolveLanguage, type SupportedLanguage } from './translations/language-utils';
 import { translateNote } from './translations/customer-notes';
-
-// Hardcoded configuration for Mews demo environment
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
-const MEWS_API_URL = 'https://api.mews-demo.com';
+import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
 const CONCURRENCY = 5; // Process 5 customers at a time to avoid overwhelming API
 
 /**
@@ -264,7 +261,7 @@ async function createSingleCustomer(
 ): Promise<CustomerResult> {
   try {
     const requestBody = {
-      ClientToken: MEWS_CLIENT_TOKEN,
+      ClientToken: getMewsClientToken(),
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager - Sample Data',
       FirstName: customer.FirstName,
@@ -282,7 +279,7 @@ async function createSingleCustomer(
 
     const response = logId
       ? await fetchWithRateLimitAndLog(
-          `${MEWS_API_URL}/api/connector/v1/customers/add`,
+          `${getMewsApiUrl()}/api/connector/v1/customers/add`,
           accessToken,
           {
             method: 'POST',
@@ -297,7 +294,7 @@ async function createSingleCustomer(
           }
         )
       : await fetchWithRateLimit(
-          `${MEWS_API_URL}/api/connector/v1/customers/add`,
+          `${getMewsApiUrl()}/api/connector/v1/customers/add`,
           accessToken,
           {
             method: 'POST',

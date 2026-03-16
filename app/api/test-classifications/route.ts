@@ -5,9 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
-const MEWS_API_URL = 'https://api.mews-demo.com';
+import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -15,7 +13,7 @@ export async function GET(request: NextRequest) {
   const enterpriseId = searchParams.get('enterpriseId');
 
   if (!accessToken) {
-    return NextResponse.json({ error: 'accessToken parameter required' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'accessToken parameter required' }, { status: 400 });
   }
 
   const testEmail = `test-${Date.now()}@classifications-test.com`;
@@ -26,11 +24,11 @@ export async function GET(request: NextRequest) {
     console.log('[TEST] Creating test customer with Classifications and Notes...');
 
     // Step 1: Create customer
-    const createResponse = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
+    const createResponse = await fetch(`${getMewsApiUrl()}/api/connector/v1/customers/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
+        ClientToken: getMewsClientToken(),
         AccessToken: accessToken,
         Client: 'Classifications Test',
         FirstName: 'Test',
@@ -59,11 +57,11 @@ export async function GET(request: NextRequest) {
     // Step 3: Retrieve customer
     console.log('[TEST] Fetching customer to verify...');
 
-    const getAllResponse = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/getAll`, {
+    const getAllResponse = await fetch(`${getMewsApiUrl()}/api/connector/v1/customers/getAll`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
+        ClientToken: getMewsClientToken(),
         AccessToken: accessToken,
         Client: 'Classifications Test',
         Extent: {

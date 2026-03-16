@@ -176,13 +176,14 @@ export async function GET(request: NextRequest) {
     const allLogs: TransformedLog[] = [];
 
     // Use Set for O(1) dedup instead of O(n) .some()
-    const seenEnvironmentNames = new Set<string>();
+    const seenEnvironmentKeys = new Set<string>();
 
     for (const log of environmentLogs) {
-      if (seenEnvironmentNames.has(log.propertyName)) {
+      const dedupKey = log.enterpriseId || log.propertyName;
+      if (seenEnvironmentKeys.has(dedupKey)) {
         continue;
       }
-      seenEnvironmentNames.add(log.propertyName);
+      seenEnvironmentKeys.add(dedupKey);
 
       // Build operationDetails from legacy customer/reservation logs
       let operationDetails: any = undefined;
