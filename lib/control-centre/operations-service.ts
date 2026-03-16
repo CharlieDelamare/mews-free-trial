@@ -38,8 +38,9 @@ export async function inspectAllRooms(accessToken: string, logId?: string): Prom
 
   await Promise.allSettled(
     toInspect.map(async s => {
+      // State is a String update value — must be wrapped in { Value: ... }
       const r = await doFetch(`${MEWS_API_URL}/api/connector/v1/resources/update`, {
-        ResourceUpdates: [{ ResourceId: s.Id, State: 'Inspected' }],
+        ResourceUpdates: [{ ResourceId: s.Id, State: { Value: 'Inspected' } }],
       });
       if (r.ok) {
         result.successCount++;
@@ -73,24 +74,23 @@ export async function morningPrep(accessToken: string, logId?: string): Promise<
     Limitation: { Count: 1000 },
   });
   const arrivalsData = await arrivalsRes.json();
-  const reservations: Array<{ Id: string; ScheduledStartUtc: string; ScheduledEndUtc: string }> =
-    arrivalsData.Reservations || [];
+  const reservations: Array<{ Id: string }> = arrivalsData.Reservations || [];
 
-  // Fix times to 07:30 check-in / 06:00 check-out
+  // Fix times to 07:30 check-in / 06:00 check-out (next day)
   const dateStr = now.toISOString().split('T')[0];
   const checkInTime = `${dateStr}T07:30:00Z`;
-  const checkOutTime = new Date(now);
-  checkOutTime.setDate(checkOutTime.getDate() + 1);
-  const checkOutStr = checkOutTime.toISOString().split('T')[0];
-  const checkOutTimeStr = `${checkOutStr}T06:00:00Z`;
+  const checkOutDate = new Date(now);
+  checkOutDate.setDate(checkOutDate.getDate() + 1);
+  const checkOutTimeStr = `${checkOutDate.toISOString().split('T')[0]}T06:00:00Z`;
 
   await Promise.allSettled(
     reservations.map(async r => {
+      // ChargeCancellationFee is required by the API
       const updateRes = await doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/updateInterval`, {
         ReservationId: r.Id,
         StartUtc: checkInTime,
         EndUtc: checkOutTimeStr,
-        SendEmail: false,
+        ChargeCancellationFee: false,
       });
       if (updateRes.ok) result.successCount++;
       else {
@@ -118,24 +118,27 @@ export async function closeOverdueTasks(accessToken: string, logId?: string): Pr
   });
   const tasksData = await tasksRes.json();
   const now = new Date().toISOString();
-  const overdue = (tasksData.Tasks || []).filter(
+  const overdue: Array<{ Id: string }> = (tasksData.Tasks || []).filter(
     (t: { DeadlineUtc: string | null; State: string }) =>
       t.DeadlineUtc && t.DeadlineUtc < now && t.State !== 'Closed'
   );
 
-  await Promise.allSettled(
-    overdue.map(async (t: { Id: string }) => {
-      const r = await doFetch(`${MEWS_API_URL}/api/connector/v1/tasks/update`, {
-        TaskId: t.Id,
-        State: 'Closed',
-      });
-      if (r.ok) result.successCount++;
-      else {
-        result.failureCount++;
-        result.errors.push(`Failed to close task ${t.Id}`);
-      }
-    })
-  );
+  if (overdue.length === 0) return result;
+
+  // tasks/close accepts up to 100 TaskIds per call — batch accordingly
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < overdue.length; i += BATCH_SIZE) {
+    const batch = overdue.slice(i, i + BATCH_SIZE);
+    const r = await doFetch(`${MEWS_API_URL}/api/connector/v1/tasks/close`, {
+      TaskIds: batch.map(t => t.Id),
+    });
+    if (r.ok) {
+      result.successCount += batch.length;
+    } else {
+      result.failureCount += batch.length;
+      result.errors.push(`Failed to close batch of ${batch.length} tasks`);
+    }
+  }
 
   return result;
 }
@@ -163,9 +166,12 @@ export async function autoCheckout(accessToken: string, logId?: string): Promise
 
   await Promise.allSettled(
     reservations.map(async r => {
+      // ReservationId is singular; CloseBills avoids open balance failures
       const processRes = await doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/process`, {
-        ReservationIds: [r.Id],
-        SendEmail: false,
+        ReservationId: r.Id,
+        CloseBills: true,
+        AllowOpenBalance: true,
+        Notes: 'Auto checkout via Control Centre',
       });
       if (processRes.ok) result.successCount++;
       else {
