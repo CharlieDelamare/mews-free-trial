@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Calculator } from 'lucide-react';
 
 const sandboxLinks = [
   {
@@ -208,6 +209,18 @@ export function Navbar() {
             </p>
             <div className="space-y-0.5">
               {renderLinks(operationLinks)}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 mb-1">Tools</p>
+            <div className="space-y-1">
+              <Link key="/roi-calculator" href="/roi-calculator" onClick={close} className={linkClasses('/roi-calculator')}>
+                <span className="flex items-center gap-2">
+                  <Calculator className="h-4 w-4" />
+                  ROI Calculator
+                </span>
+              </Link>
             </div>
           </div>
 

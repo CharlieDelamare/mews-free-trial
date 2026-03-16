@@ -68,7 +68,7 @@ export default function ROIStage() {
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
     (slice: string, field: string): number => {
-      const sliceData = state[slice as keyof typeof state] as Record<string, unknown>;
+      const sliceData = state[slice as keyof typeof state] as unknown as Record<string, unknown>;
       return (sliceData?.[field] as number) ?? 0;
     },
     [state],
@@ -212,6 +212,7 @@ export default function ROIStage() {
                 numberOfChannels: rms.numberOfChannels,
                 avgTimeToUpdateRate: rms.avgTimeToUpdateRate,
                 hasRevenueManager: rms.hasRevenueManager,
+                hasExistingRMS: rms.hasExistingRMS,
                 estimatedRevenueUplift: results.rms.estimatedRevenueUplift,
               },
               annualRevenueGain: results.rms.annualRevenueGain,
