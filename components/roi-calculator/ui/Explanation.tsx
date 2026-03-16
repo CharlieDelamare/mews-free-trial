@@ -1,0 +1,29 @@
+'use client';
+
+interface ExplanationProps {
+  title: string;
+  description: string;
+}
+
+export default function Explanation({ title, description }: ExplanationProps) {
+  return (
+    <div
+      className="mt-6 rounded-xl p-5"
+      style={{
+        background: 'rgba(45,44,55,0.03)',
+        border: '1px solid rgba(45,44,55,0.07)',
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div
+          className="w-1 h-4 rounded-full flex-shrink-0"
+          style={{ background: 'linear-gradient(to bottom, var(--mews-indigo), #4d8a96)' }}
+        />
+        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+          {title}
+        </h4>
+      </div>
+      <p className="text-gray-500 text-sm leading-relaxed pl-3">{description}</p>
+    </div>
+  );
+}
