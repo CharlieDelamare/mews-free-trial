@@ -229,7 +229,7 @@ function ControlCentreContent() {
 
       {/* Manual Add Modal */}
       {showManualAdd && (
-        <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center p-4 z-50" onClick={() => setShowManualAdd(false)}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={() => setShowManualAdd(false)}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-gray-900 mb-1">Add existing environment</h2>
             <p className="text-sm text-gray-500 mb-5">Paste an access token to add an environment without waiting for the webhook.</p>
