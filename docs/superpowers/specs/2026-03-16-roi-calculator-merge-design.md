@@ -111,6 +111,20 @@ Add to `mews-free-trial/package.json`:
 "lucide-react": "^0.344.0"
 ```
 
+Add `lucide-react` to `optimizePackageImports` in `next.config.js` (it's heavily used across ported components):
+
+```js
+optimizePackageImports: ['react', 'react-dom', 'date-fns', 'date-fns-tz', 'lucide-react'],
+```
+
+**SSR safety — dynamic imports for `html2canvas` and `jspdf`:** These packages access browser globals (`window`, `document`) at module evaluation time and will cause Next.js build failures if imported statically. In `ROIStage.tsx`, replace the static imports at the top of the file with inline dynamic imports inside the PDF export handler:
+
+```ts
+// Instead of: import html2canvas from 'html2canvas'; import { jsPDF } from 'jspdf';
+const html2canvas = (await import('html2canvas')).default;
+const { jsPDF } = await import('jspdf');
+```
+
 ---
 
 ## CSS Integration
@@ -119,18 +133,19 @@ Merge into `app/globals.css`:
 
 **Keep from ROI Calculator `index.css`:**
 - Scrollbar utilities: `.scrollbar-hide`, `.scrollbar-thin`
-- Animation keyframes: `fadeIn`, `slideUp`, `sectionReveal`, `shimmer`
+- Animation keyframes: `slideUp`, `sectionReveal`, `shimmer` (see conflict note below)
 - Stagger delay helpers: `.stagger-1`, `.stagger-2`, `.stagger-3`
 - Range slider thumb styles (updated to use Mews indigo)
 - `.card` base style
 - `.tabular-nums`
-- `.animate-fade-in`, `.animate-slide-up`, `.section-content`
+- `.animate-slide-up`, `.section-content`
 
 **Discard:**
 - `hero-gradient` (dark-theme background)
 - `.glass`, `.glass-navy`, `.glass-dark` (glassmorphism — not used after retheme)
 - `gradient-text`, `gradient-text-teal` (teal gradient — not used after retheme)
 - `--color-navy`, `--color-teal` CSS variables (replaced inline with Mews tokens)
+- `fadeIn` keyframe and `.animate-fade-in` — **conflict**: `tailwind.config.js` already defines `fadeIn` (with `translateY(8px)`) and exposes it as the `animate-fade-in` Tailwind class. Use the existing Tailwind definition throughout ported components instead.
 
 ---
 
@@ -165,6 +180,21 @@ Tools        → ROI Calculator        ← new
 ─────────────────────────────────────
 Logs
 ```
+
+---
+
+## Import Paths
+
+All ported files use relative imports (e.g. `'../types/calculator'`, `'../../utils/calculations'`). These must be rewritten to absolute `@/` paths during the port:
+
+| Original relative path | New absolute path |
+|---|---|
+| `../types/calculator` | `@/lib/roi-calculator/types/calculator` |
+| `../utils/calculations` | `@/lib/roi-calculator/utils/calculations` |
+| `../hooks/useROICalculator` | `@/hooks/useROICalculator` |
+| `../translations` | `@/lib/roi-calculator/translations` |
+| `./ui/ExportModal` | `@/components/roi-calculator/ui/ExportModal` |
+| *(etc.)* | *(follow the same pattern)* |
 
 ---
 
