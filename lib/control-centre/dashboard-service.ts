@@ -25,20 +25,20 @@ export async function getDashboardMetrics(accessToken: string, logId?: string): 
   const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
   const serviceIds = services.map(s => s.id);
 
-  // 2. Room occupancy state
-  const occupancyRes = await doFetch(
-    `${MEWS_API_URL}/api/connector/v1/resources/getOccupancyState`,
-    {}
+  // 2. Room housekeeping state via resources/getAll
+  const resourcesRes = await doFetch(
+    `${MEWS_API_URL}/api/connector/v1/resources/getAll`,
+    { Limitation: { Count: 1000 } }
   );
-  const occupancyData = await occupancyRes.json();
-  const states: Array<{ State: string }> = occupancyData.ResourceOccupancyStates || [];
+  const resourcesData = await resourcesRes.json();
+  const resources: Array<{ HousekeepingState: string }> = resourcesData.Resources || [];
 
   const rooms: RoomStatusSummary = {
-    total: states.length,
-    clean: states.filter(s => s.State === 'Clean').length,
-    dirty: states.filter(s => s.State === 'Dirty').length,
-    inspected: states.filter(s => s.State === 'Inspected').length,
-    outOfOrder: states.filter(s => s.State === 'OutOfOrder').length,
+    total: resources.length,
+    clean: resources.filter(r => r.HousekeepingState === 'Clean').length,
+    dirty: resources.filter(r => r.HousekeepingState === 'Dirty').length,
+    inspected: resources.filter(r => r.HousekeepingState === 'Inspected').length,
+    outOfOrder: resources.filter(r => r.HousekeepingState === 'OutOfOrder').length,
   };
 
   // 3. Today's arrivals & departures (versioned endpoint with ServiceIds filter)

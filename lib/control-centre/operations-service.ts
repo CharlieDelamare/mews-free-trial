@@ -26,22 +26,23 @@ export async function inspectAllRooms(accessToken: string, logId?: string): Prom
   const doFetch = postFetch(accessToken, logId);
   const result: OperationResult = { successCount: 0, failureCount: 0, errors: [] };
 
-  const res = await doFetch(`${MEWS_API_URL}/api/connector/v1/resources/getOccupancyState`, {});
+  const res = await doFetch(`${MEWS_API_URL}/api/connector/v1/resources/getAll`, {
+    States: ['Dirty', 'Clean'],
+    Limitation: { Count: 1000 },
+  });
   const data = await res.json();
-  const states: Array<{ ResourceId: string; State: string }> = data.ResourceOccupancyStates || [];
-
-  const toInspect = states.filter(s => s.State === 'Dirty' || s.State === 'Clean');
+  const toInspect: Array<{ Id: string }> = data.Resources || [];
 
   await Promise.allSettled(
     toInspect.map(async s => {
       const r = await doFetch(`${MEWS_API_URL}/api/connector/v1/resources/update`, {
-        ResourceUpdates: [{ ResourceId: s.ResourceId, HousekeepingStateUpdates: { Value: 'Inspected' } }],
+        ResourceUpdates: [{ ResourceId: s.Id, State: 'Inspected' }],
       });
       if (r.ok) {
         result.successCount++;
       } else {
         result.failureCount++;
-        result.errors.push(`Failed to inspect room ${s.ResourceId}`);
+        result.errors.push(`Failed to inspect room ${s.Id}`);
       }
     })
   );

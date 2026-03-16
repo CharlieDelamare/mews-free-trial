@@ -1,3 +1,4 @@
+import { fetchBookableServices } from '@/lib/mews-data-service';
 import type { DoorAssignment, DoorsResult, DoorsProvisionResult } from '@/types/control-centre';
 
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
@@ -93,12 +94,17 @@ export async function provisionDoors(
 export async function recoverSplitDoors(accessToken: string): Promise<DoorsProvisionResult> {
   const result: DoorsProvisionResult = { successCount: 0, failureCount: 0, errors: [] };
 
-  // Fetch all split reservations (Started state, multiple segments)
-  const res = await fetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll`, {
+  // Fetch service IDs required by the versioned reservations endpoint
+  const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
+  const serviceIds = services.map(s => s.id);
+
+  // Fetch all started reservations using the versioned endpoint
+  const res = await fetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ...buildAuth(accessToken),
+      ServiceIds: serviceIds,
       States: ['Started'],
       Limitation: { Count: 1000 },
     }),

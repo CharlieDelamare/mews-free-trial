@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
           const reservations = batch.map(row => ({
             ServiceId: mewsData.serviceId,
             RateId: mewsData.rates[0]?.id,
-            ResourceCategoryId: mewsData.resourceCategories[0]?.id,
+            RequestedCategoryId: mewsData.resourceCategories[0]?.id,
             StartUtc: `${row.CheckIn}T14:00:00Z`,
             EndUtc: `${row.CheckOut}T11:00:00Z`,
-            GuestCounts: [{ AgeCategoryId: mewsData.ageCategories.adult, Count: row.GuestCount }],
+            PersonCounts: [{ AgeCategoryId: mewsData.ageCategories.adult, Count: row.GuestCount }],
             BookerFirstName: row.GuestFirstName,
             BookerLastName: row.GuestLastName,
           }));

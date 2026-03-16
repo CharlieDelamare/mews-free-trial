@@ -111,6 +111,9 @@ export async function bookIbeReservation(
   accessToken: string,
   params: IbeBookParams
 ): Promise<IbeBookResult> {
+  // Fetch age category ID for this service
+  const mewsData = await fetchMewsData(CLIENT_TOKEN, accessToken, { serviceId: params.serviceId });
+
   const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
   const res = await fetch(url, {
     method: 'POST',
@@ -123,10 +126,10 @@ export async function bookIbeReservation(
         {
           ServiceId: params.serviceId,
           RateId: params.rateId,
-          ResourceCategoryId: params.resourceCategoryId,
+          RequestedCategoryId: params.resourceCategoryId,
           StartUtc: `${params.checkIn}T14:00:00Z`,
           EndUtc: `${params.checkOut}T11:00:00Z`,
-          GuestCounts: [{ AgeCategoryId: null, Count: params.guestCount }],
+          PersonCounts: [{ AgeCategoryId: mewsData.ageCategories.adult, Count: params.guestCount }],
           BookerEmail: params.guestEmail,
           BookerFirstName: params.guestFirstName,
           BookerLastName: params.guestLastName,

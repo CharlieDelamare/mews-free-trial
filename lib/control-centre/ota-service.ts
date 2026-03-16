@@ -37,10 +37,10 @@ export async function simulateOtaBooking(
           {
             ServiceId: mewsData.serviceId,
             RateId: rate.id,
-            ResourceCategoryId: category.id,
+            RequestedCategoryId: category.id,
             StartUtc: `${params.checkIn}T14:00:00Z`,
             EndUtc: `${params.checkOut}T11:00:00Z`,
-            GuestCounts: [{ AgeCategoryId: null, Count: params.guestCount }],
+            PersonCounts: [{ AgeCategoryId: mewsData.ageCategories.adult, Count: params.guestCount }],
             ChannelName: OTA_SOURCE_NAMES[params.channel] || params.channel,
           },
         ],
