@@ -1,4 +1,5 @@
 import { loggedFetch } from '@/lib/api-call-logger';
+import { fetchBookableServices } from '@/lib/mews-data-service';
 import type { DashboardMetrics, RoomStatusSummary } from '@/types/control-centre';
 
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
@@ -20,7 +21,11 @@ export async function getDashboardMetrics(accessToken: string, logId?: string): 
       ? loggedFetch(url, fetchOpts(body), { unifiedLogId: logId, group: 'setup' })
       : fetch(url, fetchOpts(body));
 
-  // 1. Room occupancy state
+  // 1. Fetch bookable service IDs (required for versioned reservations endpoint)
+  const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
+  const serviceIds = services.map(s => s.id);
+
+  // 2. Room occupancy state
   const occupancyRes = await doFetch(
     `${MEWS_API_URL}/api/connector/v1/resources/getOccupancyState`,
     {}
@@ -36,15 +41,18 @@ export async function getDashboardMetrics(accessToken: string, logId?: string): 
     outOfOrder: states.filter(s => s.State === 'OutOfOrder').length,
   };
 
-  // 2. Today's arrivals & departures
+  // 3. Today's arrivals & departures (versioned endpoint with ServiceIds filter)
   const now = new Date();
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
+  const reservationsUrl = `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`;
+
   const [arrivalsRes, departuresRes] = await Promise.all([
-    doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll`, {
+    doFetch(reservationsUrl, {
+      ServiceIds: serviceIds,
       ScheduledStartUtc: {
         StartUtc: todayStart.toISOString(),
         EndUtc: todayEnd.toISOString(),
@@ -52,7 +60,8 @@ export async function getDashboardMetrics(accessToken: string, logId?: string): 
       States: ['Confirmed'],
       Limitation: { Count: 1000 },
     }),
-    doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll`, {
+    doFetch(reservationsUrl, {
+      ServiceIds: serviceIds,
       ScheduledEndUtc: {
         StartUtc: todayStart.toISOString(),
         EndUtc: todayEnd.toISOString(),
@@ -68,7 +77,7 @@ export async function getDashboardMetrics(accessToken: string, logId?: string): 
   const departuresToday: number = (departuresData.Reservations || []).length;
   const checkedInCount: number = departuresToday; // Started = checked-in
 
-  // 3. Overdue tasks
+  // 4. Overdue tasks
   const tasksRes = await doFetch(`${MEWS_API_URL}/api/connector/v1/tasks/getAll`, {
     Limitation: { Count: 1000 },
   });

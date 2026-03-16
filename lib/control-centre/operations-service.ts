@@ -1,4 +1,5 @@
 import { loggedFetch } from '@/lib/api-call-logger';
+import { fetchBookableServices } from '@/lib/mews-data-service';
 import type { OperationResult } from '@/types/control-centre';
 
 const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
@@ -52,12 +53,17 @@ export async function morningPrep(accessToken: string, logId?: string): Promise<
   const doFetch = postFetch(accessToken, logId);
   const result: OperationResult = { successCount: 0, failureCount: 0, errors: [] };
 
+  // Fetch bookable service IDs (required for versioned reservations endpoint)
+  const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
+  const serviceIds = services.map(s => s.id);
+
   // Fix check-in/check-out times for today's reservations
   const now = new Date();
   const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(now); todayEnd.setHours(23, 59, 59, 999);
 
-  const arrivalsRes = await doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll`, {
+  const arrivalsRes = await doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
+    ServiceIds: serviceIds,
     ScheduledStartUtc: { StartUtc: todayStart.toISOString(), EndUtc: todayEnd.toISOString() },
     States: ['Confirmed', 'Started'],
     Limitation: { Count: 1000 },
@@ -134,11 +140,16 @@ export async function autoCheckout(accessToken: string, logId?: string): Promise
   const doFetch = postFetch(accessToken, logId);
   const result: OperationResult = { successCount: 0, failureCount: 0, errors: [] };
 
+  // Fetch bookable service IDs (required for versioned reservations endpoint)
+  const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
+  const serviceIds = services.map(s => s.id);
+
   const now = new Date();
   const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(now); todayEnd.setHours(23, 59, 59, 999);
 
-  const res = await doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll`, {
+  const res = await doFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
+    ServiceIds: serviceIds,
     ScheduledEndUtc: { StartUtc: todayStart.toISOString(), EndUtc: todayEnd.toISOString() },
     States: ['Started'],
     Limitation: { Count: 1000 },
