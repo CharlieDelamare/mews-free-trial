@@ -134,7 +134,7 @@ export default function SharedVariablesSection({
               <p className="text-3xl font-bold text-gray-900 tabular-nums">{reservationsPerMonth.toLocaleString()}</p>
               <div
                 className="flex items-center gap-1.5 mt-3 text-xs rounded-lg px-3 py-2 flex-wrap"
-                style={{ background: 'rgba(28,29,36,0.04)', color: '#6b7280' }}
+                style={{ background: 'rgba(28,29,36,0.04)', color: 'var(--roi-gray-500)' }}
               >
                 <span className="font-semibold text-gray-700">{numberOfRooms}</span>
                 <span>rooms</span>
@@ -159,7 +159,7 @@ export default function SharedVariablesSection({
               </p>
               <div
                 className="flex items-center gap-1.5 mt-3 text-xs rounded-lg px-3 py-2 flex-wrap"
-                style={{ background: 'rgba(28,29,36,0.04)', color: '#6b7280' }}
+                style={{ background: 'rgba(28,29,36,0.04)', color: 'var(--roi-gray-500)' }}
               >
                 <span className="font-semibold text-gray-700">{numberOfRooms}</span>
                 <span>rooms</span>

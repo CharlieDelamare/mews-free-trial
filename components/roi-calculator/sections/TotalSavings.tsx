@@ -15,7 +15,7 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
     <div
       className="relative overflow-hidden rounded-2xl"
       style={{
-        background: 'linear-gradient(135deg, #002347 0%, var(--mews-night-black) 50%, #004080 100%)',
+        background: 'linear-gradient(135deg, var(--roi-navy-dark) 0%, var(--mews-night-black) 50%, var(--roi-navy-mid) 100%)',
         boxShadow: '0 8px 32px rgba(0,35,71,0.25), 0 2px 8px rgba(0,0,0,0.15)',
       }}
     >
@@ -114,7 +114,7 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
             style={{
               background: 'linear-gradient(135deg, rgba(179,178,251,0.18) 0%, rgba(179,178,251,0.28) 100%)',
               border: '1.5px solid rgba(179,178,251,0.45)',
-              color: '#ffffff',
+              color: 'var(--roi-white)',
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(179,178,251,0.30) 0%, rgba(179,178,251,0.42) 100%)';

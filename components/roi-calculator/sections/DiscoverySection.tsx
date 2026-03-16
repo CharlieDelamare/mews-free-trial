@@ -48,9 +48,9 @@ interface ConversationQuestion {
 
 const TYPE_STYLES: Record<QuestionType, { bg: string; color: string }> = {
   open:      { bg: 'rgba(179,178,251,0.12)',    color: 'var(--mews-indigo)' },
-  probe:     { bg: 'rgba(139,92,246,0.12)',   color: '#7C3AED' },
-  benchmark: { bg: 'rgba(16,185,129,0.12)',   color: '#059669' },
-  quantify:  { bg: 'rgba(249,115,22,0.12)',   color: '#EA580C' },
+  probe:     { bg: 'rgba(139,92,246,0.12)',   color: 'var(--roi-module-probe)' },
+  benchmark: { bg: 'rgba(16,185,129,0.12)',   color: 'var(--mews-success-dark)' },
+  quantify:  { bg: 'rgba(249,115,22,0.12)',   color: 'var(--roi-slider-orange)' },
 };
 
 /* ── Styled input helpers ──────────────────────────────────────────── */
@@ -86,7 +86,7 @@ function DiscoveryInput({
         onBlur={(e)  => { e.currentTarget.style.borderColor = 'rgba(45,44,55,0.15)'; e.currentTarget.style.background = 'rgba(45,44,55,0.04)'; }}
       />
       {benchmark && (
-        <p className="text-xs flex items-center gap-1" style={{ color: '#059669' }}>
+        <p className="text-xs flex items-center gap-1" style={{ color: 'var(--mews-success-dark)' }}>
           <span className="font-bold">Benchmark:</span> {benchmark}
         </p>
       )}
@@ -297,7 +297,7 @@ function StepHeader({ icon, category, title, stepNum }: { icon: React.ReactNode;
     <div className="flex items-center gap-4 mb-5">
       <div
         className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-        style={{ background: 'linear-gradient(135deg, #002347, var(--mews-night-black))', boxShadow: '0 4px 12px rgba(0,35,71,0.20)' }}
+        style={{ background: 'linear-gradient(135deg, var(--roi-navy-dark), var(--mews-night-black))', boxShadow: '0 4px 12px rgba(0,35,71,0.20)' }}
       >
         {icon}
       </div>
@@ -507,7 +507,7 @@ export default function DiscoverySection({
               <div className="rounded-xl p-3" style={{ background: 'white', border: '1px solid rgba(45,44,55,0.10)' }}>
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Reservations / Month</p>
                 <p className="text-2xl font-bold text-gray-900 tabular-nums">{derivedReservations.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-2 text-xs flex-wrap" style={{ color: '#6b7280' }}>
+                <div className="flex items-center gap-1 mt-2 text-xs flex-wrap" style={{ color: 'var(--roi-gray-500)' }}>
                   <span className="font-semibold text-gray-700">{sharedVariables.numberOfRooms}</span>
                   <span>rooms</span>
                   <ArrowRight className="w-3 h-3 flex-shrink-0" />
@@ -521,7 +521,7 @@ export default function DiscoverySection({
               <div className="rounded-xl p-3" style={{ background: 'white', border: '1px solid rgba(45,44,55,0.10)' }}>
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Monthly Room Revenue</p>
                 <p className="text-2xl font-bold text-gray-900 tabular-nums">{currencySymbol}{derivedRevenue.toLocaleString()}</p>
-                <div className="flex items-center gap-1 mt-2 text-xs flex-wrap" style={{ color: '#6b7280' }}>
+                <div className="flex items-center gap-1 mt-2 text-xs flex-wrap" style={{ color: 'var(--roi-gray-500)' }}>
                   <span className="font-semibold text-gray-700">{sharedVariables.numberOfRooms}</span>
                   <span>rooms</span>
                   <ArrowRight className="w-3 h-3 flex-shrink-0" />
@@ -948,7 +948,7 @@ export default function DiscoverySection({
       {/* Header */}
       <div
         className="flex items-center justify-between gap-4 px-6 py-4"
-        style={{ background: 'linear-gradient(135deg, #002347 0%, var(--mews-night-black) 50%, #004080 100%)', borderBottom: '1px solid rgba(179,178,251,0.2)' }}
+        style={{ background: 'linear-gradient(135deg, var(--roi-navy-dark) 0%, var(--mews-night-black) 50%, var(--roi-navy-mid) 100%)', borderBottom: '1px solid rgba(179,178,251,0.2)' }}
       >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(179,178,251,0.2)', border: '1px solid rgba(179,178,251,0.35)' }}>
@@ -990,7 +990,7 @@ export default function DiscoverySection({
           onClick={goPrev}
           disabled={step === 1}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: 'rgba(45,44,55,0.07)', border: '1px solid rgba(45,44,55,0.12)', color: '#374151' }}
+          style={{ background: 'rgba(45,44,55,0.07)', border: '1px solid rgba(45,44,55,0.12)', color: 'var(--roi-gray-700)' }}
           onMouseEnter={(e) => { if (step !== 1) (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.13)'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.07)'; }}
         >
@@ -1000,7 +1000,7 @@ export default function DiscoverySection({
 
         <div className="text-center">
           {step === TOTAL_STEPS ? (
-            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#059669' }}>
+            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--mews-success-dark)' }}>
               <CheckCircle2 className="w-4 h-4" />
               Discovery complete — ROI updated
             </div>

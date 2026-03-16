@@ -105,7 +105,7 @@ function CountryCombobox({
         <div
           className="absolute z-50 w-full mt-1.5 rounded-xl overflow-hidden"
           style={{
-            background: '#ffffff',
+            background: 'var(--roi-white)',
             boxShadow: '0 8px 32px rgba(28,29,36,0.18), 0 2px 8px rgba(0,0,0,0.1)',
             border: '1px solid rgba(28,29,36,0.08)',
             maxHeight: '220px',
@@ -124,7 +124,7 @@ function CountryCombobox({
                   className="w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors duration-100"
                   style={{
                     background: isSelected ? 'rgba(179,178,251,0.1)' : 'transparent',
-                    color: isSelected ? 'var(--mews-indigo)' : '#374151',
+                    color: isSelected ? 'var(--mews-indigo)' : 'var(--roi-gray-700)',
                     fontWeight: isSelected ? 600 : 400,
                   }}
                   onMouseEnter={(e) => {
@@ -249,7 +249,7 @@ function StateCombobox({
         <div
           className="absolute z-50 w-full mt-1.5 rounded-xl overflow-hidden"
           style={{
-            background: '#ffffff',
+            background: 'var(--roi-white)',
             boxShadow: '0 8px 32px rgba(28,29,36,0.18), 0 2px 8px rgba(0,0,0,0.1)',
             border: '1px solid rgba(28,29,36,0.08)',
             maxHeight: '220px',
@@ -262,7 +262,7 @@ function StateCombobox({
             className="w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors duration-100 border-b"
             style={{
               background: !usState ? 'rgba(179,178,251,0.1)' : 'transparent',
-              color: !usState ? 'var(--mews-indigo)' : '#6b7280',
+              color: !usState ? 'var(--mews-indigo)' : 'var(--roi-gray-500)',
               fontWeight: !usState ? 600 : 400,
               borderColor: 'rgba(28,29,36,0.06)',
               fontStyle: 'italic',
@@ -288,7 +288,7 @@ function StateCombobox({
                   className="w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors duration-100"
                   style={{
                     background: isSelected ? 'rgba(179,178,251,0.1)' : 'transparent',
-                    color: isSelected ? 'var(--mews-indigo)' : '#374151',
+                    color: isSelected ? 'var(--mews-indigo)' : 'var(--roi-gray-700)',
                     fontWeight: isSelected ? 600 : 400,
                   }}
                   onMouseEnter={(e) => {
@@ -327,7 +327,7 @@ export default function HotelConfigSection({
     <div
       className="relative overflow-hidden rounded-2xl mb-6"
       style={{
-        background: 'linear-gradient(135deg, #002347 0%, var(--mews-night-black) 40%, #1a4e8c 100%)',
+        background: 'linear-gradient(135deg, var(--roi-navy-dark) 0%, var(--mews-night-black) 40%, var(--roi-navy-light) 100%)',
         boxShadow: '0 8px 32px rgba(0,35,71,0.3), 0 2px 8px rgba(0,0,0,0.2)',
       }}
     >

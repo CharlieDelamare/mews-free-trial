@@ -62,6 +62,13 @@
   --roi-gray-400: #9ca3af;
   --roi-gray-500: #6b7280;
   --roi-gray-700: #374151;
+
+  /* ROI Calculator navy gradient tokens */
+  --roi-navy-dark: #002347;
+  --roi-navy-mid: #004080;
+  --roi-navy-light: #1a4e8c;
+  /* ROI Calculator module color — Discovery probe type */
+  --roi-module-probe: #7C3AED;
 }
 
 /* Reset native dialog browser defaults for custom styling */
