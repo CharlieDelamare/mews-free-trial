@@ -46,6 +46,9 @@
   --roi-neutral-border: #d1d5db;     /* Light gray border */
   --roi-white: #ffffff;              /* Pure white (only where --mews-white can't be used inline) */
 
+  /* ROI Calculator TotalSavings highlight (cyan used for savings figure on dark bg) */
+  --roi-savings-highlight: #00d4ff;
+
   /* ROI Calculator slider color variants */
   --roi-slider-yellow: #EDFE77;
   --roi-slider-yellow-text: #6B7700;
