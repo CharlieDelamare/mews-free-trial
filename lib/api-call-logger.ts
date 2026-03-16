@@ -24,7 +24,8 @@ export type ApiCallGroup =
   | 'reservations'
   | 'state_transitions'
   | 'tasks'
-  | 'bills';
+  | 'bills'
+  | 'rooms';
 
 export interface ApiCallLogContext {
   unifiedLogId: string;

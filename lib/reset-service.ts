@@ -174,16 +174,227 @@ async function cancelReservationsInBatches(
 }
 
 /**
+ * Process (check out) reservations in batches (max 1000 per request)
+ */
+async function processReservationsInBatches(
+  accessToken: string,
+  reservationIds: string[],
+  logId?: string
+): Promise<{ successCount: number; failureCount: number }> {
+  if (reservationIds.length === 0) {
+    return { successCount: 0, failureCount: 0 };
+  }
+
+  let successCount = 0;
+  let failureCount = 0;
+  const batchSize = 1000;
+
+  for (let i = 0; i < reservationIds.length; i += batchSize) {
+    const batch = reservationIds.slice(i, i + batchSize);
+    const batchNumber = Math.floor(i / batchSize) + 1;
+    const totalBatches = Math.ceil(reservationIds.length / batchSize);
+
+    console.log(
+      `[RESET-SERVICE] Processing (checkout) batch ${batchNumber}/${totalBatches} (${batch.length} reservations)...`
+    );
+
+    try {
+      const url = `${MEWS_API_URL}/api/connector/v1/reservations/process`;
+      const fetchOptions: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Mews Sandbox Manager',
+          ReservationIds: batch
+        })
+      };
+
+      const response = logId
+        ? await loggedFetch(url, fetchOptions, {
+            unifiedLogId: logId,
+            group: 'state_transitions',
+            endpoint: 'reservations/process',
+            metadata: { batchNumber, totalBatches, batchSize: batch.length }
+          })
+        : await fetch(url, fetchOptions);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error(
+          `[RESET-SERVICE] Process batch ${batchNumber} failed: ${errorData.Message || response.statusText}`
+        );
+        failureCount += batch.length;
+        continue;
+      }
+
+      successCount += batch.length;
+      console.log(`[RESET-SERVICE] ✓ Process batch ${batchNumber} checked out successfully`);
+    } catch (error) {
+      console.error(`[RESET-SERVICE] Error processing batch ${batchNumber}:`, error);
+      failureCount += batch.length;
+    }
+  }
+
+  return { successCount, failureCount };
+}
+
+interface Resource {
+  Id: string;
+  [key: string]: any;
+}
+
+/**
+ * Fetch all resources (rooms/spaces) for the enterprise
+ */
+async function fetchAllResources(
+  accessToken: string,
+  logId?: string
+): Promise<{ resources: Resource[]; error?: string }> {
+  const allResources: Resource[] = [];
+  let cursor: string | null = null;
+  let pageCount = 0;
+
+  try {
+    do {
+      pageCount++;
+      console.log(`[RESET-SERVICE] Fetching resources page ${pageCount}...`);
+
+      const url = `${MEWS_API_URL}/api/connector/v1/resources/getAll`;
+      const fetchOptions: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Mews Sandbox Manager',
+          Extent: { Resources: true },
+          Limitation: {
+            Count: 1000,
+            ...(cursor && { Cursor: cursor })
+          }
+        })
+      };
+
+      const response: Response = logId
+        ? await loggedFetch(url, fetchOptions, {
+            unifiedLogId: logId,
+            group: 'rooms',
+            endpoint: 'resources/getAll'
+          })
+        : await fetch(url, fetchOptions);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `Failed to fetch resources: ${response.status} - ${errorData.Message || response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      const pageResources = data.Resources || [];
+      allResources.push(...pageResources);
+
+      console.log(`[RESET-SERVICE] Resources page ${pageCount}: ${pageResources.length} resources`);
+
+      cursor = data.Cursor || null;
+    } while (cursor !== null);
+
+    console.log(`[RESET-SERVICE] Total resources fetched: ${allResources.length}`);
+    return { resources: allResources };
+  } catch (error) {
+    console.error('[RESET-SERVICE] Error fetching resources:', error);
+    return {
+      resources: allResources,
+      error: error instanceof Error ? error.message : 'Unknown error fetching resources'
+    };
+  }
+}
+
+/**
+ * Update all rooms to "Inspected" state in batches (max 1000 per request)
+ */
+async function updateRoomsToInspectedInBatches(
+  accessToken: string,
+  resourceIds: string[],
+  logId?: string
+): Promise<{ successCount: number; failureCount: number }> {
+  if (resourceIds.length === 0) {
+    return { successCount: 0, failureCount: 0 };
+  }
+
+  let successCount = 0;
+  let failureCount = 0;
+  const batchSize = 1000;
+
+  for (let i = 0; i < resourceIds.length; i += batchSize) {
+    const batch = resourceIds.slice(i, i + batchSize);
+    const batchNumber = Math.floor(i / batchSize) + 1;
+    const totalBatches = Math.ceil(resourceIds.length / batchSize);
+
+    console.log(
+      `[RESET-SERVICE] Updating room status batch ${batchNumber}/${totalBatches} (${batch.length} rooms)...`
+    );
+
+    try {
+      const url = `${MEWS_API_URL}/api/connector/v1/resources/update`;
+      const fetchOptions: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ClientToken: MEWS_CLIENT_TOKEN,
+          AccessToken: accessToken,
+          Client: 'Mews Sandbox Manager',
+          ResourceUpdates: batch.map(resourceId => ({
+            ResourceId: resourceId,
+            State: { Value: 'Inspected' }
+          }))
+        })
+      };
+
+      const response = logId
+        ? await loggedFetch(url, fetchOptions, {
+            unifiedLogId: logId,
+            group: 'rooms',
+            endpoint: 'resources/update',
+            metadata: { batchNumber, totalBatches, batchSize: batch.length }
+          })
+        : await fetch(url, fetchOptions);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error(
+          `[RESET-SERVICE] Room update batch ${batchNumber} failed: ${errorData.Message || response.statusText}`
+        );
+        failureCount += batch.length;
+        continue;
+      }
+
+      successCount += batch.length;
+      console.log(`[RESET-SERVICE] ✓ Room update batch ${batchNumber} set to Inspected`);
+    } catch (error) {
+      console.error(`[RESET-SERVICE] Error updating room batch ${batchNumber}:`, error);
+      failureCount += batch.length;
+    }
+  }
+
+  return { successCount, failureCount };
+}
+
+/**
  * Main orchestrator: Reset an environment
  *
  * Steps:
  * 1. Get Configuration (timezone)
  * 2. Get Services (find Bookable service)
  * 3. Get Reservations (Confirmed + Optional only)
- * 4. Cancel Reservations
- * 5. Get Open Bills
- * 6. Close Bills (with payments)
- * 7. Create New Reservations (7-day window)
+ * 4. Process Missed Departures (checkout Started reservations with past departure)
+ * 5. Cancel Reservations
+ * 6. Get Open Bills
+ * 7. Close Bills (with payments)
+ * 8. Create New Reservations (7-day window)
+ * 9. Update All Rooms to Inspected
  */
 export async function resetEnvironment(
   accessToken: string,
@@ -203,14 +414,14 @@ export async function resetEnvironment(
   const log = await createResetLog({
     enterpriseId,
     accessTokenId,
-    totalSteps: 7
+    totalSteps: 9
   });
 
   try {
     // ========================================
     // STEP 1: Get Configuration & Timezone
     // ========================================
-    console.log(`[RESET-SERVICE] Step 1/7: Fetching configuration and timezone...`);
+    console.log(`[RESET-SERVICE] Step 1/9: Fetching configuration and timezone...`);
     const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken, log.id);
     const languageCode = config.defaultLanguageCode;
 
@@ -235,7 +446,7 @@ export async function resetEnvironment(
     // ========================================
     // STEP 2: Get ALL Services
     // ========================================
-    console.log(`[RESET-SERVICE] Step 2/7: Fetching ALL bookable services...`);
+    console.log(`[RESET-SERVICE] Step 2/9: Fetching ALL bookable services...`);
     const allMewsData = await fetchAllMewsData(MEWS_CLIENT_TOKEN, accessToken, { logId: log.id });
 
     if (allMewsData.length === 0) {
@@ -259,7 +470,7 @@ export async function resetEnvironment(
     // ========================================
     // STEP 3: Get Reservations (all services)
     // ========================================
-    console.log(`[RESET-SERVICE] Step 3/7: Fetching reservations for ${allMewsData.length} service(s)...`);
+    console.log(`[RESET-SERVICE] Step 3/9: Fetching reservations for ${allMewsData.length} service(s)...`);
     const allReservations: Reservation[] = [];
 
     for (const serviceData of allMewsData) {
@@ -286,9 +497,62 @@ export async function resetEnvironment(
     console.log(`[RESET-SERVICE] ✓ Found ${allReservations.length} total reservations to cancel across ${allMewsData.length} service(s)`);
 
     // ========================================
-    // STEP 4: Cancel Reservations (all services)
+    // STEP 4: Process Missed Departures
     // ========================================
-    console.log(`[RESET-SERVICE] Step 4/7: Canceling ${allReservations.length} reservations...`);
+    console.log(`[RESET-SERVICE] Step 4/9: Processing missed departures (Started reservations with past departure)...`);
+
+    const now = new Date();
+    const missedDepartureReservations: Reservation[] = [];
+
+    for (const serviceData of allMewsData) {
+      // Fetch Started reservations — use a wide start window to catch historical check-ins
+      const { reservations: startedReservations } = await getAllReservationsWithPagination(
+        accessToken,
+        serviceData.serviceId,
+        ['Started'],
+        log.id
+      );
+
+      // Filter client-side: only those whose scheduled departure is in the past
+      const missedForService = startedReservations.filter(
+        r => r.ScheduledEndUtc && r.ScheduledEndUtc < now.toISOString()
+      );
+
+      missedDepartureReservations.push(...missedForService);
+      console.log(
+        `[RESET-SERVICE]   Service ${serviceData.serviceId}: ${startedReservations.length} started, ${missedForService.length} missed departures`
+      );
+    }
+
+    details.missedDeparturesFetched = missedDepartureReservations.length;
+
+    if (missedDepartureReservations.length > 0) {
+      const missedIds = missedDepartureReservations.map(r => r.Id);
+      const { successCount: processedCount, failureCount: processFailed } =
+        await processReservationsInBatches(accessToken, missedIds, log.id);
+
+      details.missedDeparturesProcessed = processedCount;
+      details.missedDeparturesProcessFailed = processFailed;
+
+      if (processFailed > 0) {
+        details.errors?.push(`Failed to process ${processFailed} missed departure reservations`);
+      }
+
+      console.log(
+        `[RESET-SERVICE] ✓ Processed ${processedCount} missed departures (${processFailed} failed)`
+      );
+    } else {
+      details.missedDeparturesProcessed = 0;
+      details.missedDeparturesProcessFailed = 0;
+      console.log(`[RESET-SERVICE] ✓ No missed departures to process`);
+    }
+
+    await updateUnifiedLog(log.id, { currentStep: 4, operationDetails: details });
+
+    // ========================================
+    // STEP 5: Cancel Reservations (all services)
+    // ========================================
+    console.log(`[RESET-SERVICE] Step 5/9: Canceling ${allReservations.length} reservations...`);
 
     if (allReservations.length > 0) {
       const reservationIds = allReservations.map(r => r.Id);
@@ -314,19 +578,19 @@ export async function resetEnvironment(
       console.log(`[RESET-SERVICE] ✓ No reservations to cancel`);
     }
 
-    await updateUnifiedLog(log.id, { currentStep: 4, operationDetails: details });
-
-    // ========================================
-    // STEP 5: Get Open Bills (implicit in Step 6)
-    // ========================================
-    console.log(`[RESET-SERVICE] Step 5/7: Preparing to close bills...`);
-
     await updateUnifiedLog(log.id, { currentStep: 5, operationDetails: details });
 
     // ========================================
-    // STEP 6: Close Bills
+    // STEP 6: Get Open Bills (implicit in Step 7)
     // ========================================
-    console.log(`[RESET-SERVICE] Step 6/7: Closing bills...`);
+    console.log(`[RESET-SERVICE] Step 6/9: Preparing to close bills...`);
+
+    await updateUnifiedLog(log.id, { currentStep: 6, operationDetails: details });
+
+    // ========================================
+    // STEP 7: Close Bills
+    // ========================================
+    console.log(`[RESET-SERVICE] Step 7/9: Closing bills...`);
     const billsResult = await closeBillsForEnvironment(accessToken, log.id);
 
     details.billsFetched = billsResult.totalBills;
@@ -337,20 +601,19 @@ export async function resetEnvironment(
       details.errors?.push(`Failed to close ${billsResult.failureCount} bills`);
     }
 
-    await updateUnifiedLog(log.id, { currentStep: 6, operationDetails: details });
+    await updateUnifiedLog(log.id, { currentStep: 7, operationDetails: details });
 
     console.log(
       `[RESET-SERVICE] ✓ Closed ${billsResult.successCount} bills (${billsResult.failureCount} failed)`
     );
 
     // ========================================
-    // STEP 7: Create New Reservations (all services, 7-day window)
+    // STEP 8: Create New Reservations (all services, 7-day window)
     // ========================================
-    console.log(`[RESET-SERVICE] Step 7/7: Creating reservations for ${allMewsData.length} service(s) (7-day window)...`);
+    console.log(`[RESET-SERVICE] Step 8/9: Creating reservations for ${allMewsData.length} service(s) (7-day window)...`);
 
     // Calculate date range: today to +7 days in enterprise timezone
     const timezone = config.timezone;
-    const now = new Date();
     const todayLocal = startOfDay(toZonedTime(now, timezone));
     const todayUtc = fromZonedTime(todayLocal, timezone);
     const endDateLocal = addDays(todayLocal, 7);
@@ -406,11 +669,46 @@ export async function resetEnvironment(
       details.errors?.push(`Failed to create ${totalReservationsFailed} reservations across all services`);
     }
 
-    await updateUnifiedLog(log.id, { currentStep: 7, operationDetails: details });
+    await updateUnifiedLog(log.id, { currentStep: 8, operationDetails: details });
 
     console.log(
       `[RESET-SERVICE] ✓ Created ${totalReservationsCreated} reservations across ${allMewsData.length} service(s) (${totalReservationsFailed} failed)`
     );
+
+    // ========================================
+    // STEP 9: Update All Rooms to Inspected
+    // ========================================
+    console.log(`[RESET-SERVICE] Step 9/9: Updating all rooms to Inspected state...`);
+
+    const { resources, error: resourcesError } = await fetchAllResources(accessToken, log.id);
+
+    if (resourcesError) {
+      details.errors?.push(`Failed to fetch resources: ${resourcesError}`);
+      details.roomsUpdated = 0;
+      details.roomsUpdateFailed = 0;
+      console.warn(`[RESET-SERVICE] Warning: Could not fetch resources - ${resourcesError}`);
+    } else if (resources.length > 0) {
+      const resourceIds = resources.map(r => r.Id);
+      const { successCount: roomsUpdated, failureCount: roomsUpdateFailed } =
+        await updateRoomsToInspectedInBatches(accessToken, resourceIds, log.id);
+
+      details.roomsUpdated = roomsUpdated;
+      details.roomsUpdateFailed = roomsUpdateFailed;
+
+      if (roomsUpdateFailed > 0) {
+        details.errors?.push(`Failed to update ${roomsUpdateFailed} rooms to Inspected`);
+      }
+
+      console.log(
+        `[RESET-SERVICE] ✓ Updated ${roomsUpdated} rooms to Inspected (${roomsUpdateFailed} failed)`
+      );
+    } else {
+      details.roomsUpdated = 0;
+      details.roomsUpdateFailed = 0;
+      console.log(`[RESET-SERVICE] ✓ No rooms to update`);
+    }
+
+    await updateUnifiedLog(log.id, { currentStep: 9, operationDetails: details });
 
     // ========================================
     // COMPLETE
@@ -420,7 +718,7 @@ export async function resetEnvironment(
     await updateUnifiedLog(log.id, {
       status: 'completed',
       completedAt: new Date(),
-      currentStep: 7,
+      currentStep: 9,
       operationDetails: details
     });
 
