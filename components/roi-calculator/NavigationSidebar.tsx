@@ -83,12 +83,12 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
                   isActive
                     ? {
                         background: 'linear-gradient(135deg, var(--mews-night-black) 0%, var(--roi-navy-light) 100%)',
-                        color: '#ffffff',
+                        color: 'var(--roi-white)',
                         boxShadow: '0 2px 8px rgba(28,29,36,0.3)',
                       }
                     : {
                         background: 'rgba(255,255,255,0.85)',
-                        color: '#6b7280',
+                        color: 'var(--roi-gray-500)',
                         border: '1px solid rgba(28,29,36,0.08)',
                       }
                 }
@@ -136,19 +136,19 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
                           fontWeight: 600,
                         }
                       : {
-                          color: '#9ca3af',
+                          color: 'var(--roi-gray-400)',
                         }
                   }
                   onMouseEnter={(e) => {
                     if (!isActive) {
                       (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.04)';
-                      (e.currentTarget as HTMLElement).style.color = '#374151';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--roi-gray-700)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
                       (e.currentTarget as HTMLElement).style.background = 'transparent';
-                      (e.currentTarget as HTMLElement).style.color = '#9ca3af';
+                      (e.currentTarget as HTMLElement).style.color = 'var(--roi-gray-400)';
                     }
                   }}
                 >
@@ -161,7 +161,7 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
                   />
                   <span className="flex-1 truncate text-xs">{section.label}</span>
                   {isExpandable && section.isExpanded && (
-                    <Check className="w-3 h-3 flex-shrink-0" style={{ color: '#10b981' }} />
+                    <Check className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--mews-success)' }} />
                   )}
                   {isExpandable && !section.isExpanded && (
                     <ChevronRight className="w-3 h-3 flex-shrink-0 opacity-30" />

@@ -69,6 +69,20 @@
   --roi-navy-light: #1a4e8c;
   /* ROI Calculator module color — Discovery probe type */
   --roi-module-probe: #7C3AED;
+
+  /* ROI Calculator cinematic overlay */
+  --roi-cinematic-bg: #0a0a0f;
+
+  /* ROI Calculator DataComparison category colors */
+  --roi-data-indigo: #6366f1;    /* DataComparison category color */
+  --roi-data-amber: #f59e0b;     /* DataComparison confidence low/amber */
+
+  /* ROI Calculator PDF template colors */
+  --roi-pdf-bg-dark: #0a0a12;    /* PDF dark background */
+  --roi-pdf-bg-mid: #0f1023;     /* PDF background midpoint */
+  --roi-pdf-emerald: #34d399;    /* PDF success/GX metric color */
+  --roi-pdf-blue: #60a5fa;       /* PDF payment metric color */
+  --roi-pdf-violet: #a78bfa;     /* PDF RMS metric color */
 }
 
 /* Reset native dialog browser defaults for custom styling */
@@ -181,13 +195,6 @@ input[type='checkbox'] { accent-color: var(--mews-indigo); }
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
-/* ROI Calculator fade-in animation */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
 
 /* ROI Calculator scale-in animation (for popovers) */
 @keyframes scaleIn {

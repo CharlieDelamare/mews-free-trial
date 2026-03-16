@@ -32,11 +32,11 @@ interface DataComparisonSectionProps {
 }
 
 const GROUP_META: Record<string, { label: string; icon: typeof Building2; color: string }> = {
-  property: { label: 'Property Basics', icon: Building2, color: '#6366f1' },
-  operations: { label: 'Operations', icon: Clock, color: '#f59e0b' },
-  payments: { label: 'Payments', icon: CreditCard, color: '#3b82f6' },
-  revenue: { label: 'Revenue', icon: TrendingUp, color: '#10b981' },
-  rms: { label: 'Revenue Management', icon: BarChart3, color: '#8b5cf6' },
+  property: { label: 'Property Basics', icon: Building2, color: 'var(--roi-data-indigo)' },
+  operations: { label: 'Operations', icon: Clock, color: 'var(--roi-data-amber)' },
+  payments: { label: 'Payments', icon: CreditCard, color: 'var(--roi-module-payment)' },
+  revenue: { label: 'Revenue', icon: TrendingUp, color: 'var(--mews-success)' },
+  rms: { label: 'Revenue Management', icon: BarChart3, color: 'var(--roi-module-gx)' },
 };
 
 const GROUP_ORDER = ['property', 'operations', 'payments', 'revenue', 'rms'];
@@ -230,7 +230,7 @@ export default function DataComparisonSection({
         <div className="flex items-center gap-3">
           <div className="text-right mr-2">
             <div className="text-xs text-gray-400">Confidence</div>
-            <div className="text-sm font-bold" style={{ color: score.overall >= 70 ? '#10b981' : score.overall >= 45 ? '#3b82f6' : '#f59e0b' }}>
+            <div className="text-sm font-bold" style={{ color: score.overall >= 70 ? 'var(--mews-success)' : score.overall >= 45 ? 'var(--roi-module-payment)' : 'var(--roi-data-amber)' }}>
               {score.overall}%
             </div>
           </div>

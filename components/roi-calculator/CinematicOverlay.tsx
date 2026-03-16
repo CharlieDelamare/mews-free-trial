@@ -111,7 +111,7 @@ export default function CinematicOverlay({
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: '#0a0a0f' }}
+      style={{ background: 'var(--roi-cinematic-bg)' }}
     >
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-4">

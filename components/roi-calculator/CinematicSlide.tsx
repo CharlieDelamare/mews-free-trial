@@ -189,7 +189,7 @@ export default function CinematicSlide(props: CinematicSlideProps) {
                 )}
                 <p
                   className="text-[9px] font-semibold uppercase tracking-wider mt-0.5"
-                  style={{ color: lever.resultType === 'timeReclaimed' ? '#8b5cf6' : lever.resultType === 'costSaving' ? '#10b981' : '#3b82f6' }}
+                  style={{ color: lever.resultType === 'timeReclaimed' ? 'var(--roi-module-gx)' : lever.resultType === 'costSaving' ? 'var(--mews-success)' : 'var(--roi-module-payment)' }}
                 >
                   {t.leverResultType[lever.resultType]}
                 </p>
