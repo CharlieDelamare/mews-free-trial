@@ -93,6 +93,9 @@ function getPageLabel(pathname: string): string {
 export function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const isActive = (path: string) => pathname.startsWith(path);
 
@@ -158,7 +161,7 @@ export function Navbar() {
 
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-gray-900/50 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-gray-900/50 ${mounted ? 'transition-opacity duration-300' : ''} ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={close}
@@ -168,7 +171,7 @@ export function Navbar() {
       {/* Slide-out sidebar */}
       <aside
         style={{ backgroundColor: 'var(--mews-deep-blue)' }}
-        className={`fixed inset-y-0 left-0 z-50 w-60 shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-60 shadow-xl flex flex-col ${mounted ? 'transition-transform duration-300 ease-in-out' : ''} ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label="Navigation menu"
