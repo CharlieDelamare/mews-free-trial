@@ -1,12 +1,12 @@
 name: Claude Auto-Implement
 
 on:
-  issue_comment:
-    types: [created]
+  issues:
+    types: [labeled]
 
 jobs:
   claude:
-    if: contains(github.event.comment.body, '@claude')
+    if: github.event.label.name == 'claude'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -16,3 +16,13 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are an expert software engineer. Read this GitHub issue carefully and implement the requested changes in the codebase.
+
+            Guidelines:
+            - Make only the changes necessary to address the issue
+            - Follow the existing code style and conventions in the repo
+            - Write clean, well-structured code
+            - When done, open a pull request against main with a clear description of what you changed and why
+
+            If the issue is unclear or lacks enough detail to implement safely, leave a comment explaining what additional information is needed instead of guessing.
