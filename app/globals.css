@@ -12,6 +12,8 @@
   --mews-blue: #D6E2FC;
   --mews-olive-green: #222B28;
   --mews-green: #E6F5F0;
+  --mews-success: #10b981;
+  --mews-success-dark: #059669;
 
   /* Highlights — max 10% of any composition */
   --mews-coral: #FF5A65;
@@ -35,6 +37,52 @@
   --font-heading: var(--font-inter, 'Inter'), sans-serif;
   --font-subheading: var(--font-inter, 'Inter'), sans-serif;
   --font-body: var(--font-inter, 'Inter'), sans-serif;
+
+  /* ROI Calculator module colors */
+  --roi-module-gx: #8b5cf6;          /* Guest Experience — purple */
+  --roi-module-payment: #3b82f6;     /* Payment — blue */
+  --roi-module-rms: #10b981;         /* RMS — green (same as --mews-success) */
+  --roi-slider-teal: var(--mews-indigo); /* Replaces #6BA3B0 / #4d8a96 teal */
+  --roi-neutral-border: #d1d5db;     /* Light gray border */
+  --roi-white: #ffffff;              /* Pure white (only where --mews-white can't be used inline) */
+
+  /* ROI Calculator TotalSavings highlight (cyan used for savings figure on dark bg) */
+  --roi-savings-highlight: #00d4ff;
+
+  /* ROI Calculator slider color variants */
+  --roi-slider-yellow: #EDFE77;
+  --roi-slider-yellow-text: #6B7700;
+  --roi-slider-orange: #EA580C;
+  --roi-slider-orange-text: #C2410C;
+  --roi-slider-purple: #EF89D6;
+  --roi-slider-purple-text: #8B3580;
+  --roi-slider-track-bg: #e5e7eb;
+
+  /* Neutral grays (Tailwind-compatible) */
+  --roi-gray-400: #9ca3af;
+  --roi-gray-500: #6b7280;
+  --roi-gray-700: #374151;
+
+  /* ROI Calculator navy gradient tokens */
+  --roi-navy-dark: #002347;
+  --roi-navy-mid: #004080;
+  --roi-navy-light: #1a4e8c;
+  /* ROI Calculator module color — Discovery probe type */
+  --roi-module-probe: #7C3AED;
+
+  /* ROI Calculator cinematic overlay */
+  --roi-cinematic-bg: #0a0a0f;
+
+  /* ROI Calculator DataComparison category colors */
+  --roi-data-indigo: #6366f1;    /* DataComparison category color */
+  --roi-data-amber: #f59e0b;     /* DataComparison confidence low/amber */
+
+  /* ROI Calculator PDF template colors */
+  --roi-pdf-bg-dark: #0a0a12;    /* PDF dark background */
+  --roi-pdf-bg-mid: #0f1023;     /* PDF background midpoint */
+  --roi-pdf-emerald: #34d399;    /* PDF success/GX metric color */
+  --roi-pdf-blue: #60a5fa;       /* PDF payment metric color */
+  --roi-pdf-violet: #a78bfa;     /* PDF RMS metric color */
 }
 
 /* Reset native dialog browser defaults for custom styling */
@@ -46,3 +94,111 @@ dialog {
 dialog::backdrop {
   background-color: color-mix(in srgb, var(--mews-night-black) 50%, transparent);
 }
+
+/* ── ROI Calculator utilities ──────────────────────────────────────── */
+
+/* Scrollbar */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(28, 29, 36, 0.2);
+  border-radius: 99px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(28, 29, 36, 0.35);
+}
+
+/* Range slider — Mews indigo thumb
+   NOTE: These styles are intentionally global and will apply to all
+   <input type="range"> elements in the app. If a future page needs
+   different slider styling, scope it with a wrapper class. */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--mews-indigo);
+  box-shadow: 0 2px 8px rgba(179,178,251,0.25), 0 0 0 3px rgba(179,178,251,0.08);
+  cursor: pointer;
+  transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease;
+}
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(179,178,251,0.35), 0 0 0 5px rgba(179,178,251,0.12);
+}
+input[type='range']::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--mews-indigo);
+  box-shadow: 0 2px 8px rgba(179,178,251,0.25), 0 0 0 3px rgba(179,178,251,0.08);
+  cursor: pointer;
+}
+input[type='checkbox'] { accent-color: var(--mews-indigo); }
+
+/* Animation */
+.animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+.section-content { animation: sectionReveal 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
+.shimmer-bg {
+  background: linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.6) 50%,rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sectionReveal {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+
+/* Card */
+.roi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(28,29,36,0.06);
+  border: 1px solid rgba(28,29,36,0.08);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.roi-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 12px 32px rgba(28,29,36,0.10);
+}
+
+/* Misc */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ROI Calculator hero number gradient (replaces teal gradient from source) */
+.gradient-text-teal {
+  background: linear-gradient(135deg, rgba(179,178,251,0.8) 0%, var(--mews-indigo) 50%, rgba(179,178,251,0.6) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ROI Calculator scale-in animation (for popovers) */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95) translateX(-50%); }
+  to { opacity: 1; transform: scale(1) translateX(-50%); }
+}
+.animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
