@@ -21,6 +21,9 @@
     "@vercel/functions": "^1.4.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
+    "lucide-react": "^0.344.0",
     "next": "14.2.28",
     "react": "^18",
     "react-dom": "^18"
