@@ -99,11 +99,8 @@ export default function SandboxFillerPage() {
         if (data.services.length === 1) {
           setSelectedServiceId(data.services[0].id);
         }
-      } else {
-        console.error('Failed to fetch services:', data.error);
       }
     } catch (error) {
-      console.error('Failed to fetch services:', error);
     } finally {
       setServicesLoading(false);
     }
@@ -151,7 +148,6 @@ export default function SandboxFillerPage() {
 
     // Prevent duplicate submissions
     if (submittingRef.current) {
-      console.log('[SANDBOX-FILLER] Duplicate submission prevented');
       return;
     }
 
@@ -240,7 +236,7 @@ export default function SandboxFillerPage() {
               </p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              If your property isn&apos;t available in the dropdown, please add the &quot;Mews Sandbox Manager&quot; integration in the Marketplace within Mews.
+              If your property isn&apos;t available in the dropdown, please add the &ldquo;Mews Sandbox Manager&rdquo; integration in the Marketplace within Mews.
             </p>
           </div>
 
@@ -345,6 +341,7 @@ export default function SandboxFillerPage() {
           <button
             type="submit"
             disabled={!sandboxFillerData.selectedEnvironment || !selectedServiceId || sandboxFillerLoading}
+            aria-busy={sandboxFillerLoading}
             className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
               !sandboxFillerData.selectedEnvironment || !selectedServiceId || sandboxFillerLoading
                 ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'

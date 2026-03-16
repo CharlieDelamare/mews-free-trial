@@ -398,7 +398,7 @@ describe('customer-service', () => {
       await createSampleCustomers('test-token', 'test-enterprise', 123);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.mews-demo.com/api/connector/v1/customers/add',
+        'https://api.mews-test.com/api/connector/v1/customers/add',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -409,7 +409,7 @@ describe('customer-service', () => {
       const callArgs = (global.fetch as any).mock.calls[0];
       const payload = JSON.parse(callArgs[1].body);
       expect(payload).toMatchObject({
-        ClientToken: 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0',
+        ClientToken: 'test-client-token',
         AccessToken: 'test-token',
         Client: 'Mews Sandbox Manager - Sample Data',
         FirstName: 'John',

@@ -96,7 +96,6 @@ export default function LogsPage() {
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         setError('Error fetching logs');
-        console.error(err);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -113,7 +112,7 @@ export default function LogsPage() {
     try {
       await fetchPage(page);
     } catch (err) {
-      console.error('Failed to fetch page:', err);
+      // Error handled by polling
     }
   };
 

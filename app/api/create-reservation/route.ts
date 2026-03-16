@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendZapierNotification } from '@/lib/zapier';
-
-// Hardcoded client token for Mews demo environment (fallback)
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
 
 // Define response types
 interface MewsResponse {
@@ -44,13 +42,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Validate date formats
+    const parsedStart = new Date(startDate);
+    const parsedEnd = new Date(endDate);
+
+    if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid date format' },
+        { status: 400 }
+      );
+    }
+
+    if (parsedStart >= parsedEnd) {
+      return NextResponse.json(
+        { success: false, error: 'Start date must be before end date' },
+        { status: 400 }
+      );
+    }
+
     // Get environment variables
-    const clientToken = process.env.MEWS_CLIENT_TOKEN || MEWS_CLIENT_TOKEN;
+    const clientToken = getMewsClientToken();
     const accessToken = process.env.MEWS_ACCESS_TOKEN;
     const serviceId = process.env.MEWS_BOOKABLE_SERVICE_ID;
     const rateId = process.env.MEWS_RATE_ID;
     const resourceCategoryId = process.env.MEWS_RESOURCE_CATEGORY_ID;
-    const apiUrl = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
+    const apiUrl = getMewsApiUrl();
 
     if (!accessToken || !serviceId || !rateId || !resourceCategoryId) {
       console.error('Missing Mews configuration');

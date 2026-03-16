@@ -7,7 +7,7 @@
 import type { ParsedCsvRow, CsvParseResult } from '@/types/control-centre';
 
 const REQUIRED_COLUMNS = ['GuestFirstName', 'GuestLastName', 'CheckIn', 'CheckOut', 'GuestCount'];
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line no-unused-vars
 const OPTIONAL_COLUMNS = ['PricePerNight', 'RoomCategory', 'RateName'];
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;

@@ -20,13 +20,15 @@ export async function GET() {
     // Fetch all enabled access tokens
     const accessTokens = await prisma.accessToken.findMany({
       where: { isEnabled: true },
-      orderBy: { receivedAt: 'desc' }
+      orderBy: { receivedAt: 'desc' },
+      take: 500
     });
 
     // Fetch all environment logs from UnifiedLog table
     const environmentLogs = await prisma.unifiedLog.findMany({
       where: { logType: 'environment' },
-      orderBy: { timestamp: 'desc' }
+      orderBy: { timestamp: 'desc' },
+      take: 500
     });
 
     // Create a map of enterpriseId -> EnvironmentLog for quick lookup

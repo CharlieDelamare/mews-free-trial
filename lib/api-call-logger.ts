@@ -114,6 +114,7 @@ class ApiCallLogBuffer {
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private inflightCount = 0;
   private inflightPromises: Promise<void>[] = [];
+  private droppedEntryCount = 0;
 
   add(entry: ApiCallLogEntry): void {
     this.buffer.push(entry);
@@ -135,6 +136,7 @@ class ApiCallLogBuffer {
 
     // Drop batch if too many concurrent writes to protect connection pool
     if (this.inflightCount >= MAX_INFLIGHT_WRITES) {
+      this.droppedEntryCount += entries.length;
       console.warn(
         `[API-CALL-LOG] Dropping ${entries.length} log entries: ` +
         `${this.inflightCount} DB writes in-flight (max ${MAX_INFLIGHT_WRITES})`
@@ -179,6 +181,10 @@ class ApiCallLogBuffer {
     this.flush();
     await Promise.allSettled(this.inflightPromises);
     this.inflightPromises = [];
+    if (this.droppedEntryCount > 0) {
+      console.warn(`[API-CALL-LOG] Total dropped entries during this session: ${this.droppedEntryCount}`);
+      this.droppedEntryCount = 0;
+    }
   }
 }
 
@@ -223,8 +229,12 @@ export async function loggedFetch(
   const endpoint = logContext.endpoint || extractEndpoint(url);
   const redactedRequestBody = prepareRequestBody(options);
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
     const durationMs = Date.now() - startTime;
 
     // Only read response body on errors (saves memory/IO for 300+ successful calls)
@@ -256,7 +266,10 @@ export async function loggedFetch(
 
     return response;
   } catch (error) {
+    clearTimeout(timeoutId);
     const durationMs = Date.now() - startTime;
+
+    const isAbort = error instanceof DOMException && error.name === 'AbortError';
 
     logBuffer.add({
       unifiedLogId: logContext.unifiedLogId,
@@ -269,7 +282,9 @@ export async function loggedFetch(
       success: false,
       requestBody: redactedRequestBody,
       responseBody: null,
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage: isAbort
+        ? `Request timed out after 30s: ${endpoint}`
+        : (error instanceof Error ? error.message : String(error)),
       metadata: logContext.metadata || null,
     });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveAccessToken } from '@/lib/reservations';
+import { hasActiveOperation } from '@/lib/unified-logger';
 import { closeBillsForEnvironment } from '@/lib/bill-service';
 import { createCloseBillsLog, updateUnifiedLog } from '@/lib/unified-logger';
 import { runInBackground } from '@/lib/background';
@@ -64,6 +65,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<CloseBill
       return NextResponse.json(
         { success: false, error: 'Access token not found' },
         { status: 404 }
+      );
+    }
+
+    // Race condition guard: prevent concurrent close bills operations
+    if (await hasActiveOperation(tokenRecord.enterpriseId, 'close_bills')) {
+      return NextResponse.json(
+        { success: false, error: 'A close bills operation is already in progress for this environment' },
+        { status: 409 }
       );
     }
 

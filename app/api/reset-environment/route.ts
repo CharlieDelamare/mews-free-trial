@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveAccessToken } from '@/lib/reservations';
+import { hasActiveOperation } from '@/lib/unified-logger';
 import { resetEnvironment } from '@/lib/reset-service';
 import type { ResetOperationRequest, ResetOperationResponse } from '@/types/reset';
 import { runInBackground } from '@/lib/background';
@@ -69,6 +70,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResetOper
           error: 'Access token not found'
         },
         { status: 404 }
+      );
+    }
+
+    // Race condition guard: prevent concurrent reset operations
+    if (await hasActiveOperation(tokenRecord.enterpriseId, 'reset')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'A reset operation is already in progress for this environment'
+        },
+        { status: 409 }
       );
     }
 

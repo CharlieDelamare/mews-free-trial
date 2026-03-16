@@ -160,6 +160,7 @@ export default function SaveSandboxPage() {
             <button
               onClick={handleSaveClick}
               disabled={!selectedEnvironment || submitting}
+              aria-busy={submitting}
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || submitting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'

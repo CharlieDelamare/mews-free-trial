@@ -6,10 +6,7 @@
 import type { Bill, OrderItem, PaymentItem, BillCloseResult, CloseBillsResult } from '@/types/reset';
 import { fetchTimezoneFromConfiguration } from './timezone-service';
 import { loggedFetch } from './api-call-logger';
-
-// Hardcoded Mews client token for demo environment
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
+import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
 
 /**
  * Check if a Mews API error indicates that the bill is already closed.
@@ -37,7 +34,7 @@ export async function getBills(
 
     const WINDOW_DAYS = 90;
     const allBills = new Map<string, Bill>();
-    const url = `${MEWS_API_URL}/api/connector/v1/bills/getAll`;
+    const url = `${getMewsApiUrl()}/api/connector/v1/bills/getAll`;
     let windowCount = 0;
 
     let windowEnd = now;
@@ -55,7 +52,7 @@ export async function getBills(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
+          ClientToken: getMewsClientToken(),
           AccessToken: accessToken,
           Client: 'Mews Sandbox Manager',
           UpdatedUtc: {
@@ -120,12 +117,12 @@ export async function getOrderItems(
   }
 
   try {
-    const url = `${MEWS_API_URL}/api/connector/v1/orderItems/getAll`;
+    const url = `${getMewsApiUrl()}/api/connector/v1/orderItems/getAll`;
     const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
+        ClientToken: getMewsClientToken(),
         AccessToken: accessToken,
         Client: 'Mews Sandbox Manager',
         BillIds: billIds,
@@ -172,12 +169,12 @@ export async function getPaymentItems(
   }
 
   try {
-    const url = `${MEWS_API_URL}/api/connector/v1/payments/getAll`;
+    const url = `${getMewsApiUrl()}/api/connector/v1/payments/getAll`;
     const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
+        ClientToken: getMewsClientToken(),
         AccessToken: accessToken,
         Client: 'Mews Sandbox Manager',
         BillIds: billIds,
@@ -276,7 +273,7 @@ export async function addExternalPayment(
 ): Promise<{ success: boolean; error?: string; alreadyClosed?: boolean }> {
   try {
     const payload = {
-      ClientToken: MEWS_CLIENT_TOKEN,
+      ClientToken: getMewsClientToken(),
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager',
       AccountId: accountId,
@@ -290,7 +287,7 @@ export async function addExternalPayment(
 
     console.log('[BILL-SERVICE] Adding payment with payload:', JSON.stringify(payload, null, 2));
 
-    const url = `${MEWS_API_URL}/api/connector/v1/payments/addExternal`;
+    const url = `${getMewsApiUrl()}/api/connector/v1/payments/addExternal`;
     const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -348,7 +345,7 @@ export async function closeBill(
 ): Promise<{ success: boolean; error?: string; alreadyClosed?: boolean }> {
   try {
     const payload = {
-      ClientToken: MEWS_CLIENT_TOKEN,
+      ClientToken: getMewsClientToken(),
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager',
       BillId: billId,
@@ -357,7 +354,7 @@ export async function closeBill(
 
     console.log('[BILL-SERVICE] Closing bill with payload:', JSON.stringify(payload, null, 2));
 
-    const url = `${MEWS_API_URL}/api/connector/v1/bills/close`;
+    const url = `${getMewsApiUrl()}/api/connector/v1/bills/close`;
     const fetchOptions: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -427,7 +424,7 @@ export async function closeBillsForEnvironment(
   console.log('[BILL-SERVICE] Starting bill closure process');
 
   // Fetch configuration to get currency
-  const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken, logId);
+  const config = await fetchTimezoneFromConfiguration(getMewsClientToken(), accessToken, logId);
   const currency = config.currency;
 
   if (!currency) {

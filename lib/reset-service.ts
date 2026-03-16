@@ -13,10 +13,7 @@ import { createResetLog, updateUnifiedLog } from './unified-logger';
 import { fetchTimezoneFromConfiguration } from './timezone-service';
 import { loggedFetch } from './api-call-logger';
 import type { ResetResult, ResetOperationDetails, ResetStep } from '@/types/reset';
-
-// Hardcoded Mews client token for demo environment
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
+import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
 
 interface Reservation {
   Id: string;
@@ -47,12 +44,12 @@ async function getAllReservationsWithPagination(
       const sevenDaysAgo = subDays(new Date(), 7);
       const threeMonthsFromStart = addMonths(sevenDaysAgo, 3);
 
-      const url = `${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`;
+      const url = `${getMewsApiUrl()}/api/connector/v1/reservations/getAll/2023-06-06`;
       const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
+          ClientToken: getMewsClientToken(),
           AccessToken: accessToken,
           Client: 'Mews Sandbox Manager',
           ServiceIds: [serviceId],
@@ -129,12 +126,12 @@ async function cancelReservationsInBatches(
     );
 
     try {
-      const url = `${MEWS_API_URL}/api/connector/v1/reservations/cancel`;
+      const url = `${getMewsApiUrl()}/api/connector/v1/reservations/cancel`;
       const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
+          ClientToken: getMewsClientToken(),
           AccessToken: accessToken,
           Client: 'Mews Sandbox Manager',
           ReservationIds: batch,
@@ -199,12 +196,12 @@ async function processReservationsInBatches(
     );
 
     try {
-      const url = `${MEWS_API_URL}/api/connector/v1/reservations/process`;
+      const url = `${getMewsApiUrl()}/api/connector/v1/reservations/process`;
       const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
+          ClientToken: getMewsClientToken(),
           AccessToken: accessToken,
           Client: 'Mews Sandbox Manager',
           ReservationIds: batch
@@ -261,12 +258,12 @@ async function fetchAllResources(
       pageCount++;
       console.log(`[RESET-SERVICE] Fetching resources page ${pageCount}...`);
 
-      const url = `${MEWS_API_URL}/api/connector/v1/resources/getAll`;
+      const url = `${getMewsApiUrl()}/api/connector/v1/resources/getAll`;
       const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
+          ClientToken: getMewsClientToken(),
           AccessToken: accessToken,
           Client: 'Mews Sandbox Manager',
           Extent: { Resources: true },
@@ -338,12 +335,12 @@ async function updateRoomsToInspectedInBatches(
     );
 
     try {
-      const url = `${MEWS_API_URL}/api/connector/v1/resources/update`;
+      const url = `${getMewsApiUrl()}/api/connector/v1/resources/update`;
       const fetchOptions: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ClientToken: MEWS_CLIENT_TOKEN,
+          ClientToken: getMewsClientToken(),
           AccessToken: accessToken,
           Client: 'Mews Sandbox Manager',
           ResourceUpdates: batch.map(resourceId => ({
@@ -422,7 +419,7 @@ export async function resetEnvironment(
     // STEP 1: Get Configuration & Timezone
     // ========================================
     console.log(`[RESET-SERVICE] Step 1/9: Fetching configuration and timezone...`);
-    const config = await fetchTimezoneFromConfiguration(MEWS_CLIENT_TOKEN, accessToken, log.id);
+    const config = await fetchTimezoneFromConfiguration(getMewsClientToken(), accessToken, log.id);
     const languageCode = config.defaultLanguageCode;
 
     if (config.error) {
@@ -447,7 +444,7 @@ export async function resetEnvironment(
     // STEP 2: Get ALL Services
     // ========================================
     console.log(`[RESET-SERVICE] Step 2/9: Fetching ALL bookable services...`);
-    const allMewsData = await fetchAllMewsData(MEWS_CLIENT_TOKEN, accessToken, { logId: log.id });
+    const allMewsData = await fetchAllMewsData(getMewsClientToken(), accessToken, { logId: log.id });
 
     if (allMewsData.length === 0) {
       throw new Error('No bookable services found');

@@ -16,9 +16,7 @@ import { fetchWithRateLimitAndLog } from './api-call-logger';
 import { log, logError } from './force-log';
 import { resolveLanguage, type SupportedLanguage } from './translations/language-utils';
 import { translateNote } from './translations/customer-notes';
-
-const MEWS_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
+import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
 const CUSTOMER_CONCURRENCY = 5; // Process 5 customers at a time
 
 export interface ReservationCreationResult {
@@ -67,12 +65,12 @@ interface CategoryTarget {
 async function fetchTimezoneFromMews(accessToken: string, logId?: string): Promise<string> {
   console.log('[RESERVATIONS] Fetching timezone from Mews API...');
 
-  const url = `${MEWS_API_URL}/api/connector/v1/configuration/get`;
+  const url = `${getMewsApiUrl()}/api/connector/v1/configuration/get`;
   const fetchOpts: RequestInit = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ClientToken: MEWS_CLIENT_TOKEN,
+      ClientToken: getMewsClientToken(),
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager'
     })
@@ -166,7 +164,7 @@ export async function createReservationsForEnvironment(
     );
 
     // Fetch Mews data (or use pre-fetched data if provided)
-    const mewsData = options?.mewsData ?? await fetchMewsData(MEWS_CLIENT_TOKEN, accessToken, {
+    const mewsData = options?.mewsData ?? await fetchMewsData(getMewsClientToken(), accessToken, {
       serviceId: options?.serviceId
     });
 
@@ -642,12 +640,12 @@ function calculateUniqueCustomerCount(totalReservations: number): number {
  */
 async function getCustomerByEmail(email: string, accessToken: string, logId?: string): Promise<string | null> {
   try {
-    const url = `${MEWS_API_URL}/api/connector/v1/customers/getAll`;
+    const url = `${getMewsApiUrl()}/api/connector/v1/customers/getAll`;
     const fetchOpts: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: MEWS_CLIENT_TOKEN,
+        ClientToken: getMewsClientToken(),
         AccessToken: accessToken,
         Client: 'Mews Sandbox Manager',
         Emails: [email],
@@ -692,7 +690,7 @@ async function getCustomerByEmail(email: string, accessToken: string, logId?: st
  */
 async function createSingleCustomer(customer: SampleCustomer, accessToken: string, language: SupportedLanguage = 'en', logId?: string): Promise<string> {
   const requestBody = {
-    ClientToken: MEWS_CLIENT_TOKEN,
+    ClientToken: getMewsClientToken(),
     AccessToken: accessToken,
     Client: 'Free Trial Generator',
     FirstName: customer.FirstName,
@@ -707,7 +705,7 @@ async function createSingleCustomer(customer: SampleCustomer, accessToken: strin
     Notes: customer.Notes ? translateNote(customer.Notes, language) : undefined
   };
 
-  const url = `${MEWS_API_URL}/api/connector/v1/customers/add`;
+  const url = `${getMewsApiUrl()}/api/connector/v1/customers/add`;
   const fetchOpts: RequestInit = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -980,12 +978,12 @@ async function sendReservationGroup(
   const created: any[] = [];
   const failed: any[] = [];
 
-  const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
+  const url = `${getMewsApiUrl()}/api/connector/v1/reservations/add`;
   const fetchOpts: RequestInit = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ClientToken: MEWS_CLIENT_TOKEN,
+      ClientToken: getMewsClientToken(),
       AccessToken: accessToken,
       Client: 'Mews Sandbox Manager',
       ServiceId: serviceId,

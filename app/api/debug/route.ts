@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[DEBUG] Error in debug endpoint:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: String(error) },
+      { success: false, error: 'Internal server error', details: String(error) },
       { status: 500 }
     );
   }

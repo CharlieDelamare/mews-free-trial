@@ -2,17 +2,19 @@
  * Centralized configuration for Mews API access
  *
  * Reads MEWS_CLIENT_TOKEN from environment variables.
- * Falls back to the hardcoded demo token if not set.
+ * Throws if not set.
  */
-
-const FALLBACK_CLIENT_TOKEN = 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
 
 /**
  * Get the Mews client token from environment variables.
- * Falls back to the hardcoded demo token if not set.
+ * Throws if the environment variable is not set.
  */
 export function getMewsClientToken(): string {
-  return process.env.MEWS_CLIENT_TOKEN || FALLBACK_CLIENT_TOKEN;
+  const token = process.env.MEWS_CLIENT_TOKEN;
+  if (!token) {
+    throw new Error('MEWS_CLIENT_TOKEN environment variable is required');
+  }
+  return token;
 }
 
 /**

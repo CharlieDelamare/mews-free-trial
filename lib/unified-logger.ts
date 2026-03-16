@@ -17,6 +17,26 @@ import type {
   CloseBillsDetails,
 } from '@/types/unified-log';
 
+
+/**
+ * Check if there is an active (processing) operation for a given enterprise and log type.
+ * Used as a guard to prevent concurrent operations.
+ */
+export async function hasActiveOperation(enterpriseId: string, logType: LogType): Promise<boolean> {
+  try {
+    const count = await prisma.unifiedLog.count({
+      where: {
+        enterpriseId,
+        logType,
+        status: 'processing',
+      },
+    });
+    return count > 0;
+  } catch (error) {
+    console.error('[UNIFIED-LOGGER] Failed to check active operation:', (error as Error).message);
+    return false;
+  }
+}
 // === Create Functions ===
 
 /**

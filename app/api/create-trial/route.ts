@@ -362,7 +362,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (error instanceof SyntaxError) {
       errorMessage = 'Invalid request format';
       errorDetails = process.env.NODE_ENV === 'development' ? error.message : undefined;
-    } else if ((error as any).code === 'ECONNREFUSED' || (error as any).code === 'ETIMEDOUT') {
+    } else if ((error as NodeJS.ErrnoException).code === 'ECONNREFUSED' || (error as NodeJS.ErrnoException).code === 'ETIMEDOUT') {
       errorMessage = 'Network error: Unable to reach external services';
       errorDetails = process.env.NODE_ENV === 'development' ? (error as Error).message : undefined;
     } else if ((error as Error).message?.includes('fetch')) {

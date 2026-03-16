@@ -34,31 +34,11 @@ interface RateLimiterConfig {
 }
 
 /**
- * Queued request awaiting capacity
- */
-interface QueuedRequest {
-  /** Function that executes the HTTP request */
-  requestFn: () => Promise<Response>;
-  /** Promise resolve callback */
-  resolve: (value: any) => void;
-  /** Promise reject callback */
-  reject: (error: Error) => void;
-  /** Context string for logging */
-  context?: string;
-  /** Current retry count */
-  retryCount: number;
-  /** Timestamp when request was queued */
-  timestamp: number;
-}
-
-/**
  * Request tracking window for a specific AccessToken
  */
 interface RequestWindow {
   /** Timestamps of requests made within the window */
   timestamps: number[];
-  /** Queue of pending requests */
-  queue: QueuedRequest[];
   /** Flag indicating if queue is being processed */
   isProcessing: boolean;
 }
@@ -338,7 +318,6 @@ export class MewsRateLimiter {
     if (!this.windows.has(accessToken)) {
       this.windows.set(accessToken, {
         timestamps: [],
-        queue: [],
         isProcessing: false
       });
     }
@@ -357,7 +336,7 @@ export class MewsRateLimiter {
     return {
       currentCount,
       percentageUsed: Math.round((currentCount / this.config.maxRequests) * 100),
-      queueLength: window.queue.length,
+      queueLength: 0,
       isThrottling: currentCount >= threshold
     };
   }
