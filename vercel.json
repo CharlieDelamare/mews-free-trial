@@ -15,6 +15,21 @@
     },
     "app/api/close-bills/route.ts": {
       "maxDuration": 800
+    },
+    "app/api/control-centre/morning-prep/route.ts": {
+      "maxDuration": 800
+    },
+    "app/api/control-centre/auto-checkout/route.ts": {
+      "maxDuration": 800
+    },
+    "app/api/control-centre/scenario-provision/route.ts": {
+      "maxDuration": 800
+    },
+    "app/api/control-centre/doors/provision/route.ts": {
+      "maxDuration": 800
+    },
+    "app/api/control-centre/import/route.ts": {
+      "maxDuration": 800
     }
   }
 }
