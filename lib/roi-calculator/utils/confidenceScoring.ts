@@ -123,13 +123,13 @@ export const CONFIDENCE_LABELS: Record<ConfidenceScore['level'], {
   'validated': {
     label: 'Validated Estimate',
     description: 'Most key inputs confirmed by the prospect. Strong basis for a business case.',
-    color: '#10b981',
+    color: 'var(--mews-success)',
     bgColor: 'rgba(16, 185, 129, 0.08)',
   },
   'high-confidence': {
     label: 'High-Confidence Estimate',
     description: 'All critical inputs confirmed. This ROI is grounded in your actual data.',
-    color: '#059669',
+    color: 'var(--mews-success-dark)',
     bgColor: 'rgba(5, 150, 105, 0.08)',
   },
 };
