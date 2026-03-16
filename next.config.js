@@ -12,7 +12,7 @@ const nextConfig = {
 
   // Experimental optimizations
   experimental: {
-    optimizePackageImports: ['react', 'react-dom', 'date-fns', 'date-fns-tz'],
+    optimizePackageImports: ['react', 'react-dom', 'date-fns', 'date-fns-tz', 'lucide-react'],
   },
 }
 
