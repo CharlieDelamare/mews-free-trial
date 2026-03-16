@@ -240,7 +240,7 @@ export default function SandboxFillerPage() {
               </p>
             )}
             <p className="text-xs text-gray-500 mt-2">
-              If your property isn't available in the dropdown, please add the "Mews Sandbox Manager" integration in the Marketplace within Mews.
+              If your property isn&apos;t available in the dropdown, please add the &quot;Mews Sandbox Manager&quot; integration in the Marketplace within Mews.
             </p>
           </div>
 

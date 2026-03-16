@@ -14,6 +14,14 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['react', 'react-dom', 'date-fns', 'date-fns-tz', 'lucide-react'],
   },
+
+  // Stub optional jsPDF peer dependencies (dompurify + canvg) that are only
+  // needed for the jsPDF.html() path — we use the canvas/addImage path instead.
+  webpack(config) {
+    config.resolve.alias['dompurify'] = false;
+    config.resolve.alias['canvg'] = false;
+    return config;
+  },
 }
 
 module.exports = nextConfig

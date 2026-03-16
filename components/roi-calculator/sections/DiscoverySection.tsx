@@ -877,7 +877,7 @@ export default function DiscoverySection({
               <div className="mt-3 flex items-start gap-2 p-3 rounded-lg" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
                 <BarChart3 className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-purple-800">
-                  RMS module has been disabled from the ROI calculation. The prospect already has automated rate management, so the full uplift and time savings don't apply. You can still manually re-enable it with a reduced 2% incremental uplift.
+                  RMS module has been disabled from the ROI calculation. The prospect already has automated rate management, so the full uplift and time savings don&apos;t apply. You can still manually re-enable it with a reduced 2% incremental uplift.
                 </p>
               </div>
             )}
