@@ -25,7 +25,7 @@ export default function LeverCard({
   const isCost = resultType === 'costSaving';
 
   const Icon = isTime ? Clock : isCost ? TrendingDown : TrendingUp;
-  const accentColor = isTime ? '#8b5cf6' : isCost ? '#10b981' : '#3b82f6';
+  const accentColor = isTime ? 'var(--roi-module-gx)' : isCost ? 'var(--mews-success)' : 'var(--roi-module-payment)';
   const tagLabel = isTime ? 'time reclaimed' : isCost ? 'cost saving' : 'revenue uplift';
 
   const formatted = isTime

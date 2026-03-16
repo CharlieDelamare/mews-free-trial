@@ -17,7 +17,7 @@ export default function Explanation({ title, description }: ExplanationProps) {
       <div className="flex items-center gap-2 mb-2">
         <div
           className="w-1 h-4 rounded-full flex-shrink-0"
-          style={{ background: 'linear-gradient(to bottom, var(--mews-indigo), #4d8a96)' }}
+          style={{ background: 'linear-gradient(to bottom, var(--mews-indigo), var(--mews-indigo))' }}
         />
         <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
           {title}

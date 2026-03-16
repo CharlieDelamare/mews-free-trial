@@ -78,13 +78,13 @@ export default function Slider({
       hoverBg: 'rgba(239,137,214,0.14)',
     },
     pink: {
-      track: '#6BA3B0',
-      badgeBg: 'rgba(107,163,176,0.08)',
-      badgeBorder: 'rgba(107,163,176,0.2)',
-      badgeText: '#4d8a96',
-      editBorder: 'rgba(107,163,176,0.4)',
-      editShadow: 'rgba(107,163,176,0.12)',
-      hoverBg: 'rgba(107,163,176,0.14)',
+      track: 'var(--mews-indigo)',
+      badgeBg: 'rgba(179,178,251,0.08)',
+      badgeBorder: 'rgba(179,178,251,0.2)',
+      badgeText: 'var(--mews-indigo)',
+      editBorder: 'rgba(179,178,251,0.4)',
+      editShadow: 'rgba(179,178,251,0.12)',
+      hoverBg: 'rgba(179,178,251,0.14)',
     },
   };
   const cs = colorScheme[color];

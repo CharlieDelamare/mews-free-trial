@@ -59,7 +59,7 @@ export default function ModulePill({
         }}
         className="relative flex-shrink-0 w-8 h-[18px] rounded-full transition-colors duration-200"
         style={{
-          background: enabled ? color : '#d1d5db',
+          background: enabled ? color : 'var(--roi-neutral-border)',
         }}
         aria-label={`Toggle ${label}`}
       >

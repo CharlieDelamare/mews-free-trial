@@ -28,10 +28,10 @@ export default function PresetSelector({ activePreset, onSelect }: PresetSelecto
             style={
               isActive
                 ? {
-                    background: 'rgba(107,163,176,0.25)',
-                    color: '#ffffff',
-                    border: '1.5px solid rgba(107,163,176,0.5)',
-                    boxShadow: '0 0 12px rgba(107,163,176,0.15)',
+                    background: 'rgba(179,178,251,0.25)',
+                    color: 'var(--mews-white)',
+                    border: '1.5px solid rgba(179,178,251,0.5)',
+                    boxShadow: '0 0 12px rgba(179,178,251,0.15)',
                   }
                 : {
                     background: 'rgba(255,255,255,0.08)',

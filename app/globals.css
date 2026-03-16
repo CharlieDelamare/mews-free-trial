@@ -37,6 +37,14 @@
   --font-heading: var(--font-inter, 'Inter'), sans-serif;
   --font-subheading: var(--font-inter, 'Inter'), sans-serif;
   --font-body: var(--font-inter, 'Inter'), sans-serif;
+
+  /* ROI Calculator module colors */
+  --roi-module-gx: #8b5cf6;          /* Guest Experience — purple */
+  --roi-module-payment: #3b82f6;     /* Payment — blue */
+  --roi-module-rms: #10b981;         /* RMS — green (same as --mews-success) */
+  --roi-slider-teal: var(--mews-indigo); /* Replaces #6BA3B0 / #4d8a96 teal */
+  --roi-neutral-border: #d1d5db;     /* Light gray border */
+  --roi-white: #ffffff;              /* Pure white (only where --mews-white can't be used inline) */
 }
 
 /* Reset native dialog browser defaults for custom styling */

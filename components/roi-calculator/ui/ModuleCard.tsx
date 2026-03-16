@@ -44,7 +44,7 @@ export default function ModuleCard({
     <div
       className="rounded-2xl overflow-hidden transition-all duration-300"
       style={{
-        background: enabled ? '#ffffff' : 'rgba(255,255,255,0.5)',
+        background: enabled ? 'var(--mews-white)' : 'rgba(255,255,255,0.5)',
         border: isActiveDetail
           ? `2px solid ${color}`
           : `1px solid ${enabled ? 'rgba(45,44,55,0.08)' : 'rgba(45,44,55,0.04)'}`,

@@ -273,7 +273,7 @@ export default function SmartField({
           onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
           className="w-full cursor-pointer mb-4"
           style={{
-            background: `linear-gradient(to right, ${status === 'confirmed' || status === 'adjusted' ? '#10b981' : '#f59e0b'} 0%, ${status === 'confirmed' || status === 'adjusted' ? '#10b981' : '#f59e0b'} ${((value - min) / (max - min)) * 100}%, #e5e7eb ${((value - min) / (max - min)) * 100}%, #e5e7eb 100%)`,
+            background: `linear-gradient(to right, ${status === 'confirmed' || status === 'adjusted' ? 'var(--mews-success)' : '#f59e0b'} 0%, ${status === 'confirmed' || status === 'adjusted' ? 'var(--mews-success)' : '#f59e0b'} ${((value - min) / (max - min)) * 100}%, #e5e7eb ${((value - min) / (max - min)) * 100}%, #e5e7eb 100%)`,
             height: '6px',
             borderRadius: '99px',
           }}

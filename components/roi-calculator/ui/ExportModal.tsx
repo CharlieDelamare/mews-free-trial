@@ -82,8 +82,8 @@ export default function ExportModal({
                 key={section.id}
                 className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150 group"
                 style={{
-                  background: isChecked ? 'rgba(107,163,176,0.07)' : 'rgba(45,44,55,0.02)',
-                  border: `1px solid ${isChecked ? 'rgba(107,163,176,0.25)' : 'rgba(45,44,55,0.06)'}`,
+                  background: isChecked ? 'rgba(179,178,251,0.07)' : 'rgba(45,44,55,0.02)',
+                  border: `1px solid ${isChecked ? 'rgba(179,178,251,0.25)' : 'rgba(45,44,55,0.06)'}`,
                 }}
               >
                 {/* Custom checkbox */}
@@ -91,10 +91,10 @@ export default function ExportModal({
                   className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-150"
                   style={{
                     background: isChecked
-                      ? 'linear-gradient(135deg, var(--mews-indigo), #4d8a96)'
+                      ? 'var(--mews-indigo)'
                       : 'rgba(45,44,55,0.06)',
                     border: `2px solid ${isChecked ? 'transparent' : 'rgba(45,44,55,0.15)'}`,
-                    boxShadow: isChecked ? '0 2px 8px rgba(107,163,176,0.3)' : 'none',
+                    boxShadow: isChecked ? '0 2px 8px rgba(179,178,251,0.3)' : 'none',
                   }}
                 >
                   {isChecked && (
@@ -152,7 +152,7 @@ export default function ExportModal({
             style={{
               background:
                 selectedSections.length === 0 || isExporting
-                  ? '#d1d5db'
+                  ? 'var(--roi-neutral-border)'
                   : 'linear-gradient(135deg, var(--mews-night-black) 0%, #1a4e8c 100%)',
               boxShadow:
                 selectedSections.length === 0 || isExporting
