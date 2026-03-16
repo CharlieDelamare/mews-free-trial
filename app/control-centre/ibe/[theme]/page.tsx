@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { IbeTheme, IbeSearchResult } from '@/types/control-centre';
 
@@ -27,9 +27,8 @@ interface BookingForm {
   email: string;
 }
 
-export default function IbePage({ params }: { params: Promise<{ theme: string }> }) {
-  const resolvedParams = use(params);
-  const theme = resolvedParams.theme as IbeTheme;
+export default function IbePage({ params }: { params: { theme: string } }) {
+  const theme = params.theme as IbeTheme;
   const searchParams = useSearchParams();
   const router = useRouter();
   const enterpriseId = searchParams.get('enterpriseId') || '';
