@@ -35,3 +35,6 @@ prisma/*.db-journal
 # Data directory (legacy token storage)
 /data
 environment-logs.json
+
+# Git worktrees
+.worktrees/

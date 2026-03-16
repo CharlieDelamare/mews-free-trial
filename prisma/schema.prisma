@@ -197,3 +197,22 @@ model ApiCallLog {
   @@index([unifiedLogId, group])
   @@index([unifiedLogId, timestamp])
 }
+
+model IbeSession {
+  id             String    @id @default(cuid())
+  enterpriseId   String
+  theme          String    // 'luxury' | 'city' | 'resort' | 'conference' | 'budget'
+  reservationId  String?
+  checkIn        String
+  checkOut       String
+  guestCount     Int
+  totalPrice     Float?
+  status         String    // 'searching' | 'booked' | 'failed'
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+  metadata       Json?
+
+  @@index([enterpriseId])
+  @@index([theme])
+  @@index([createdAt])
+}
