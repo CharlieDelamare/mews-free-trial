@@ -186,7 +186,7 @@ export default function SandboxFillerPage() {
     <main className="min-h-screen bg-mews-linen py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sandbox Filler</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Demo Filler</h1>
           <p className="text-gray-600">Add reservations to an existing sandbox</p>
         </div>
 
