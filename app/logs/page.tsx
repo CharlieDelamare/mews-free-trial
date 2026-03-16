@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { UnifiedLog, EnvironmentLog, ResetLog, DemoFillerLog, CloseBillsLog } from '@/types/unified-log';
+import type { UnifiedLog, EnvironmentLog, ResetLog, DemoFillerLog, CloseBillsLog, ControlCentreLog } from '@/types/unified-log';
 import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
 import { CopyButton } from '@/components/CopyButton';
 import { Pagination } from '@/components/Pagination';
@@ -21,6 +21,16 @@ function getLogTypeLabel(type: UnifiedLog['logType']) {
       return { label: 'Sandbox Filler', color: 'bg-warning-50 text-warning-700' };
     case 'close_bills':
       return { label: 'Close Bills', color: 'bg-warning-100 text-warning-700' };
+    case 'morning_prep':
+      return { label: 'Morning Prep', color: 'bg-blue-100 text-blue-700' };
+    case 'auto_checkout':
+      return { label: 'Auto Checkout', color: 'bg-green-100 text-green-700' };
+    case 'scenario':
+      return { label: 'Scenario', color: 'bg-purple-100 text-purple-700' };
+    case 'doors':
+      return { label: 'Door Provisioning', color: 'bg-gray-100 text-gray-700' };
+    case 'import':
+      return { label: 'Import', color: 'bg-orange-100 text-orange-700' };
   }
 }
 
@@ -191,6 +201,9 @@ export default function LogsPage() {
                     {log.logType === 'reset' && <ResetContent log={log} />}
                     {log.logType === 'demo_filler' && <DemoFillerContent log={log} />}
                     {log.logType === 'close_bills' && <CloseBillsContent log={log as CloseBillsLog} />}
+                    {(log.logType === 'morning_prep' || log.logType === 'auto_checkout' || log.logType === 'scenario' || log.logType === 'doors' || log.logType === 'import') && (
+                      <ControlCentreContent log={log as ControlCentreLog} />
+                    )}
                   </div>
                 );
               })}
@@ -389,6 +402,63 @@ function DemoFillerContent({ log }: { log: DemoFillerLog }) {
           <div className="flex items-center gap-2 text-warning-700">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning-700"></div>
             <p className="text-xs font-medium">Creating reservations...</p>
+          </div>
+        </div>
+      )}
+
+      {log.status === 'failed' && log.errorMessage && (
+        <div className="border-t border-gray-200 pt-3 mt-3">
+          <h3 className="font-semibold text-gray-800 text-sm mb-2">Error Details</h3>
+          <pre className="bg-white rounded p-2 text-xs overflow-x-auto text-gray-700">{log.errorMessage}</pre>
+        </div>
+      )}
+
+      <ApiCallLogs logId={log.id} />
+    </>
+  );
+}
+
+function ControlCentreContent({ log }: { log: ControlCentreLog }) {
+  const scenarioType = log.logType === 'scenario'
+    ? (log.operationDetails?.scenarioType as string | undefined)
+    : undefined;
+
+  return (
+    <>
+      <div className="border-t border-gray-200 pt-3 mt-3">
+        <div className="space-y-2 text-sm">
+          {scenarioType && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Scenario:</span>
+              <span className="font-medium text-gray-800 capitalize">{scenarioType.replace('_', ' ')}</span>
+            </div>
+          )}
+          {log.totalItems != null && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">{log.logType === 'import' ? 'Rows imported:' : 'Items processed:'}</span>
+              <span className="font-medium text-gray-800">{log.successCount ?? 0} / {log.totalItems}</span>
+            </div>
+          )}
+          {(log.failureCount ?? 0) > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-error-600">Failed:</span>
+              <span className="font-medium text-error-700">{log.failureCount}</span>
+            </div>
+          )}
+          {log.completedAt && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Completed:</span>
+              <span className="font-medium text-gray-800">{formatDate(log.completedAt)}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {log.status === 'processing' && (
+        <div className="border-t border-gray-200 pt-3 mt-3">
+          <div className="flex items-center gap-2 text-warning-700">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-warning-700"></div>
+            <p className="text-xs font-medium">Running...</p>
           </div>
         </div>
       )}

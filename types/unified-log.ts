@@ -1,7 +1,8 @@
 // TypeScript types for unified logging system
 
 // === Core Types ===
-export type LogType = 'environment' | 'reset' | 'demo_filler' | 'close_bills';
+export type ControlCentreLogType = 'morning_prep' | 'auto_checkout' | 'scenario' | 'doors' | 'import';
+export type LogType = 'environment' | 'reset' | 'demo_filler' | 'close_bills' | ControlCentreLogType;
 export type LogStatus = 'building' | 'processing' | 'completed' | 'failed';
 
 // === operationDetails Types ===
@@ -150,8 +151,17 @@ export interface CloseBillsLog extends BaseLog {
   operationDetails?: CloseBillsDetails | null;
 }
 
+/** Control centre operation log (morning prep, auto checkout, scenario, doors, import) */
+export interface ControlCentreLog extends BaseLog {
+  logType: ControlCentreLogType;
+  totalItems?: number | null;
+  successCount?: number | null;
+  failureCount?: number | null;
+  operationDetails?: Record<string, unknown> | null;
+}
+
 /** Discriminated union of all log types */
-export type UnifiedLog = EnvironmentLog | ResetLog | DemoFillerLog | CloseBillsLog;
+export type UnifiedLog = EnvironmentLog | ResetLog | DemoFillerLog | CloseBillsLog | ControlCentreLog;
 
 // === Type Guards ===
 
