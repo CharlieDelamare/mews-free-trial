@@ -109,7 +109,10 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       if (savedClearRef.current) clearTimeout(savedClearRef.current);
     };
-  }, [state, presentationId]);
+  // Depend only on non-ui slices so UI-only changes (opening modals, cinematic mode)
+  // don't trigger unnecessary PATCH requests.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, presentationId]);
 
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
