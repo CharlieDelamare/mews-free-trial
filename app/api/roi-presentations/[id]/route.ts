@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { extractMetadata } from '@/lib/roi-calculator/utils/persistence';
-import type { PersistedState } from '@/lib/roi-calculator/utils/persistence';
+import { extractMetadata, serializeState } from '@/lib/roi-calculator/utils/persistence';
+import type { CalculatorState } from '@/lib/roi-calculator/types/calculator';
 
 export async function GET(
   _req: NextRequest,
@@ -20,14 +20,19 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const { state } = await req.json() as { state: PersistedState };
+  const { state } = await req.json() as { state: CalculatorState };
 
-  const meta = extractMetadata(state);
+  if (!state) {
+    return NextResponse.json({ success: false, error: 'state is required' }, { status: 400 });
+  }
+
+  const persisted = serializeState(state);
+  const meta = extractMetadata(persisted);
 
   await prisma.roiPresentation.update({
     where: { id },
     data: {
-      stateJson: state as object,
+      stateJson: persisted as object,
       ...meta,
     },
   });
