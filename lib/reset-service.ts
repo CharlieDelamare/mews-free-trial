@@ -8,7 +8,7 @@ import { fetchAllMewsData } from './mews-data-service';
 import { createReservationsForEnvironment } from './reservation-service';
 import { closeBillsForEnvironment } from './bill-service';
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
-import { startOfDay, addDays, subDays, addMonths } from 'date-fns';
+import { startOfDay, addDays, subDays, addMonths, subMonths } from 'date-fns';
 import { createResetLog, updateUnifiedLog } from './unified-logger';
 import { fetchTimezoneFromConfiguration } from './timezone-service';
 import { loggedFetch } from './api-call-logger';
@@ -22,72 +22,102 @@ interface Reservation {
 
 
 /**
- * Get all reservations with pagination support
+ * Get all reservations with pagination support.
+ *
+ * Fetches reservations across multiple 3-month windows (Mews API limit) from
+ * `lookbackDate` (default: 1 year ago) through 3 months from now, so that
+ * Confirmed/Optional reservations with past start dates and Started reservations
+ * with past departure dates are not missed.
  */
 async function getAllReservationsWithPagination(
   accessToken: string,
   serviceId: string,
   states: string[],
-  logId?: string
+  logId?: string,
+  lookbackDate?: Date
 ): Promise<{ reservations: Reservation[]; error?: string }> {
   const allReservations: Reservation[] = [];
-  let cursor: string | null = null;
-  let pageCount = 0;
+  const seenIds = new Set<string>();
+
+  // Default: look back 1 year to catch stale confirmed/started reservations
+  const windowStart = lookbackDate ?? subMonths(new Date(), 12);
+  const windowEnd = addMonths(new Date(), 3);
+
+  // Chunk into 3-month windows (Mews API max per ScheduledStartUtc filter)
+  const windows: Array<{ start: Date; end: Date }> = [];
+  let chunkStart = windowStart;
+  while (chunkStart < windowEnd) {
+    const chunkEnd = addMonths(chunkStart, 3);
+    windows.push({ start: chunkStart, end: chunkEnd < windowEnd ? chunkEnd : windowEnd });
+    chunkStart = chunkEnd;
+  }
+
+  console.log(`[RESET-SERVICE] Fetching reservations across ${windows.length} window(s) from ${windowStart.toISOString()} to ${windowEnd.toISOString()}`);
 
   try {
-    do {
-      pageCount++;
-      console.log(`[RESET-SERVICE] Fetching reservations page ${pageCount}...`);
+    for (let w = 0; w < windows.length; w++) {
+      const { start, end } = windows[w];
+      let cursor: string | null = null;
+      let pageCount = 0;
 
-      // Include reservations starting up to 7 days ago through 3 months ahead
-      // (API max window is 3 months for ScheduledStartUtc filter)
-      const sevenDaysAgo = subDays(new Date(), 7);
-      const threeMonthsFromStart = addMonths(sevenDaysAgo, 3);
+      do {
+        pageCount++;
+        console.log(`[RESET-SERVICE] Window ${w + 1}/${windows.length}, page ${pageCount} (${start.toISOString().slice(0, 10)} – ${end.toISOString().slice(0, 10)})...`);
 
-      const url = `${getMewsApiUrl()}/api/connector/v1/reservations/getAll/2023-06-06`;
-      const fetchOptions: RequestInit = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ClientToken: getMewsClientToken(),
-          AccessToken: accessToken,
-          Client: 'Mews Sandbox Manager',
-          ServiceIds: [serviceId],
-          States: states,
-          ScheduledStartUtc: {
-            StartUtc: sevenDaysAgo.toISOString(),
-            EndUtc: threeMonthsFromStart.toISOString()
-          },
-          Limitation: {
-            Count: 1000,
-            ...(cursor && { Cursor: cursor })
-          }
-        })
-      };
-
-      const response: Response = logId
-        ? await loggedFetch(url, fetchOptions, {
-            unifiedLogId: logId,
-            group: 'reservations',
-            endpoint: 'reservations/getAll/2023-06-06'
+        const url = `${getMewsApiUrl()}/api/connector/v1/reservations/getAll/2023-06-06`;
+        const fetchOptions: RequestInit = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ClientToken: getMewsClientToken(),
+            AccessToken: accessToken,
+            Client: 'Mews Sandbox Manager',
+            ServiceIds: [serviceId],
+            States: states,
+            ScheduledStartUtc: {
+              StartUtc: start.toISOString(),
+              EndUtc: end.toISOString()
+            },
+            Limitation: {
+              Count: 1000,
+              ...(cursor && { Cursor: cursor })
+            }
           })
-        : await fetch(url, fetchOptions);
+        };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          `Failed to fetch reservations: ${response.status} - ${errorData.Message || response.statusText}`
-        );
-      }
+        const response: Response = logId
+          ? await loggedFetch(url, fetchOptions, {
+              unifiedLogId: logId,
+              group: 'reservations',
+              endpoint: 'reservations/getAll/2023-06-06'
+            })
+          : await fetch(url, fetchOptions);
 
-      const data = await response.json();
-      const pageReservations = data.Reservations || [];
-      allReservations.push(...pageReservations);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            `Failed to fetch reservations: ${response.status} - ${errorData.Message || response.statusText}`
+          );
+        }
 
-      console.log(`[RESET-SERVICE] Page ${pageCount}: ${pageReservations.length} reservations`);
+        const data = await response.json();
+        const pageReservations: Reservation[] = data.Reservations || [];
 
-      cursor = data.Cursor || null;
-    } while (cursor !== null);
+        // Deduplicate by ID (windows may overlap at boundaries)
+        let newCount = 0;
+        for (const r of pageReservations) {
+          if (!seenIds.has(r.Id)) {
+            seenIds.add(r.Id);
+            allReservations.push(r);
+            newCount++;
+          }
+        }
+
+        console.log(`[RESET-SERVICE] Window ${w + 1}, page ${pageCount}: ${pageReservations.length} fetched, ${newCount} new`);
+
+        cursor = data.Cursor || null;
+      } while (cursor !== null);
+    }
 
     console.log(`[RESET-SERVICE] Total reservations fetched: ${allReservations.length}`);
     return { reservations: allReservations };
