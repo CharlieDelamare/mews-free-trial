@@ -26,19 +26,8 @@ import {
 
 // ── Default state ─────────────────────────────────────────────────────
 
-import { defaultCalculatorState } from '@/lib/roi-calculator/utils/defaultState';
+import { defaultCalculatorState, deriveReservations, deriveMonthlyRevenue } from '@/lib/roi-calculator/utils/defaultState';
 export { defaultCalculatorState };
-
-// ── Derivation helpers ────────────────────────────────────────────────
-
-function deriveReservations(rooms: number, occupancy: number, avgStay: number): number {
-  if (avgStay <= 0 || rooms <= 0) return 1;
-  return Math.max(1, Math.round(rooms * 30 * (occupancy / 100) / avgStay));
-}
-
-function deriveMonthlyRevenue(rooms: number, adr: number, occupancy: number): number {
-  return Math.max(0, Math.round(rooms * adr * 30 * (occupancy / 100)));
-}
 
 // ── Module presets ────────────────────────────────────────────────────
 
@@ -301,8 +290,16 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
 
 // ── Hook ──────────────────────────────────────────────────────────────
 
-export function useROICalculator() {
-  const [state, dispatch] = useReducer(reducer, defaultCalculatorState);
+export function useROICalculator(savedState?: Omit<CalculatorState, 'ui'>) {
+  const startState: CalculatorState = savedState
+    ? {
+        ...savedState,
+        config: { ...savedState.config, isInitialLoad: true },
+        ui: defaultCalculatorState.ui,
+      }
+    : defaultCalculatorState;
+
+  const [state, dispatch] = useReducer(reducer, startState);
 
   // Clear usState when country changes away from United States
   useEffect(() => {

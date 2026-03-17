@@ -1,12 +1,12 @@
 import type { CalculatorState } from '@/lib/roi-calculator/types/calculator';
 
-// Derivation helpers (duplicated here so this file has no 'use client' imports)
-function deriveReservations(rooms: number, occupancy: number, avgStay: number): number {
+// Derivation helpers (exported so the hook can import them instead of duplicating)
+export function deriveReservations(rooms: number, occupancy: number, avgStay: number): number {
   if (avgStay <= 0 || rooms <= 0) return 1;
   return Math.max(1, Math.round(rooms * 30 * (occupancy / 100) / avgStay));
 }
 
-function deriveMonthlyRevenue(rooms: number, adr: number, occupancy: number): number {
+export function deriveMonthlyRevenue(rooms: number, adr: number, occupancy: number): number {
   return Math.max(0, Math.round(rooms * adr * 30 * (occupancy / 100)));
 }
 
