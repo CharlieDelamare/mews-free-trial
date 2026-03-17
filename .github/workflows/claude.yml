@@ -21,6 +21,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
           prompt: |
             You are an expert software engineer. Read this GitHub issue carefully and implement the requested changes in the codebase.
 
