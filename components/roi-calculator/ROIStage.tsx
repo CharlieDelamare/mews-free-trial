@@ -74,6 +74,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -89,13 +90,15 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        await fetch(`/api/roi-presentations/${presentationId}`, {
+        const res = await fetch(`/api/roi-presentations/${presentationId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ state: serializeState(state) }),
         });
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
         setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
+        if (savedClearRef.current) clearTimeout(savedClearRef.current);
+        savedClearRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
       } catch {
         setSaveStatus('idle');
         console.error('[ROI] Auto-save failed');
@@ -104,6 +107,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
 
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (savedClearRef.current) clearTimeout(savedClearRef.current);
     };
   }, [state, presentationId]);
 
