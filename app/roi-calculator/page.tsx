@@ -5,6 +5,8 @@ import { Plus, ArrowRight, TrendingUp } from 'lucide-react';
 
 export const metadata = { title: 'Business Case Presentations — Mews ROI' };
 
+// TODO: always renders USD ($). To support per-presentation currencies, add a
+// currencySymbol column to RoiPresentation and populate it from extractMetadata.
 function formatCurrency(amount: number): string {
   if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(1)}M`;
   if (amount >= 1_000) return `$${Math.round(amount / 1_000)}k`;

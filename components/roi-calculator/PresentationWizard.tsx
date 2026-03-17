@@ -136,7 +136,8 @@ export default function PresentationWizard() {
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[--mews-night-black] text-white font-medium hover:bg-[--mews-deep-blue] transition-colors"
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[--mews-night-black] text-white font-medium hover:bg-[--mews-deep-blue] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ fontFamily: 'var(--font-body)' }}
             >
               Continue <ArrowRight className="w-4 h-4" />
@@ -165,7 +166,7 @@ export default function PresentationWizard() {
         isOpen={true}
         onClose={() => {}}
         onComplete={handleIntakeComplete}
-        intakeMode={ui.activePreset === 'custom' ? 'fast' : 'fast'}
+        intakeMode="fast"
         onModeChange={(mode: IntakeMode) =>
           confidenceDispatch({ type: 'SET_INTAKE_MODE', mode })
         }
