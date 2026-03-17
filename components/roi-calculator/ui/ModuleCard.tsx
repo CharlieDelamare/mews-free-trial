@@ -77,21 +77,34 @@ export default function ModuleCard({
 
           {/* Toggle switch */}
           <button
+            role="switch"
+            aria-checked={enabled}
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
-            className="flex-shrink-0 w-11 h-6 rounded-full transition-all duration-200 relative"
-            style={{
-              background: enabled ? color : 'rgba(45,44,55,0.12)',
-              boxShadow: enabled ? `0 2px 8px ${color}40` : 'none',
-            }}
+            className="flex-shrink-0 flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-full"
+            style={{ '--tw-ring-color': color } as React.CSSProperties}
             aria-label={`${enabled ? 'Disable' : 'Enable'} ${label}`}
           >
+            <span
+              className="text-xs font-semibold tracking-wide"
+              style={{ color: enabled ? color : 'rgba(45,44,55,0.3)', minWidth: '1.75rem', textAlign: 'right' }}
+            >
+              {enabled ? 'ON' : 'OFF'}
+            </span>
             <div
-              className="w-5 h-5 rounded-full bg-white absolute top-0.5 transition-all duration-200"
+              className="relative w-11 h-6 rounded-full transition-colors duration-200"
               style={{
-                left: enabled ? '22px' : '2px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                background: enabled ? color : 'rgba(45,44,55,0.15)',
+                boxShadow: enabled ? `0 2px 8px ${color}40` : 'inset 0 1px 2px rgba(0,0,0,0.08)',
               }}
-            />
+            >
+              <div
+                className="w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform duration-200"
+                style={{
+                  transform: enabled ? 'translateX(22px)' : 'translateX(2px)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }}
+              />
+            </div>
           </button>
         </div>
 
