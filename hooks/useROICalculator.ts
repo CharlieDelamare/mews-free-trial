@@ -70,7 +70,7 @@ function detectPreset(enabled: EnabledModules): PresetKey {
 
 // ── Initial state ─────────────────────────────────────────────────────
 
-const initialState: CalculatorState = {
+export const defaultCalculatorState: CalculatorState = {
   config: {
     title: '',
     country: 'Belgium',
@@ -384,7 +384,7 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
 // ── Hook ──────────────────────────────────────────────────────────────
 
 export function useROICalculator() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, defaultCalculatorState);
 
   // Clear usState when country changes away from United States
   useEffect(() => {
