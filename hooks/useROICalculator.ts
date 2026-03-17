@@ -291,15 +291,14 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
 // ── Hook ──────────────────────────────────────────────────────────────
 
 export function useROICalculator(savedState?: Omit<CalculatorState, 'ui'>) {
-  const startState: CalculatorState = savedState
-    ? {
-        ...savedState,
-        config: { ...savedState.config, isInitialLoad: true },
-        ui: defaultCalculatorState.ui,
-      }
-    : defaultCalculatorState;
-
-  const [state, dispatch] = useReducer(reducer, startState);
+  const [state, dispatch] = useReducer(
+    reducer,
+    savedState,
+    (s): CalculatorState =>
+      s
+        ? { ...s, config: { ...s.config, isInitialLoad: true }, ui: defaultCalculatorState.ui }
+        : defaultCalculatorState,
+  );
 
   // Clear usState when country changes away from United States
   useEffect(() => {
