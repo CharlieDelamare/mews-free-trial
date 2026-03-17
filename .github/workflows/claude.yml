@@ -35,10 +35,11 @@ jobs:
 
             ${{ github.event.issue.body }}
 
-            Guidelines:
-            - Make only the changes necessary to address the issue
-            - Follow the existing code style and conventions in the repo
-            - Write clean, well-structured code
-            - When done, open a pull request against main with a clear description of what you changed and why
+            IMPORTANT INSTRUCTIONS:
+            1. Create a new branch named "claude/issue-${{ github.event.issue.number }}" before making any changes
+            2. Make all changes on that branch — NEVER commit directly to main
+            3. Follow the existing code style and conventions in the repo
+            4. Write clean, well-structured code
+            5. When done, open a pull request from your branch to main with a clear description of what you changed and why
 
             If the issue is unclear or lacks enough detail to implement safely, leave a comment on issue #${{ github.event.issue.number }} explaining what additional information is needed.
