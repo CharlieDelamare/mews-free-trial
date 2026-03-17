@@ -336,6 +336,11 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-24">
         {/* ─── Zone 1: The Stage ─── */}
         <div className="pt-6 md:pt-10">
+          {/* Page heading */}
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold" style={{ color: 'var(--mews-night-black)', fontFamily: 'var(--font-heading)' }}>ROI Calculator</h1>
+          </div>
+
           {/* Presentation title */}
           <div className="flex flex-col items-center mb-4">
             <input
