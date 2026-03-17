@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { UnifiedLog, EnvironmentLog, ResetLog, DemoFillerLog, CloseBillsLog, ControlCentreLog } from '@/types/unified-log';
 import { StatusBadge, getStatusCardStyle } from '@/components/StatusBadge';
@@ -61,11 +61,25 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const currentPageRef = useRef(currentPage);
+  const debouncedSearchRef = useRef(debouncedSearch);
   currentPageRef.current = currentPage;
+  debouncedSearchRef.current = debouncedSearch;
 
-  const fetchPage = useCallback(async (page: number, signal?: AbortSignal) => {
-    const response = await fetch(`/api/logs?page=${page}&pageSize=${ITEMS_PER_PAGE}`, { signal });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const fetchPage = useCallback(async (page: number, searchQuery: string, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(ITEMS_PER_PAGE) });
+    if (searchQuery) params.set('search', searchQuery);
+    const response = await fetch(`/api/logs?${params}`, { signal });
     const data = await response.json();
     if (data.success) {
       setLogs(data.logs);
@@ -77,7 +91,7 @@ export default function LogsPage() {
   }, []);
 
   const fetchLogsForPolling = useCallback(async (signal?: AbortSignal) => {
-    return fetchPage(currentPageRef.current, signal);
+    return fetchPage(currentPageRef.current, debouncedSearchRef.current, signal);
   }, [fetchPage]);
 
   const { isPolling, lastFetchedAt, refresh } = useAdaptivePolling({
@@ -92,7 +106,7 @@ export default function LogsPage() {
     const initialFetch = async () => {
       try {
         setLoading(true);
-        await fetchPage(1, controller.signal);
+        await fetchPage(1, debouncedSearch, controller.signal);
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
         setError('Error fetching logs');
@@ -102,7 +116,7 @@ export default function LogsPage() {
     };
     initialFetch();
     return () => controller.abort();
-  }, [fetchPage]);
+  }, [fetchPage, debouncedSearch]);
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
@@ -110,7 +124,7 @@ export default function LogsPage() {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
-      await fetchPage(page);
+      await fetchPage(page, debouncedSearch);
     } catch (err) {
       // Error handled by polling
     }
@@ -138,13 +152,23 @@ export default function LogsPage() {
                 </span>
               )}
               <button
-                onClick={refresh}
-                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => startTransition(() => { refresh(); })}
+                className="min-w-[36px] px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 title="Refresh logs"
               >
                 Refresh
               </button>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="search"
+              placeholder="Search by property name..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full sm:w-80 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
           </div>
 
           {loading && (
@@ -162,10 +186,16 @@ export default function LogsPage() {
 
           {!loading && !error && logs.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              <p className="text-lg">No sandboxes created yet.</p>
-              <Link href="/" className="mt-4 inline-block text-primary-600 hover:text-info-700 font-medium">
-                Create your first sandbox &rarr;
-              </Link>
+              {debouncedSearch ? (
+                <p className="text-lg">No logs found for &ldquo;{debouncedSearch}&rdquo;.</p>
+              ) : (
+                <>
+                  <p className="text-lg">No sandboxes created yet.</p>
+                  <Link href="/" className="mt-4 inline-block text-primary-600 hover:text-info-700 font-medium">
+                    Create your first sandbox &rarr;
+                  </Link>
+                </>
+              )}
             </div>
           )}
 

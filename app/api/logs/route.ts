@@ -46,16 +46,22 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(searchParams.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10)));
     const skip = (page - 1) * pageSize;
+    const search = searchParams.get('search')?.trim() || '';
 
     // 1. Try the UnifiedLog table (primary path) with server-side pagination
     try {
+      const where = search
+        ? { propertyName: { contains: search, mode: 'insensitive' as const } }
+        : {};
+
       const [unifiedLogs, totalCount, activeCount] = await Promise.all([
         prisma.unifiedLog.findMany({
+          where,
           orderBy: { timestamp: 'desc' },
           take: pageSize,
           skip,
         }),
-        prisma.unifiedLog.count(),
+        prisma.unifiedLog.count({ where }),
         prisma.unifiedLog.count({
           where: { status: { in: ['building', 'processing', 'Updating'] } },
         }),
