@@ -111,6 +111,7 @@ describe('deserializeState', () => {
   it('returns null for non-object input', () => {
     expect(deserializeState('invalid')).toBeNull();
     expect(deserializeState(42)).toBeNull();
+    expect(deserializeState([])).toBeNull();
   });
 
   it('restores a valid serialized state', () => {

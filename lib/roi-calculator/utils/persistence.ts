@@ -1,6 +1,6 @@
 import type { CalculatorState } from '@/lib/roi-calculator/types/calculator';
 import { calcAll } from '@/lib/roi-calculator/utils/calculations';
-import { defaultCalculatorState } from '@/hooks/useROICalculator';
+import { defaultCalculatorState } from '@/lib/roi-calculator/utils/defaultState';
 
 export type PersistedState = Omit<CalculatorState, 'ui'>;
 
