@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import SearchableSelect from '@/components/SearchableSelect';
+import { useToast } from '@/components/Toast';
 
 interface Environment {
   enterpriseId: string;
@@ -20,8 +21,8 @@ export default function SaveSandboxPage() {
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchEnvironments();
@@ -48,15 +49,13 @@ export default function SaveSandboxPage() {
       const response = await fetch('/api/environments/list');
       const data = await response.json();
       if (data.success) {
-        // Filter to trial-type sandboxes only (they have expiration timers)
-        const trialEnvironments = (data.environments || [])
-          .filter((env: Environment) => env.type === 'trial')
+        const sorted = (data.environments || [])
           .sort((a: Environment, b: Environment) => {
             const nameA = (a.propertyName || a.enterpriseName || '').toLowerCase();
             const nameB = (b.propertyName || b.enterpriseName || '').toLowerCase();
             return nameA.localeCompare(nameB);
           });
-        setEnvironments(trialEnvironments);
+        setEnvironments(sorted);
       }
     } catch (error) {
       console.error('Failed to fetch environments:', error);
@@ -87,21 +86,12 @@ export default function SaveSandboxPage() {
       if (data.success) {
         const env = environments.find(e => e.enterpriseId === selectedEnvironment);
         const envName = env?.propertyName || env?.enterpriseName || selectedEnvironment;
-        setResult({
-          type: 'success',
-          text: `Successfully saved "${envName}". The sandbox will no longer expire.`,
-        });
+        showToast(`Successfully saved "${envName}". The sandbox will no longer expire.`, 'success');
       } else {
-        setResult({
-          type: 'error',
-          text: data.error || 'Failed to save sandbox.',
-        });
+        showToast(data.error || 'Failed to save sandbox.', 'error');
       }
     } catch (error) {
-      setResult({
-        type: 'error',
-        text: 'Network error. Please try again.',
-      });
+      showToast('Network error. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -146,7 +136,7 @@ export default function SaveSandboxPage() {
               )}
               {!environmentsLoading && environments.length === 0 && (
                 <p className="text-sm text-gray-500 mt-2">
-                  No trial sandboxes found. Only sandboxes created by this app can be saved.
+                  No sandboxes found.
                 </p>
               )}
             </div>
@@ -169,17 +159,6 @@ export default function SaveSandboxPage() {
             >
               {submitting ? 'Saving...' : 'Save Sandbox'}
             </button>
-
-            {/* Result Message */}
-            {result && (
-              <div className={`p-4 rounded-lg text-sm ${
-                result.type === 'success'
-                  ? 'bg-success-50 text-success-700 border border-success-100'
-                  : 'bg-error-50 text-error-700 border border-error-100'
-              }`}>
-                {result.text}
-              </div>
-            )}
 
             <p className="text-xs text-gray-500 text-center">
               This will cancel the automatic deletion of the selected sandbox
