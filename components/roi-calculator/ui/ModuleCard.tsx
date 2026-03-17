@@ -80,7 +80,7 @@ export default function ModuleCard({
             role="switch"
             aria-checked={enabled}
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
-            className="flex-shrink-0 flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-full"
+            className="flex-shrink-0 flex items-center gap-1.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 rounded-full"
             style={{ '--tw-ring-color': color } as React.CSSProperties}
             aria-label={`${enabled ? 'Disable' : 'Enable'} ${label}`}
           >
@@ -98,7 +98,7 @@ export default function ModuleCard({
               }}
             >
               <div
-                className="w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform duration-200"
+                className="w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform duration-200 ease-in-out"
                 style={{
                   transform: enabled ? 'translateX(22px)' : 'translateX(2px)',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.2)',

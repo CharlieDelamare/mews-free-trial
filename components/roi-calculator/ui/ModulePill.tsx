@@ -57,16 +57,20 @@ export default function ModulePill({
           e.stopPropagation();
           onToggle();
         }}
-        className="relative flex-shrink-0 w-8 h-[18px] rounded-full transition-colors duration-200"
+        className="relative flex-shrink-0 w-9 h-5 rounded-full transition-all duration-200 cursor-pointer focus-visible:outline-none"
         style={{
-          background: enabled ? color : 'var(--roi-neutral-border)',
+          background: enabled ? color : 'rgba(45,44,55,0.18)',
+          boxShadow: enabled ? `0 0 0 2px ${color}25` : 'none',
         }}
         aria-label={`Toggle ${label}`}
+        aria-checked={enabled}
+        role="switch"
       >
         <span
-          className="absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform duration-200"
+          className="absolute top-[3px] w-[14px] h-[14px] rounded-full bg-white transition-transform duration-200 ease-in-out"
           style={{
-            transform: enabled ? 'translateX(16px)' : 'translateX(2px)',
+            transform: enabled ? 'translateX(18px)' : 'translateX(3px)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
           }}
         />
       </button>
