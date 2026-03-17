@@ -34,56 +34,47 @@ export default function ModulePill({
 }: ModulePillProps) {
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer select-none"
+      className="inline-flex items-center rounded-2xl border-2 bg-white transition-all duration-200"
       style={{
-        background: isActive
-          ? 'rgba(255,255,255,0.95)'
-          : enabled
-            ? 'rgba(255,255,255,0.7)'
-            : 'rgba(255,255,255,0.4)',
-        border: isActive
-          ? `2px solid ${color}`
-          : '2px solid transparent',
-        boxShadow: isActive
-          ? `0 2px 12px ${color}25`
-          : 'none',
-        opacity: enabled ? 1 : 0.5,
+        borderColor: isActive ? color : enabled ? color + '40' : '#e5e7eb',
+        boxShadow: isActive ? `0 2px 12px ${color}30` : 'none',
+        opacity: enabled ? 1 : 0.55,
       }}
-      onClick={onSelect}
     >
-      {/* Toggle switch */}
+      {/* ── Toggle switch — its own button, no nesting tricks ── */}
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        className="relative flex-shrink-0 w-8 h-[18px] rounded-full transition-colors duration-200"
-        style={{
-          background: enabled ? color : 'var(--roi-neutral-border)',
-        }}
-        aria-label={`Toggle ${label}`}
+        type="button"
+        onClick={onToggle}
+        aria-label={`${enabled ? 'Disable' : 'Enable'} ${label}`}
+        className="flex-shrink-0 w-10 h-6 rounded-full mx-2 my-2 relative transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+        style={{ background: enabled ? color : '#d1d5db' }}
       >
         <span
-          className="absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow-sm transition-transform duration-200"
-          style={{
-            transform: enabled ? 'translateX(16px)' : 'translateX(2px)',
-          }}
+          className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
+          style={{ transform: enabled ? 'translateX(18px)' : 'translateX(3px)' }}
         />
       </button>
 
-      {/* Label + value */}
-      <div className="flex items-center gap-1.5 min-w-0">
+      {/* ── Label + value — separate button for detail expand ── */}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex items-center gap-2 pr-3 py-2 focus:outline-none"
+      >
         <span
-          className="w-2 h-2 rounded-full flex-shrink-0"
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
           style={{ background: color }}
         />
-        <span className="text-sm font-semibold text-gray-700 truncate">{label}</span>
-        {enabled && (
-          <span className="text-xs font-bold text-gray-500 tabular-nums flex-shrink-0">
+        <span className="text-sm font-bold text-gray-800 whitespace-nowrap">{label}</span>
+        {enabled && savings > 0 && (
+          <span
+            className="text-xs font-semibold tabular-nums"
+            style={{ color }}
+          >
             {formatShort(savings, currencySymbol)}
           </span>
         )}
-      </div>
+      </button>
     </div>
   );
 }
