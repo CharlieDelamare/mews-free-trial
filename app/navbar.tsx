@@ -213,7 +213,7 @@ export function Navbar() {
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 mb-1">Tools</p>
+            <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1" style={{ color: 'var(--mews-indigo)', opacity: 0.7 }}>Tools</p>
             <div className="space-y-1">
               <Link key="/roi-calculator" href="/roi-calculator" onClick={close} className={linkClasses('/roi-calculator')}>
                 <span className="flex items-center gap-2">
