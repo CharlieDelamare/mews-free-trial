@@ -249,20 +249,22 @@ export async function loggedFetch(
       }
     }
 
-    logBuffer.add({
-      unifiedLogId: logContext.unifiedLogId,
-      endpoint,
-      method: options.method || 'GET',
-      url,
-      group: logContext.group,
-      statusCode: response.status,
-      durationMs,
-      success: response.ok,
-      requestBody: redactedRequestBody,
-      responseBody: responseBodyStr,
-      errorMessage: response.ok ? null : `HTTP ${response.status}`,
-      metadata: logContext.metadata || null,
-    });
+    if (!response.ok) {
+      logBuffer.add({
+        unifiedLogId: logContext.unifiedLogId,
+        endpoint,
+        method: options.method || 'GET',
+        url,
+        group: logContext.group,
+        statusCode: response.status,
+        durationMs,
+        success: false,
+        requestBody: redactedRequestBody,
+        responseBody: responseBodyStr,
+        errorMessage: `HTTP ${response.status}`,
+        metadata: logContext.metadata || null,
+      });
+    }
 
     return response;
   } catch (error) {

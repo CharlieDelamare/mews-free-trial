@@ -48,7 +48,7 @@ export async function createEnvironmentLog(input: CreateEnvironmentLogInput): Pr
       data: {
         logType: 'environment',
         status: input.status || 'building',
-        propertyName: input.propertyName,
+        propertyName: input.propertyName.trim(),
         customerName: input.customerName,
         customerEmail: input.customerEmail,
         propertyCountry: input.propertyCountry,
@@ -339,9 +339,10 @@ export async function findEnvironmentLogByPropertyName(
   requireBuilding: boolean = true
 ): Promise<EnvironmentLog | null> {
   try {
+    const propertyNameFilter = { equals: propertyName.trim(), mode: 'insensitive' as const };
     const whereClause = requireBuilding
-      ? { propertyName, logType: 'environment', status: 'building' }
-      : { propertyName, logType: 'environment' };
+      ? { propertyName: propertyNameFilter, logType: 'environment', status: 'building' }
+      : { propertyName: propertyNameFilter, logType: 'environment' };
 
     const result = await prisma.unifiedLog.findFirst({
       where: whereClause,
