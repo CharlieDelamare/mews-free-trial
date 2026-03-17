@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useState, useMemo, useEffect } from 'react';
+import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import PropertyContextLine from '@/components/roi-calculator/PropertyContextLine';
 import HeroNumber from '@/components/roi-calculator/HeroNumber';
-import ModulePillsBar from '@/components/roi-calculator/ModulePillsBar';
+import { MODULE_META, MODULE_KEYS } from '@/hooks/useROICalculator';
 import WaterfallChart from '@/components/roi-calculator/WaterfallChart';
 import ModuleStoryPanel from '@/components/roi-calculator/ModuleStoryPanel';
 import ActionDock from '@/components/roi-calculator/ActionDock';
@@ -13,8 +12,6 @@ import ProspectIntake from '@/components/roi-calculator/ProspectIntake';
 import DataComparisonSection from '@/components/roi-calculator/DataComparisonSection';
 import DiscoverySection from '@/components/roi-calculator/sections/DiscoverySection';
 import ExportModal from '@/components/roi-calculator/ui/ExportModal';
-import { AlertTriangle, Shield, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
-import { CONFIDENCE_LABELS } from '@/lib/roi-calculator/utils/confidenceScoring';
 import PDFTemplate from '@/components/roi-calculator/PDFTemplate';
 import { countries, hotelTypes, usStates } from '@/lib/roi-calculator/utils/hotelDefaults';
 import { getTranslations } from '@/lib/roi-calculator/translations';
@@ -22,16 +19,23 @@ import { useROICalculator } from '@/hooks/useROICalculator';
 import { useConfidence } from '@/hooks/useConfidence';
 import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
 import { buildInitialConfidenceMap } from '@/lib/roi-calculator/utils/confidenceScoring';
+import { serializeState } from '@/lib/roi-calculator/utils/persistence';
 import type {
   SharedVariables,
   GuestExperienceInputs,
   PaymentInputs,
   RMSInputs,
   ModuleKey,
+  CalculatorState,
 } from '@/lib/roi-calculator/types/calculator';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
 
-export default function ROIStage() {
+interface ROIStageProps {
+  presentationId?: string;
+  initialState?: Omit<CalculatorState, 'ui'>;
+}
+
+export default function ROIStage({ presentationId, initialState }: ROIStageProps = {}) {
   const {
     state,
     dispatch,
@@ -40,7 +44,7 @@ export default function ROIStage() {
     leverDescriptors,
     enabledModuleKeys,
     propertyContextString,
-  } = useROICalculator();
+  } = useROICalculator(initialState);
 
   const { config, ui, sharedVariables, guestExperience, payment, rms } = state;
   const { currencySymbol } = config;
@@ -64,6 +68,53 @@ export default function ROIStage() {
     markUnknown,
     initConfidence,
   } = useConfidence(priorityInputs);
+
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+  // Always hold the latest state so the debounced save never uses a stale snapshot
+  const latestStateRef = useRef(state);
+  latestStateRef.current = state;
+
+  useEffect(() => {
+    if (!presentationId) return;
+    // Skip the very first render — state hasn't changed yet
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    setSaveStatus('saving');
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/roi-presentations/${presentationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          // Use latestStateRef to always capture the most recent state, even if
+          // the user kept editing during the 1.5s debounce window.
+          body: JSON.stringify({ state: serializeState(latestStateRef.current) }),
+        });
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        setSaveStatus('saved');
+        if (savedClearRef.current) clearTimeout(savedClearRef.current);
+        savedClearRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch {
+        setSaveStatus('idle');
+        console.error('[ROI] Auto-save failed');
+      }
+    }, 1500);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (savedClearRef.current) clearTimeout(savedClearRef.current);
+    };
+  // Depend only on non-ui slices so UI-only changes (opening modals, cinematic mode)
+  // don't trigger unnecessary PATCH requests.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, presentationId]);
 
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
@@ -286,7 +337,7 @@ export default function ROIStage() {
         {/* ─── Zone 1: The Stage ─── */}
         <div className="pt-6 md:pt-10">
           {/* Presentation title */}
-          <div className="flex justify-center mb-4">
+          <div className="flex flex-col items-center mb-4">
             <input
               type="text"
               value={config.title}
@@ -294,6 +345,11 @@ export default function ROIStage() {
               placeholder="Enter presentation title…"
               className="w-full max-w-xl text-center text-2xl font-bold text-gray-800 bg-transparent outline-none placeholder:text-gray-300 placeholder:font-normal"
             />
+            {presentationId && saveStatus !== 'idle' && (
+              <span className="text-xs text-[--mews-night-black]/40 mt-1">
+                {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
+              </span>
+            )}
           </div>
 
           {/* Country, State & Hotel Type selectors */}
@@ -330,39 +386,6 @@ export default function ROIStage() {
             </select>
           </div>
 
-          {/* Property Context Line */}
-          <div className="flex justify-center">
-            <PropertyContextLine contextString={propertyContextString} />
-          </div>
-
-          {/* Confidence CTA — big button to open prospect intake */}
-          {(() => {
-            const meta = CONFIDENCE_LABELS[score.level];
-            const LevelIcon = score.level === 'directional' ? AlertTriangle
-              : score.level === 'indicative' ? Shield
-              : score.level === 'validated' ? CheckCircle2
-              : ShieldCheck;
-            return (
-              <div className="flex justify-center mt-3 mb-2">
-                <button
-                  onClick={() => setIsIntakeOpen(true)}
-                  className="flex items-center gap-3 px-5 py-3 rounded-xl border-2 transition-all duration-200 hover:shadow-md group"
-                  style={{
-                    borderColor: meta.color + '40',
-                    backgroundColor: meta.bgColor,
-                  }}
-                >
-                  <LevelIcon className="w-5 h-5 flex-shrink-0" style={{ color: meta.color }} />
-                  <div className="text-left">
-                    <div className="text-sm font-bold" style={{ color: meta.color }}>{meta.label}</div>
-                    <div className="text-xs text-gray-500">Customize inputs with prospect</div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-              </div>
-            );
-          })()}
-
           {/* Hero Number */}
           <HeroNumber
             totalSavings={filteredResults.totalSavings}
@@ -375,14 +398,72 @@ export default function ROIStage() {
           />
 
           {/* Module Pills */}
-          <ModulePillsBar
-            enabledModules={ui.enabledModules}
-            activeDetailModule={ui.activeDetailModule}
-            filteredResults={filteredResults}
-            currencySymbol={currencySymbol}
-            onToggleModule={(module: ModuleKey) => dispatch({ type: 'TOGGLE_MODULE', module })}
-            onSelectModule={(module: ModuleKey) => dispatch({ type: 'SET_ACTIVE_DETAIL', module })}
-          />
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {MODULE_KEYS.map((moduleKey) => {
+              const meta = MODULE_META[moduleKey];
+              const enabled = ui.enabledModules[moduleKey];
+              const isActive = ui.activeDetailModule === moduleKey;
+              const contribution = filteredResults.contributions.find((c) => c.key === moduleKey);
+              const savings = contribution?.savings ?? 0;
+              const fmt = (v: number) => {
+                const abs = Math.abs(v);
+                if (abs >= 1_000_000) return `${currencySymbol}${(v / 1_000_000).toFixed(1)}M`;
+                if (abs >= 10_000) return `${currencySymbol}${Math.round(v / 1_000)}k`;
+                if (abs >= 1_000) return `${currencySymbol}${(v / 1_000).toFixed(1)}k`;
+                return `${currencySymbol}${Math.round(v)}`;
+              };
+              return (
+                <div
+                  key={moduleKey}
+                  className="inline-flex items-center rounded-2xl border-2 bg-white transition-all duration-200 select-none"
+                  style={{
+                    borderColor: isActive ? meta.color : enabled ? meta.color + '55' : '#e5e7eb',
+                    opacity: enabled ? 1 : 0.55,
+                    boxShadow: isActive ? `0 2px 12px ${meta.color}30` : 'none',
+                  }}
+                >
+                  {/* Toggle button — role="switch" for accessibility */}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enabled}
+                    aria-label={`${enabled ? 'Disable' : 'Enable'} ${meta.label}`}
+                    className="flex items-center cursor-pointer pl-2 pr-1 py-2 focus:outline-none"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      dispatch({ type: 'TOGGLE_MODULE', module: moduleKey });
+                    }}
+                  >
+                    {/* Visual toggle track */}
+                    <span
+                      className="relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+                      style={{ background: enabled ? meta.color : '#d1d5db' }}
+                    >
+                      {/* Knob */}
+                      <span
+                        className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
+                        style={{ transform: enabled ? 'translateX(19px)' : 'translateX(3px)' }}
+                      />
+                    </span>
+                  </button>
+                  {/* Label — click expands detail panel */}
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 pr-3 pl-1 py-2 focus:outline-none"
+                    onClick={() => dispatch({ type: 'SET_ACTIVE_DETAIL', module: moduleKey })}
+                  >
+                    <span className="text-sm font-bold text-gray-800 whitespace-nowrap">{meta.label}</span>
+                    {enabled && savings > 0 && (
+                      <span className="text-xs font-semibold tabular-nums" style={{ color: meta.color }}>
+                        {fmt(savings)}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
 
           {/* Waterfall Chart */}
           <div className="mt-6">

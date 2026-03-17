@@ -216,3 +216,20 @@ model IbeSession {
   @@index([theme])
   @@index([createdAt])
 }
+
+model RoiPresentation {
+  id                  String   @id @default(uuid())
+  name                String
+  salesforceAccountId String?
+  country             String
+  hotelType           String
+  numberOfRooms       Int      @default(0)
+  totalAnnualSavings  Float    @default(0)
+  createdBy           String?
+  stateJson           Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([createdBy])
+}
