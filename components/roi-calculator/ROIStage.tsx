@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useMemo, useEffect } from 'react';
+import { useCallback, useState, useMemo, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import PropertyContextLine from '@/components/roi-calculator/PropertyContextLine';
 import HeroNumber from '@/components/roi-calculator/HeroNumber';
@@ -22,16 +22,23 @@ import { useROICalculator } from '@/hooks/useROICalculator';
 import { useConfidence } from '@/hooks/useConfidence';
 import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
 import { buildInitialConfidenceMap } from '@/lib/roi-calculator/utils/confidenceScoring';
+import { serializeState } from '@/lib/roi-calculator/utils/persistence';
 import type {
   SharedVariables,
   GuestExperienceInputs,
   PaymentInputs,
   RMSInputs,
   ModuleKey,
+  CalculatorState,
 } from '@/lib/roi-calculator/types/calculator';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
 
-export default function ROIStage() {
+interface ROIStageProps {
+  presentationId?: string;
+  initialState?: Omit<CalculatorState, 'ui'>;
+}
+
+export default function ROIStage({ presentationId, initialState }: ROIStageProps = {}) {
   const {
     state,
     dispatch,
@@ -40,7 +47,7 @@ export default function ROIStage() {
     leverDescriptors,
     enabledModuleKeys,
     propertyContextString,
-  } = useROICalculator();
+  } = useROICalculator(initialState);
 
   const { config, ui, sharedVariables, guestExperience, payment, rms } = state;
   const { currencySymbol } = config;
@@ -64,6 +71,41 @@ export default function ROIStage() {
     markUnknown,
     initConfidence,
   } = useConfidence(priorityInputs);
+
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (!presentationId) return;
+    // Skip the very first render — state hasn't changed yet
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    setSaveStatus('saving');
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await fetch(`/api/roi-presentations/${presentationId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: serializeState(state) }),
+        });
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      } catch {
+        setSaveStatus('idle');
+        console.error('[ROI] Auto-save failed');
+      }
+    }, 1500);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [state, presentationId]);
 
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
@@ -331,8 +373,13 @@ export default function ROIStage() {
           </div>
 
           {/* Property Context Line */}
-          <div className="flex justify-center">
+          <div className="flex items-center justify-center gap-2">
             <PropertyContextLine contextString={propertyContextString} />
+            {presentationId && saveStatus !== 'idle' && (
+              <span className="text-xs text-[--mews-night-black]/50">
+                {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
+              </span>
+            )}
           </div>
 
           {/* Confidence CTA — big button to open prospect intake */}
