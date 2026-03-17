@@ -73,7 +73,6 @@ export default function ExtendSandboxPage() {
   const handleExtendConfirm = async () => {
     setShowConfirmDialog(false);
     setSubmitting(true);
-    setResult(null);
 
     try {
       // Convert the date to UTC ISO 8601 format (start of day UTC)
@@ -137,7 +136,6 @@ export default function ExtendSandboxPage() {
                   value={selectedEnvironment}
                   onChange={(val) => {
                     setSelectedEnvironment(val);
-                    setResult(null);
                   }}
                   options={environments.map((env) => ({
                     value: env.enterpriseId,
@@ -164,7 +162,6 @@ export default function ExtendSandboxPage() {
                 value={newExpirationDate}
                 onChange={(e) => {
                   setNewExpirationDate(e.target.value);
-                  setResult(null);
                 }}
                 min={minDate}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"

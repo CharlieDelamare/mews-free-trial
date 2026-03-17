@@ -72,7 +72,6 @@ export default function SaveSandboxPage() {
   const handleSaveConfirm = async () => {
     setShowConfirmDialog(false);
     setSubmitting(true);
-    setResult(null);
 
     try {
       const response = await fetch('/api/save-sandbox', {
@@ -125,7 +124,6 @@ export default function SaveSandboxPage() {
                   value={selectedEnvironment}
                   onChange={(val) => {
                     setSelectedEnvironment(val);
-                    setResult(null);
                   }}
                   options={environments.map((env) => ({
                     value: env.enterpriseId,
