@@ -174,9 +174,10 @@ export default function PresentationWizard() {
                     <button
                       key={key}
                       type="button"
-                      onClick={() =>
-                        setSelectedModules((prev) => ({ ...prev, [key]: !prev[key] }))
-                      }
+                      onClick={() => {
+                        setSelectedModules((prev) => ({ ...prev, [key]: !prev[key] }));
+                        if (modulesError) setModulesError('');
+                      }}
                       className={[
                         'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors',
                         isSelected
