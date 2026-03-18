@@ -20,19 +20,19 @@ import { useConfidence } from '@/hooks/useConfidence';
 import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
 import { buildInitialConfidenceMap } from '@/lib/roi-calculator/utils/confidenceScoring';
 import { serializeState } from '@/lib/roi-calculator/utils/persistence';
+import type { PersistedState } from '@/lib/roi-calculator/utils/persistence';
 import type {
   SharedVariables,
   GuestExperienceInputs,
   PaymentInputs,
   RMSInputs,
   ModuleKey,
-  CalculatorState,
 } from '@/lib/roi-calculator/types/calculator';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
 
 interface ROIStageProps {
   presentationId?: string;
-  initialState?: Omit<CalculatorState, 'ui'>;
+  initialState?: PersistedState;
 }
 
 export default function ROIStage({ presentationId, initialState }: ROIStageProps = {}) {
