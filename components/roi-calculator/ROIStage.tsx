@@ -362,7 +362,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             <select
               value={config.country}
               onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
             >
               {countries.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}</option>
@@ -372,7 +372,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
               <select
                 value={config.usState}
                 onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: e.target.value })}
-                className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+                className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
               >
                 <option value="">All states (national avg)</option>
                 {usStates.map((s) => (
@@ -383,7 +383,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             <select
               value={config.hotelType}
               onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
             >
               {hotelTypes.map((ht) => (
                 <option key={ht} value={ht}>{ht}</option>
@@ -422,7 +422,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
                   key={moduleKey}
                   className="inline-flex items-center rounded-2xl border-2 bg-white transition-all duration-200 select-none"
                   style={{
-                    borderColor: isActive ? meta.color : enabled ? meta.color + '55' : '#e5e7eb',
+                    borderColor: isActive ? meta.color : enabled ? meta.color + '55' : 'var(--neutral-200)',
                     opacity: enabled ? 1 : 0.55,
                     boxShadow: isActive ? `0 2px 12px ${meta.color}30` : 'none',
                   }}
@@ -443,7 +443,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
                     {/* Visual toggle track */}
                     <span
                       className="relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
-                      style={{ background: enabled ? meta.color : '#d1d5db' }}
+                      style={{ background: enabled ? meta.color : 'var(--neutral-300)' }}
                     >
                       {/* Knob */}
                       <span
