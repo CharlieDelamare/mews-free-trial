@@ -163,7 +163,8 @@ export default function PresentationWizard() {
       )}
       <ProspectIntake
         isOpen={true}
-        onClose={() => {}}
+        onClose={() => setStep('identity')}
+        fullPage={true}
         onComplete={handleIntakeComplete}
         intakeMode="fast"
         onModeChange={(mode: IntakeMode) =>
