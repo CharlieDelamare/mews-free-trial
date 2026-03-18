@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import SearchableSelect from '@/components/SearchableSelect';
+import { useToast } from '@/components/Toast';
 
 interface Environment {
   enterpriseId: string;
@@ -21,8 +22,8 @@ export default function ExtendSandboxPage() {
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchEnvironments();
@@ -49,15 +50,13 @@ export default function ExtendSandboxPage() {
       const response = await fetch('/api/environments/list');
       const data = await response.json();
       if (data.success) {
-        // Filter to trial-type sandboxes only (they have expiration timers)
-        const trialEnvironments = (data.environments || [])
-          .filter((env: Environment) => env.type === 'trial')
+        const sorted = (data.environments || [])
           .sort((a: Environment, b: Environment) => {
             const nameA = (a.propertyName || a.enterpriseName || '').toLowerCase();
             const nameB = (b.propertyName || b.enterpriseName || '').toLowerCase();
             return nameA.localeCompare(nameB);
           });
-        setEnvironments(trialEnvironments);
+        setEnvironments(sorted);
       }
     } catch (error) {
       console.error('Failed to fetch environments:', error);
@@ -74,7 +73,6 @@ export default function ExtendSandboxPage() {
   const handleExtendConfirm = async () => {
     setShowConfirmDialog(false);
     setSubmitting(true);
-    setResult(null);
 
     try {
       // Convert the date to UTC ISO 8601 format (start of day UTC)
@@ -94,21 +92,12 @@ export default function ExtendSandboxPage() {
       if (data.success) {
         const env = environments.find(e => e.enterpriseId === selectedEnvironment);
         const envName = env?.propertyName || env?.enterpriseName || selectedEnvironment;
-        setResult({
-          type: 'success',
-          text: `Successfully extended "${envName}" expiration to ${newExpirationDate}.`,
-        });
+        showToast(`Successfully extended "${envName}" expiration to ${newExpirationDate}.`, 'success');
       } else {
-        setResult({
-          type: 'error',
-          text: data.error || 'Failed to extend sandbox expiration.',
-        });
+        showToast(data.error || 'Failed to extend sandbox expiration.', 'error');
       }
     } catch (error) {
-      setResult({
-        type: 'error',
-        text: 'Network error. Please try again.',
-      });
+      showToast('Network error. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -147,7 +136,6 @@ export default function ExtendSandboxPage() {
                   value={selectedEnvironment}
                   onChange={(val) => {
                     setSelectedEnvironment(val);
-                    setResult(null);
                   }}
                   options={environments.map((env) => ({
                     value: env.enterpriseId,
@@ -174,7 +162,6 @@ export default function ExtendSandboxPage() {
                 value={newExpirationDate}
                 onChange={(e) => {
                   setNewExpirationDate(e.target.value);
-                  setResult(null);
                 }}
                 min={minDate}
                 className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"

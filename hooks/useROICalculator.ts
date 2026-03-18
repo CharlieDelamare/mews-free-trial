@@ -27,6 +27,7 @@ import {
 // ── Default state ─────────────────────────────────────────────────────
 
 import { defaultCalculatorState, deriveReservations, deriveMonthlyRevenue } from '@/lib/roi-calculator/utils/defaultState';
+import type { PersistedState } from '@/lib/roi-calculator/utils/persistence';
 export { defaultCalculatorState };
 
 // ── Module presets ────────────────────────────────────────────────────
@@ -290,13 +291,20 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
 
 // ── Hook ──────────────────────────────────────────────────────────────
 
-export function useROICalculator(savedState?: Omit<CalculatorState, 'ui'>) {
+export function useROICalculator(savedState?: PersistedState) {
   const [state, dispatch] = useReducer(
     reducer,
     savedState,
     (s): CalculatorState =>
       s
-        ? { ...s, config: { ...s.config, isInitialLoad: true }, ui: defaultCalculatorState.ui }
+        ? {
+            ...s,
+            config: { ...s.config, isInitialLoad: true },
+            ui: {
+              ...defaultCalculatorState.ui,
+              ...(s.enabledModules && { enabledModules: s.enabledModules }),
+            },
+          }
         : defaultCalculatorState,
   );
 

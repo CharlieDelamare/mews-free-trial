@@ -47,10 +47,10 @@ interface ConversationQuestion {
 }
 
 const TYPE_STYLES: Record<QuestionType, { bg: string; color: string }> = {
-  open:      { bg: 'rgba(179,178,251,0.12)',    color: 'var(--mews-indigo)' },
-  probe:     { bg: 'rgba(139,92,246,0.12)',   color: 'var(--roi-module-probe)' },
-  benchmark: { bg: 'rgba(16,185,129,0.12)',   color: 'var(--mews-success-dark)' },
-  quantify:  { bg: 'rgba(249,115,22,0.12)',   color: 'var(--roi-slider-orange)' },
+  open:      { bg: 'color-mix(in srgb, var(--mews-indigo) 12%, transparent)',    color: 'var(--mews-indigo)' },
+  probe:     { bg: 'color-mix(in srgb, var(--roi-module-gx) 12%, transparent)',   color: 'var(--roi-module-probe)' },
+  benchmark: { bg: 'color-mix(in srgb, var(--mews-success) 12%, transparent)',   color: 'var(--mews-success-dark)' },
+  quantify:  { bg: 'color-mix(in srgb, var(--roi-data-amber) 12%, transparent)',   color: 'var(--roi-slider-orange)' },
 };
 
 /* ── Styled input helpers ──────────────────────────────────────────── */
@@ -81,9 +81,9 @@ function DiscoveryInput({
         step={step}
         onChange={(e) => { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(v); }}
         className="w-full rounded-xl px-4 py-2.5 text-sm font-medium text-gray-800 outline-none transition-all duration-150"
-        style={{ background: 'rgba(45,44,55,0.04)', border: '1.5px solid rgba(45,44,55,0.15)' }}
-        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--mews-indigo)'; e.currentTarget.style.background = 'rgba(179,178,251,0.05)'; }}
-        onBlur={(e)  => { e.currentTarget.style.borderColor = 'rgba(45,44,55,0.15)'; e.currentTarget.style.background = 'rgba(45,44,55,0.04)'; }}
+        style={{ background: 'color-mix(in srgb, var(--mews-charcoal) 4%, transparent)', border: '1.5px solid color-mix(in srgb, var(--mews-charcoal) 15%, transparent)' }}
+        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--mews-indigo)'; e.currentTarget.style.background = 'color-mix(in srgb, var(--mews-indigo) 5%, transparent)'; }}
+        onBlur={(e)  => { e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--mews-charcoal) 15%, transparent)'; e.currentTarget.style.background = 'color-mix(in srgb, var(--mews-charcoal) 4%, transparent)'; }}
       />
       {benchmark && (
         <p className="text-xs flex items-center gap-1" style={{ color: 'var(--mews-success-dark)' }}>
@@ -112,8 +112,8 @@ function DiscoverySelect({
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-xl px-4 py-2.5 text-sm font-medium text-gray-800 outline-none transition-all duration-150 appearance-none"
         style={{
-          background: 'rgba(45,44,55,0.04)',
-          border: '1.5px solid rgba(45,44,55,0.15)',
+          background: 'color-mix(in srgb, var(--mews-charcoal) 4%, transparent)',
+          border: '1.5px solid color-mix(in srgb, var(--mews-charcoal) 15%, transparent)',
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'right 12px center',
@@ -132,14 +132,14 @@ function ConversationCard({ questions }: { questions: ConversationQuestion[] }) 
   return (
     <div
       className="rounded-xl overflow-hidden"
-      style={{ border: '1px solid rgba(179,178,251,0.22)' }}
+      style={{ border: '1px solid color-mix(in srgb, var(--mews-indigo) 22%, transparent)' }}
     >
       {/* Header */}
       <div
         className="flex items-center gap-2.5 px-4 py-2.5"
-        style={{ background: 'rgba(179,178,251,0.08)', borderBottom: '1px solid rgba(179,178,251,0.15)' }}
+        style={{ background: 'color-mix(in srgb, var(--mews-indigo) 8%, transparent)', borderBottom: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}
       >
-        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(179,178,251,0.2)' }}>
+        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--mews-indigo) 20%, transparent)' }}>
           <MessageSquare className="w-3.5 h-3.5" style={{ color: 'var(--mews-indigo)' }} />
         </div>
         <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>
@@ -148,7 +148,7 @@ function ConversationCard({ questions }: { questions: ConversationQuestion[] }) 
         <span className="text-xs text-gray-400 ml-auto">Follow this sequence →</span>
       </div>
       {/* Questions */}
-      <div className="divide-y" style={{ borderColor: 'rgba(45,44,55,0.07)' }}>
+      <div className="divide-y" style={{ borderColor: 'color-mix(in srgb, var(--mews-charcoal) 7%, transparent)' }}>
         {questions.map((q, i) => {
           const style = TYPE_STYLES[q.type];
           return (
@@ -180,12 +180,12 @@ function CoachingCard({ title, points }: { title?: string; points: string[] }) {
   return (
     <div
       className="rounded-xl p-4"
-      style={{ background: 'rgba(0,35,71,0.05)', border: '1px solid rgba(0,35,71,0.12)' }}
+      style={{ background: 'color-mix(in srgb, var(--roi-navy-dark) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--roi-navy-dark) 12%, transparent)' }}
     >
       <div className="flex items-start gap-3">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-          style={{ background: 'rgba(45,44,55,0.12)' }}
+          style={{ background: 'color-mix(in srgb, var(--mews-charcoal) 12%, transparent)' }}
         >
           <Lightbulb className="w-4 h-4 text-yellow-500" />
         </div>
@@ -211,14 +211,14 @@ function CoachingCard({ title, points }: { title?: string; points: string[] }) {
 function ObjectionCard({ objections }: { objections: { push: string; response: string }[] }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(245,158,11,0.30)' }}>
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid color-mix(in srgb, var(--roi-data-amber) 30%, transparent)' }}>
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between gap-3 p-4 text-left transition-colors duration-150"
-        style={{ background: open ? 'rgba(245,158,11,0.10)' : 'rgba(245,158,11,0.05)' }}
+        style={{ background: open ? 'color-mix(in srgb, var(--roi-data-amber) 10%, transparent)' : 'color-mix(in srgb, var(--roi-data-amber) 5%, transparent)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245,158,11,0.2)' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--roi-data-amber) 20%, transparent)' }}>
             <ShieldAlert className="w-4 h-4 text-amber-500" />
           </div>
           <div>
@@ -229,7 +229,7 @@ function ObjectionCard({ objections }: { objections: { push: string; response: s
         {open ? <ChevronUp className="w-4 h-4 text-amber-500 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-amber-500 flex-shrink-0" />}
       </button>
       {open && (
-        <div className="divide-y" style={{ borderColor: 'rgba(245,158,11,0.15)', background: 'rgba(245,158,11,0.04)' }}>
+        <div className="divide-y" style={{ borderColor: 'color-mix(in srgb, var(--roi-data-amber) 15%, transparent)', background: 'color-mix(in srgb, var(--roi-data-amber) 4%, transparent)' }}>
           {objections.map((obj, i) => (
             <div key={i} className="px-4 py-3.5">
               <p className="text-xs font-bold text-amber-700 mb-1.5">
@@ -251,7 +251,7 @@ function DataPanel({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="rounded-xl p-5 space-y-4"
-      style={{ background: 'rgba(45,44,55,0.025)', border: '1px solid rgba(45,44,55,0.09)' }}
+      style={{ background: 'color-mix(in srgb, var(--mews-charcoal) 2.5%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-charcoal) 9%, transparent)' }}
     >
       <div className="flex items-center gap-2 mb-1">
         <div className="w-1 h-4 rounded-full" style={{ background: 'var(--mews-indigo)' }} />
@@ -272,7 +272,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Step {current} of {total}</span>
         <span className="text-xs font-bold" style={{ color: 'var(--mews-indigo)' }}>{pct}% complete</span>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(45,44,55,0.10)' }}>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'color-mix(in srgb, var(--mews-charcoal) 10%, transparent)' }}>
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, background: 'linear-gradient(90deg, var(--mews-night-black), var(--mews-indigo))' }}
@@ -283,7 +283,7 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
           <div
             key={i}
             className="flex-1 h-1 rounded-full transition-all duration-300 cursor-pointer"
-            style={{ background: i < current ? 'var(--mews-indigo)' : 'rgba(45,44,55,0.10)' }}
+            style={{ background: i < current ? 'var(--mews-indigo)' : 'color-mix(in srgb, var(--mews-charcoal) 10%, transparent)' }}
           />
         ))}
       </div>
@@ -297,13 +297,13 @@ function StepHeader({ icon, category, title, stepNum }: { icon: React.ReactNode;
     <div className="flex items-center gap-4 mb-5">
       <div
         className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-        style={{ background: 'linear-gradient(135deg, var(--roi-navy-dark), var(--mews-night-black))', boxShadow: '0 4px 12px rgba(0,35,71,0.20)' }}
+        style={{ background: 'linear-gradient(135deg, var(--roi-navy-dark), var(--mews-night-black))', boxShadow: '0 4px 12px color-mix(in srgb, var(--roi-navy-dark) 20%, transparent)' }}
       >
         {icon}
       </div>
       <div>
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: 'rgba(179,178,251,0.12)', color: 'var(--mews-indigo)' }}>
+          <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: 'color-mix(in srgb, var(--mews-indigo) 12%, transparent)', color: 'var(--mews-indigo)' }}>
             Step {stepNum}
           </span>
           <span className="text-xs text-gray-400 font-medium">{category}</span>
@@ -498,13 +498,13 @@ export default function DiscoverySection({
           </div>
 
           {/* Auto-derived values */}
-          <div className="rounded-xl p-4 mt-1" style={{ background: 'rgba(45,44,55,0.03)', border: '1px solid rgba(45,44,55,0.09)' }}>
+          <div className="rounded-xl p-4 mt-1" style={{ background: 'color-mix(in srgb, var(--mews-charcoal) 3%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-charcoal) 9%, transparent)' }}>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-1 h-4 rounded-full" style={{ background: 'var(--mews-indigo)' }} />
               <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Auto-Derived — confirms your inputs</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="rounded-xl p-3" style={{ background: 'white', border: '1px solid rgba(45,44,55,0.10)' }}>
+              <div className="rounded-xl p-3" style={{ background: 'white', border: '1px solid color-mix(in srgb, var(--mews-charcoal) 10%, transparent)' }}>
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Reservations / Month</p>
                 <p className="text-2xl font-bold text-gray-900 tabular-nums">{derivedReservations.toLocaleString()}</p>
                 <div className="flex items-center gap-1 mt-2 text-xs flex-wrap" style={{ color: 'var(--roi-gray-500)' }}>
@@ -518,7 +518,7 @@ export default function DiscoverySection({
                   <span className="font-semibold text-gray-700">÷{sharedVariables.avgLengthOfStay}n</span>
                 </div>
               </div>
-              <div className="rounded-xl p-3" style={{ background: 'white', border: '1px solid rgba(45,44,55,0.10)' }}>
+              <div className="rounded-xl p-3" style={{ background: 'white', border: '1px solid color-mix(in srgb, var(--mews-charcoal) 10%, transparent)' }}>
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Monthly Room Revenue</p>
                 <p className="text-2xl font-bold text-gray-900 tabular-nums">{currencySymbol}{derivedRevenue.toLocaleString()}</p>
                 <div className="flex items-center gap-1 mt-2 text-xs flex-wrap" style={{ color: 'var(--roi-gray-500)' }}>
@@ -595,7 +595,7 @@ export default function DiscoverySection({
             />
             <div
               className="rounded-xl p-4 flex flex-col justify-center gap-2"
-              style={{ background: 'rgba(179,178,251,0.06)', border: '1px solid rgba(179,178,251,0.18)' }}
+              style={{ background: 'color-mix(in srgb, var(--mews-indigo) 6%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 18%, transparent)' }}
             >
               <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>Annual labor cost estimate</p>
               <p className="text-2xl font-bold text-gray-900">
@@ -683,7 +683,7 @@ export default function DiscoverySection({
               benchmark="Without active promotion: 5–10% · With Mews portal + kiosk: 15–35%"
             />
           </div>
-          <div className="pt-3 border-t" style={{ borderColor: 'rgba(45,44,55,0.08)' }}>
+          <div className="pt-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--mews-charcoal) 8%, transparent)' }}>
             <DiscoveryInput
               label="Average OTA Commission Rate"
               value={guestExperience.averageCommission}
@@ -777,7 +777,7 @@ export default function DiscoverySection({
               benchmark="Industry avg: 2–5% · Higher in OTA-heavy mix"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t" style={{ borderColor: 'rgba(45,44,55,0.08)' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--mews-charcoal) 8%, transparent)' }}>
             <DiscoveryInput
               label="No-Shows Without Fee Recovered"
               value={payment.noShowWithoutFee}
@@ -848,7 +848,7 @@ export default function DiscoverySection({
           },
         ]} />
         <DataPanel>
-          <div className="mb-4 pb-4 border-b" style={{ borderColor: 'rgba(45,44,55,0.08)' }}>
+          <div className="mb-4 pb-4 border-b" style={{ borderColor: 'color-mix(in srgb, var(--mews-charcoal) 8%, transparent)' }}>
             <label className="block text-sm font-semibold text-gray-800 mb-2">Do you already have an RMS?</label>
             <p className="text-xs text-gray-500 mb-3">If the property is already using a revenue management system, the incremental value of switching to Mews RMS is significantly lower.</p>
             <div className="flex gap-3">
@@ -874,7 +874,7 @@ export default function DiscoverySection({
               </button>
             </div>
             {rms.hasExistingRMS && (
-              <div className="mt-3 flex items-start gap-2 p-3 rounded-lg" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
+              <div className="mt-3 flex items-start gap-2 p-3 rounded-lg" style={{ background: 'color-mix(in srgb, var(--roi-module-gx) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--roi-module-gx) 20%, transparent)' }}>
                 <BarChart3 className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-purple-800">
                   RMS module has been disabled from the ROI calculation. The prospect already has automated rate management, so the full uplift and time savings don&apos;t apply. You can still manually re-enable it with a reduced 2% incremental uplift.
@@ -916,7 +916,7 @@ export default function DiscoverySection({
               benchmark="Manual (channel manager): 5–20 min · Without channel manager: 30–60+ min"
             />
           </div>
-          <div className="pt-3 border-t" style={{ borderColor: 'rgba(45,44,55,0.08)' }}>
+          <div className="pt-3 border-t" style={{ borderColor: 'color-mix(in srgb, var(--mews-charcoal) 8%, transparent)' }}>
             <DiscoverySelect
               label="Current Rate Update Frequency"
               value={rms.rateUpdateFrequency}
@@ -941,17 +941,17 @@ export default function DiscoverySection({
       className="rounded-2xl overflow-hidden"
       style={{
         background: 'white',
-        border: '1.5px solid rgba(179,178,251,0.28)',
-        boxShadow: '0 8px 32px rgba(0,35,71,0.12), 0 2px 8px rgba(179,178,251,0.08)',
+        border: '1.5px solid color-mix(in srgb, var(--mews-indigo) 28%, transparent)',
+        boxShadow: '0 8px 32px color-mix(in srgb, var(--roi-navy-dark) 12%, transparent), 0 2px 8px color-mix(in srgb, var(--mews-indigo) 8%, transparent)',
       }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between gap-4 px-6 py-4"
-        style={{ background: 'linear-gradient(135deg, var(--roi-navy-dark) 0%, var(--mews-night-black) 50%, var(--roi-navy-mid) 100%)', borderBottom: '1px solid rgba(179,178,251,0.2)' }}
+        style={{ background: 'linear-gradient(135deg, var(--roi-navy-dark) 0%, var(--mews-night-black) 50%, var(--roi-navy-mid) 100%)', borderBottom: '1px solid color-mix(in srgb, var(--mews-indigo) 20%, transparent)' }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(179,178,251,0.2)', border: '1px solid rgba(179,178,251,0.35)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'color-mix(in srgb, var(--mews-indigo) 20%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 35%, transparent)' }}>
             <Compass className="w-5 h-5 text-teal-300" />
           </div>
           <div>
@@ -962,9 +962,9 @@ export default function DiscoverySection({
         <button
           onClick={onClose}
           className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150"
-          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}
+          style={{ background: 'color-mix(in srgb, var(--mews-white) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-white) 15%, transparent)' }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 18%, transparent)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 8%, transparent)'; }}
           aria-label="Close discovery"
         >
           <X className="w-4 h-4 text-white/70" />
@@ -972,7 +972,7 @@ export default function DiscoverySection({
       </div>
 
       {/* Progress */}
-      <div className="px-6 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(45,44,55,0.07)' }}>
+      <div className="px-6 pt-5 pb-4" style={{ borderBottom: '1px solid color-mix(in srgb, var(--mews-charcoal) 7%, transparent)' }}>
         <ProgressBar current={step} total={TOTAL_STEPS} />
       </div>
 
@@ -984,15 +984,15 @@ export default function DiscoverySection({
       {/* Footer navigation */}
       <div
         className="flex items-center justify-between gap-4 px-6 py-4"
-        style={{ borderTop: '1px solid rgba(45,44,55,0.08)', background: 'rgba(45,44,55,0.02)' }}
+        style={{ borderTop: '1px solid color-mix(in srgb, var(--mews-charcoal) 8%, transparent)', background: 'color-mix(in srgb, var(--mews-charcoal) 2%, transparent)' }}
       >
         <button
           onClick={goPrev}
           disabled={step === 1}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: 'rgba(45,44,55,0.07)', border: '1px solid rgba(45,44,55,0.12)', color: 'var(--roi-gray-700)' }}
-          onMouseEnter={(e) => { if (step !== 1) (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.13)'; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.07)'; }}
+          style={{ background: 'color-mix(in srgb, var(--mews-charcoal) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-charcoal) 12%, transparent)', color: 'var(--roi-gray-700)' }}
+          onMouseEnter={(e) => { if (step !== 1) (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 13%, transparent)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 7%, transparent)'; }}
         >
           <ChevronLeft className="w-4 h-4" />
           Previous
@@ -1013,9 +1013,9 @@ export default function DiscoverySection({
           <button
             onClick={goNext}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
-            style={{ background: 'linear-gradient(135deg, var(--mews-night-black), var(--mews-indigo))', color: 'white', boxShadow: '0 4px 12px rgba(179,178,251,0.3)' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(179,178,251,0.45)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(179,178,251,0.3)'; }}
+            style={{ background: 'linear-gradient(135deg, var(--mews-night-black), var(--mews-indigo))', color: 'white', boxShadow: '0 4px 12px color-mix(in srgb, var(--mews-indigo) 30%, transparent)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px color-mix(in srgb, var(--mews-indigo) 45%, transparent)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px color-mix(in srgb, var(--mews-indigo) 30%, transparent)'; }}
           >
             Next Step
             <ChevronRight className="w-4 h-4" />
@@ -1024,9 +1024,9 @@ export default function DiscoverySection({
           <button
             onClick={onClose}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
-            style={{ background: 'linear-gradient(135deg, var(--mews-night-black), var(--mews-indigo))', color: 'white', boxShadow: '0 4px 12px rgba(179,178,251,0.3)' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(179,178,251,0.45)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(179,178,251,0.3)'; }}
+            style={{ background: 'linear-gradient(135deg, var(--mews-night-black), var(--mews-indigo))', color: 'white', boxShadow: '0 4px 12px color-mix(in srgb, var(--mews-indigo) 30%, transparent)' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px color-mix(in srgb, var(--mews-indigo) 45%, transparent)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px color-mix(in srgb, var(--mews-indigo) 30%, transparent)'; }}
           >
             <CheckCircle2 className="w-4 h-4" />
             View My ROI

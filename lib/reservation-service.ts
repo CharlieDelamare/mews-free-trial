@@ -882,19 +882,32 @@ function generateReservationData(
   // Shuffle reservations to avoid clustering by stay length
   const shuffled = shuffleArray(reservations);
 
-  // Mark 2-3 reservations as Optional with a future ReleasedUtc (tomorrow)
-  // Mews API requires release date to be in the future when creating Optional reservations
-  const tomorrow = new Date();
+  // Mark up to 3 reservations as Optional.
+  // Mews requires ReleasedUtc to be both in the future and strictly before StartUtc,
+  // so only reservations arriving 2+ days from now are eligible.
+  const now = new Date();
+  const tomorrow = new Date(now);
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
   tomorrow.setUTCHours(14, 0, 0, 0);
 
-  const optionalCount = Math.min(3, shuffled.length);
-  for (let i = 0; i < optionalCount; i++) {
+  let markedOptional = 0;
+  for (let i = 0; i < shuffled.length && markedOptional < 3; i++) {
+    const dayBeforeArrival = new Date(shuffled[i].checkInUtc);
+    dayBeforeArrival.setUTCDate(dayBeforeArrival.getUTCDate() - 1);
+    dayBeforeArrival.setUTCHours(12, 0, 0, 0);
+
+    // Candidate release date: day before arrival, but at least tomorrow
+    const releasedUtc = dayBeforeArrival > tomorrow ? dayBeforeArrival : tomorrow;
+
+    // Skip if release date isn't strictly before check-in (no valid window)
+    if (releasedUtc >= shuffled[i].checkInUtc) continue;
+
     shuffled[i].isOptional = true;
-    shuffled[i].releasedUtc = tomorrow;
+    shuffled[i].releasedUtc = releasedUtc;
+    markedOptional++;
   }
 
-  console.log(`[RESERVATIONS] Generated and shuffled ${shuffled.length} total reservations (${optionalCount} optional with future release date)`);
+  console.log(`[RESERVATIONS] Generated and shuffled ${shuffled.length} total reservations (${markedOptional} optional with future release date)`);
   return shuffled;
 }
 

@@ -162,9 +162,10 @@ export function Navbar() {
 
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-40 bg-gray-900/50 ${mounted ? 'transition-opacity duration-300' : ''} ${
+        className={`fixed inset-0 z-40 ${mounted ? 'transition-opacity duration-300' : ''} ${
           open ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{ backgroundColor: 'color-mix(in srgb, var(--mews-night-black) 50%, transparent)' }}
         onClick={close}
         aria-hidden="true"
       />

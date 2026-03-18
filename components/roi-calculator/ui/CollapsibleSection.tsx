@@ -52,9 +52,9 @@ export default function CollapsibleSection({
       className="bg-white rounded-2xl overflow-hidden transition-all duration-200"
       style={{
         boxShadow: isExpanded
-          ? '0 4px 20px rgba(0,0,0,0.07), 0 12px 40px rgba(45,44,55,0.08)'
-          : '0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(45,44,55,0.05)',
-        border: '1px solid rgba(45,44,55,0.08)',
+          ? '0 4px 20px color-mix(in srgb, var(--mews-black) 7%, transparent), 0 12px 40px color-mix(in srgb, var(--mews-charcoal) 8%, transparent)'
+          : '0 1px 4px color-mix(in srgb, var(--mews-black) 5%, transparent), 0 4px 16px color-mix(in srgb, var(--mews-charcoal) 5%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--mews-charcoal) 8%, transparent)',
       }}
     >
       {/* Header / Toggle Button */}
@@ -63,12 +63,12 @@ export default function CollapsibleSection({
         className="w-full p-5 md:p-6 flex items-center justify-between transition-colors duration-200"
         style={{
           background: isExpanded
-            ? 'linear-gradient(to right, rgba(45,44,55,0.02), transparent)'
+            ? 'linear-gradient(to right, color-mix(in srgb, var(--mews-charcoal) 2%, transparent), transparent)'
             : 'transparent',
         }}
         onMouseEnter={(e) => {
           if (!isExpanded) {
-            (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.02)';
+            (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 2%, transparent)';
           }
         }}
         onMouseLeave={(e) => {
@@ -81,7 +81,7 @@ export default function CollapsibleSection({
         <div className="flex items-center gap-3 min-w-0">
           <div
             className={`${iconColor} p-2.5 rounded-xl flex-shrink-0`}
-            style={{ border: '1px solid rgba(0,0,0,0.06)' }}
+            style={{ border: '1px solid color-mix(in srgb, var(--mews-black) 6%, transparent)' }}
           >
             {icon}
           </div>
@@ -112,7 +112,7 @@ export default function CollapsibleSection({
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 flex-shrink-0"
             style={{
-              background: isExpanded ? 'rgba(107,163,176,0.1)' : 'rgba(45,44,55,0.05)',
+              background: isExpanded ? 'color-mix(in srgb, var(--roi-slider-teal) 10%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 5%, transparent)',
               transform: isExpanded ? 'none' : 'none',
             }}
           >
@@ -132,7 +132,7 @@ export default function CollapsibleSection({
         <div
           style={{
             height: '1px',
-            background: 'linear-gradient(to right, transparent, rgba(45,44,55,0.08) 20%, rgba(45,44,55,0.08) 80%, transparent)',
+            background: 'linear-gradient(to right, transparent, color-mix(in srgb, var(--mews-charcoal) 8%, transparent) 20%, color-mix(in srgb, var(--mews-charcoal) 8%, transparent) 80%, transparent)',
           }}
         />
       )}

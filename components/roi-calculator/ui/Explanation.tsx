@@ -10,8 +10,8 @@ export default function Explanation({ title, description }: ExplanationProps) {
     <div
       className="mt-6 rounded-xl p-5"
       style={{
-        background: 'rgba(45,44,55,0.03)',
-        border: '1px solid rgba(45,44,55,0.07)',
+        background: 'color-mix(in srgb, var(--mews-charcoal) 3%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--mews-charcoal) 7%, transparent)',
       }}
     >
       <div className="flex items-center gap-2 mb-2">

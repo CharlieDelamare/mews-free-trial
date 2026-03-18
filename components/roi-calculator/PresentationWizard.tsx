@@ -2,14 +2,14 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import ProspectIntake from '@/components/roi-calculator/ProspectIntake';
 import { useROICalculator } from '@/hooks/useROICalculator';
 import { useConfidence } from '@/hooks/useConfidence';
 import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
 import { serializeState } from '@/lib/roi-calculator/utils/persistence';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
-import type { SharedVariables } from '@/lib/roi-calculator/types/calculator';
+import type { SharedVariables, EnabledModules } from '@/lib/roi-calculator/types/calculator';
 
 export default function PresentationWizard() {
   const router = useRouter();
@@ -17,7 +17,13 @@ export default function PresentationWizard() {
   const [name, setName] = useState('');
   const [salesforceAccountId, setSalesforceAccountId] = useState('');
   const [createdBy, setCreatedBy] = useState('');
+  const [selectedModules, setSelectedModules] = useState<EnabledModules>({
+    guestExperience: true,
+    payment: true,
+    rms: true,
+  });
   const [nameError, setNameError] = useState('');
+  const [modulesError, setModulesError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,8 +32,8 @@ export default function PresentationWizard() {
   const { currencySymbol } = config;
 
   const priorityInputs = useMemo(
-    () => getPriorityInputs(currencySymbol, config.country, config.hotelType),
-    [currencySymbol, config.country, config.hotelType],
+    () => getPriorityInputs(currencySymbol, config.country, config.hotelType, selectedModules),
+    [currencySymbol, config.country, config.hotelType, selectedModules],
   );
 
   const {
@@ -35,14 +41,13 @@ export default function PresentationWizard() {
     score,
     getFieldStatus,
     getBenchmarkValue,
-    setFieldConfidence,
     confirmField,
-    markUnknown,
+    revertToBenchmark,
   } = useConfidence(priorityInputs);
 
-  const handleAdjustField = useCallback(
-    (key: string) => setFieldConfidence(key, 'adjusted'),
-    [setFieldConfidence],
+  const handleRevertFieldToBenchmark = useCallback(
+    (key: string) => revertToBenchmark(key),
+    [revertToBenchmark],
   );
 
   function handleIdentitySubmit(e: React.FormEvent) {
@@ -52,6 +57,11 @@ export default function PresentationWizard() {
       return;
     }
     setNameError('');
+    if (!selectedModules.guestExperience && !selectedModules.payment && !selectedModules.rms) {
+      setModulesError('Please select at least one Mews product');
+      return;
+    }
+    setModulesError('');
     setStep('intake');
   }
 
@@ -59,6 +69,10 @@ export default function PresentationWizard() {
     setIsSubmitting(true);
     setSubmitError('');
     try {
+      const stateToSave = {
+        ...state,
+        ui: { ...state.ui, enabledModules: selectedModules },
+      };
       const res = await fetch('/api/roi-presentations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,7 +80,7 @@ export default function PresentationWizard() {
           name: name.trim(),
           salesforceAccountId: salesforceAccountId.trim() || undefined,
           createdBy: createdBy.trim() || undefined,
-          state: serializeState(state),
+          state: serializeState(stateToSave),
         }),
       });
       const data = await res.json();
@@ -134,6 +148,77 @@ export default function PresentationWizard() {
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-[--mews-night-black] mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
+                Which Mews products will they be using?
+              </label>
+              <div className="grid grid-cols-1 gap-3">
+                {(
+                  [
+                    {
+                      key: 'guestExperience' as const,
+                      label: 'Guest Experience',
+                      description: 'Check-in automation, direct bookings, upsells',
+                    },
+                    {
+                      key: 'payment' as const,
+                      label: 'Payments & Billing',
+                      description: 'Chargebacks, reconciliation, no-shows',
+                    },
+                    {
+                      key: 'rms' as const,
+                      label: 'RMS',
+                      description: 'Rate management, channel optimisation',
+                    },
+                  ] satisfies { key: keyof EnabledModules; label: string; description: string }[]
+                ).map(({ key, label, description }) => {
+                  const isSelected = selectedModules[key];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setSelectedModules((prev) => ({ ...prev, [key]: !prev[key] }));
+                        if (modulesError) setModulesError('');
+                      }}
+                      className={[
+                        'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors',
+                        isSelected
+                          ? 'bg-[--mews-night-black] text-white border-[--mews-night-black]'
+                          : 'bg-white text-[--mews-night-black] border-[--mews-night-black]/15 hover:border-[--mews-night-black]/40',
+                      ].join(' ')}
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      <span
+                        className={[
+                          'flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-colors',
+                          isSelected
+                            ? 'bg-white border-white'
+                            : 'border-[--mews-night-black]/20',
+                        ].join(' ')}
+                      >
+                        {isSelected && <Check className="w-3 h-3 text-[--mews-night-black]" />}
+                      </span>
+                      <span className="flex flex-col">
+                        <span className="text-sm font-medium leading-snug">{label}</span>
+                        <span
+                          className={[
+                            'text-xs leading-snug',
+                            isSelected ? 'text-white/70' : 'text-[--mews-night-black]/50',
+                          ].join(' ')}
+                        >
+                          {description}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {modulesError && (
+                <p className="mt-1.5 text-sm text-[--mews-coral]">{modulesError}</p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -164,7 +249,8 @@ export default function PresentationWizard() {
       )}
       <ProspectIntake
         isOpen={true}
-        onClose={() => {}}
+        onClose={() => setStep('identity')}
+        fullPage={true}
         onComplete={handleIntakeComplete}
         intakeMode="fast"
         onModeChange={(mode: IntakeMode) =>
@@ -181,8 +267,7 @@ export default function PresentationWizard() {
         getFieldStatus={getFieldStatus}
         getBenchmarkValue={getBenchmarkValue}
         onConfirmField={confirmField}
-        onAdjustField={handleAdjustField}
-        onMarkUnknown={markUnknown}
+        onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
         country={config.country}
         usState={config.usState}

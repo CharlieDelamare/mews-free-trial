@@ -46,7 +46,7 @@ export default function SharedVariablesSection({
       <div className="space-y-6">
 
         {/* Primary inputs */}
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(147,51,234,0.04)', border: '1px solid rgba(147,51,234,0.12)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--roi-module-probe) 4%, transparent)', border: '1px solid color-mix(in srgb, var(--roi-module-probe) 12%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-1">Property Metrics</h3>
           <p className="text-sm text-gray-500 mb-5">
             These four values drive all calculations. Reservations and revenue are auto-derived from them.
@@ -119,7 +119,7 @@ export default function SharedVariablesSection({
         </div>
 
         {/* Derived metrics */}
-        <div className="rounded-xl p-5" style={{ background: 'rgba(28,29,36,0.03)', border: '1px solid rgba(28,29,36,0.09)' }}>
+        <div className="rounded-xl p-5" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 3%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 9%, transparent)' }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-1 h-4 rounded-full" style={{ background: 'var(--mews-indigo)' }} />
             <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Auto-Derived Values</h4>
@@ -129,12 +129,12 @@ export default function SharedVariablesSection({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Reservations */}
-            <div className="rounded-xl p-4" style={{ background: 'white', border: '1px solid rgba(28,29,36,0.10)' }}>
+            <div className="rounded-xl p-4" style={{ background: 'white', border: '1px solid color-mix(in srgb, var(--mews-night-black) 10%, transparent)' }}>
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Reservations / Month</p>
               <p className="text-3xl font-bold text-gray-900 tabular-nums">{reservationsPerMonth.toLocaleString()}</p>
               <div
                 className="flex items-center gap-1.5 mt-3 text-xs rounded-lg px-3 py-2 flex-wrap"
-                style={{ background: 'rgba(28,29,36,0.04)', color: 'var(--roi-gray-500)' }}
+                style={{ background: 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)', color: 'var(--roi-gray-500)' }}
               >
                 <span className="font-semibold text-gray-700">{numberOfRooms}</span>
                 <span>rooms</span>
@@ -152,14 +152,14 @@ export default function SharedVariablesSection({
             </div>
 
             {/* Monthly Revenue */}
-            <div className="rounded-xl p-4" style={{ background: 'white', border: '1px solid rgba(28,29,36,0.10)' }}>
+            <div className="rounded-xl p-4" style={{ background: 'white', border: '1px solid color-mix(in srgb, var(--mews-night-black) 10%, transparent)' }}>
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Monthly Room Revenue</p>
               <p className="text-3xl font-bold text-gray-900 tabular-nums">
                 {currencySymbol}{monthlyRevenue.toLocaleString()}
               </p>
               <div
                 className="flex items-center gap-1.5 mt-3 text-xs rounded-lg px-3 py-2 flex-wrap"
-                style={{ background: 'rgba(28,29,36,0.04)', color: 'var(--roi-gray-500)' }}
+                style={{ background: 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)', color: 'var(--roi-gray-500)' }}
               >
                 <span className="font-semibold text-gray-700">{numberOfRooms}</span>
                 <span>rooms</span>
@@ -180,9 +180,9 @@ export default function SharedVariablesSection({
         </div>
 
         {/* Info note */}
-        <div className="rounded-xl p-4" style={{ background: 'rgba(28,29,36,0.03)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 3%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(179,178,251,0.12)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'color-mix(in srgb, var(--mews-indigo) 12%, transparent)' }}>
               <svg className="w-4 h-4" style={{ color: 'var(--mews-indigo)' }} fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>

@@ -44,8 +44,8 @@ export default function WaterfallChart({
     <div
       className="rounded-2xl p-5 md:p-6"
       style={{
-        background: 'rgba(28,29,36,0.03)',
-        border: '1px solid rgba(28,29,36,0.06)',
+        background: 'color-mix(in srgb, var(--mews-night-black) 3%, transparent)',
+        border: '1px solid color-mix(in srgb, var(--mews-night-black) 6%, transparent)',
       }}
     >
       <div className="space-y-3">
@@ -75,7 +75,7 @@ export default function WaterfallChart({
                 <span className="text-xs font-semibold text-gray-500 w-28 md:w-36 text-right truncate">
                   {c.label}
                 </span>
-                <div className="flex-1 h-7 rounded-lg overflow-hidden" style={{ background: 'rgba(28,29,36,0.04)' }}>
+                <div className="flex-1 h-7 rounded-lg overflow-hidden" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)' }}>
                   <div
                     className="h-full rounded-lg transition-all duration-700 ease-out flex items-center justify-end px-2"
                     style={{
@@ -158,7 +158,7 @@ export default function WaterfallChart({
         })}
 
         {/* Total divider + total */}
-        <div className="flex items-center gap-3 pt-2" style={{ borderTop: '2px solid rgba(28,29,36,0.08)' }}>
+        <div className="flex items-center gap-3 pt-2" style={{ borderTop: '2px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)' }}>
           <span className="text-xs font-bold text-gray-700 w-28 md:w-36 text-right">
             Total
           </span>

@@ -53,7 +53,7 @@ export default function GuestExperienceSection({
       headerless={headerless}
     >
       <div className="space-y-8">
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Intuitive Check-In & Guest Portal</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -69,7 +69,7 @@ export default function GuestExperienceSection({
                 <p className="text-xs text-gray-500 mt-1">⚙️ Shared variable - synced across all sections</p>
               </div>
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>With Mews</h3>
               <Slider label="Mews Time to Check In" value={mewsCheckInTime} onChange={(v) => onInputChange('mewsCheckInTime', v)} min={0.1} max={5} step={0.1} formatValue={formatMinutes} color="pink" tooltip="Mews' digital guest portal lets guests check in from their mobile device, whenever and wherever they prefer. Faster check-ins, improved guest satisfaction. Default: 1.5 min. Source: Mews internal benchmark." />
               <Slider label="Mews Time to Check Out" value={mewsCheckOutTime} onChange={(v) => onInputChange('mewsCheckOutTime', v)} min={0.1} max={5} step={0.1} formatValue={formatMinutes} color="pink" tooltip="Mews enables contactless check-out from any device - no queues, no waiting. Guests settle their bill digitally at their own pace. Default: 0.5 min. Source: Mews internal benchmark." />
@@ -86,7 +86,7 @@ export default function GuestExperienceSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Automatic Room Assignment</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -101,7 +101,7 @@ export default function GuestExperienceSection({
                 <p className="text-xs text-gray-500 mt-1">⚙️ Shared variable - synced across all sections</p>
               </div>
             </div>
-            <div className="flex items-center justify-center p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="flex items-center justify-center p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <div className="text-center space-y-4">
                 <div className="w-24 h-24 mx-auto bg-blue-500 rounded-lg flex items-center justify-center shadow-sm">
                   <Users className="w-12 h-12 text-white" />
@@ -121,7 +121,7 @@ export default function GuestExperienceSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Upsell in Guest Portal</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -135,7 +135,7 @@ export default function GuestExperienceSection({
                 <p className="text-xs text-gray-500 mt-1">⚙️ Shared variable - synced across all sections</p>
               </div>
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>Mews Impact</h3>
               <Slider label="% Reservations Checked In Online" value={onlineCheckInPercentage} onChange={(v) => onInputChange('onlineCheckInPercentage', v)} min={0} max={100} step={5} unit="%" color="pink" tooltip="Mews' digital guest portal and kiosk allow guests to check in digitally, reducing front-desk queues and putting guests in control of their experience. Default varies by region (15–35%) and hotel type. Source: Mews June 2025 survey — US portal 10.5%, kiosk 30%; global portal 8.6%, kiosk 20%." />
               <Slider label="Average Revenue Uplift" value={revenueUplift} onChange={(v) => onInputChange('revenueUplift', v)} min={0} max={30} step={1} unit="%" color="pink" tooltip="Mews Kiosk and Guest Portal present smart, relevant upsells at every touchpoint - room upgrades, late checkout, spa, parking, and more. Guests browse at their own pace without pressure. Default: 10-15%. Source: Mews research." />
@@ -150,7 +150,7 @@ export default function GuestExperienceSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Direct Booking & Commission Savings</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -165,7 +165,7 @@ export default function GuestExperienceSection({
               </div>
               <Slider label="Average OTA Commission Rate" value={averageCommission} onChange={(v) => onInputChange('averageCommission', v)} min={0} max={30} step={1} unit="%" color="yellow" tooltip="Average commission rate charged by OTAs (Booking.com, Expedia, etc). Industry standard: 15-25%. Default: 18%. Source: HFTP, Phocuswright. | Ask: What commission rate are you paying your main OTA partners like Booking.com or Expedia?" />
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>Mews Impact</h3>
               <Slider label="Direct Booking Increase" value={directBookingIncrease} onChange={(v) => onInputChange('directBookingIncrease', v)} min={0} max={100} step={5} unit="%" color="pink" tooltip="Mews' user-friendly booking engine drives direct bookings with customizable options and a branded experience. One customer reported 40% more direct bookings in the first year. Default: 40-45%. Source: Mews research." />
             </div>

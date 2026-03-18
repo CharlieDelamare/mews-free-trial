@@ -28,27 +28,27 @@ export default function PresetSelector({ activePreset, onSelect }: PresetSelecto
             style={
               isActive
                 ? {
-                    background: 'rgba(179,178,251,0.25)',
+                    background: 'color-mix(in srgb, var(--mews-indigo) 25%, transparent)',
                     color: 'var(--mews-white)',
-                    border: '1.5px solid rgba(179,178,251,0.5)',
-                    boxShadow: '0 0 12px rgba(179,178,251,0.15)',
+                    border: '1.5px solid color-mix(in srgb, var(--mews-indigo) 50%, transparent)',
+                    boxShadow: '0 0 12px color-mix(in srgb, var(--mews-indigo) 15%, transparent)',
                   }
                 : {
-                    background: 'rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.55)',
-                    border: '1.5px solid rgba(255,255,255,0.1)',
+                    background: 'color-mix(in srgb, var(--mews-white) 8%, transparent)',
+                    color: 'color-mix(in srgb, var(--mews-white) 55%, transparent)',
+                    border: '1.5px solid color-mix(in srgb, var(--mews-white) 10%, transparent)',
                   }
             }
             onMouseEnter={(e) => {
               if (!isActive) {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.14)';
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)';
+                (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 14%, transparent)';
+                (e.currentTarget as HTMLElement).style.color = 'color-mix(in srgb, var(--mews-white) 80%, transparent)';
               }
             }}
             onMouseLeave={(e) => {
               if (!isActive) {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)';
+                (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 8%, transparent)';
+                (e.currentTarget as HTMLElement).style.color = 'color-mix(in srgb, var(--mews-white) 55%, transparent)';
               }
             }}
           >
@@ -59,9 +59,9 @@ export default function PresetSelector({ activePreset, onSelect }: PresetSelecto
       {activePreset === 'custom' && (
         <span className="px-3.5 py-1.5 rounded-full text-xs font-semibold"
           style={{
-            background: 'rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.4)',
-            border: '1.5px dashed rgba(255,255,255,0.15)',
+            background: 'color-mix(in srgb, var(--mews-white) 8%, transparent)',
+            color: 'color-mix(in srgb, var(--mews-white) 40%, transparent)',
+            border: '1.5px dashed color-mix(in srgb, var(--mews-white) 15%, transparent)',
           }}
         >
           Custom

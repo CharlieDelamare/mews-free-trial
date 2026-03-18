@@ -11,8 +11,8 @@ const IBE_THEMES: Array<{ theme: IbeTheme; label: string; description: string; c
   { theme: 'luxury', label: 'Luxury Retreat', description: 'Premium experiences for discerning travellers', color: 'var(--mews-night-black)' },
   { theme: 'city', label: 'City Break', description: 'Urban escapes in the heart of the city', color: 'var(--mews-deep-blue)' },
   { theme: 'resort', label: 'Resort & Spa', description: 'Relaxation and wellness in a resort setting', color: 'var(--mews-olive-green)' },
-  { theme: 'conference', label: 'Conference & Events', description: 'Professional venues for meetings and events', color: '#2D3748' },
-  { theme: 'budget', label: 'Budget Smart', description: 'Great value stays without compromising quality', color: '#2C5282' },
+  { theme: 'conference', label: 'Conference & Events', description: 'Professional venues for meetings and events', color: 'var(--mews-charcoal)' },
+  { theme: 'budget', label: 'Budget Smart', description: 'Great value stays without compromising quality', color: 'var(--mews-deep-blue)' },
 ];
 
 export default function IbeTab({ enterpriseId }: Props) {

@@ -37,7 +37,7 @@ export default function ExportModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-      style={{ background: 'rgba(0,26,51,0.6)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'color-mix(in srgb, var(--mews-deep-blue) 60%, transparent)', backdropFilter: 'blur(8px)' }}
       onClick={(e) => {
         if (e.target === e.currentTarget && !isExporting) onClose();
       }}
@@ -45,13 +45,13 @@ export default function ExportModal({
       <div
         className="bg-white rounded-2xl max-w-sm w-full overflow-hidden flex flex-col animate-scale-in"
         style={{
-          boxShadow: '0 24px 64px rgba(0,26,51,0.25), 0 8px 24px rgba(0,0,0,0.15)',
+          boxShadow: '0 24px 64px color-mix(in srgb, var(--mews-deep-blue) 25%, transparent), 0 8px 24px color-mix(in srgb, var(--mews-black) 15%, transparent)',
         }}
       >
         {/* Header */}
         <div
           className="flex items-center justify-between p-5 pb-4"
-          style={{ borderBottom: '1px solid rgba(45,44,55,0.06)' }}
+          style={{ borderBottom: '1px solid color-mix(in srgb, var(--mews-charcoal) 6%, transparent)' }}
         >
           <div>
             <h2 className="text-lg font-bold text-gray-900">{t.labels.exportRoiReport}</h2>
@@ -61,12 +61,12 @@ export default function ExportModal({
             onClick={onClose}
             disabled={isExporting}
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150"
-            style={{ background: 'rgba(45,44,55,0.05)' }}
+            style={{ background: 'color-mix(in srgb, var(--mews-charcoal) 5%, transparent)' }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.10)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 10%, transparent)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.05)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 5%, transparent)';
             }}
           >
             <X className="w-4 h-4 text-gray-500" />
@@ -82,8 +82,8 @@ export default function ExportModal({
                 key={section.id}
                 className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150 group"
                 style={{
-                  background: isChecked ? 'rgba(179,178,251,0.07)' : 'rgba(45,44,55,0.02)',
-                  border: `1px solid ${isChecked ? 'rgba(179,178,251,0.25)' : 'rgba(45,44,55,0.06)'}`,
+                  background: isChecked ? 'color-mix(in srgb, var(--mews-indigo) 7%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 2%, transparent)',
+                  border: `1px solid ${isChecked ? 'color-mix(in srgb, var(--mews-indigo) 25%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)'}`,
                 }}
               >
                 {/* Custom checkbox */}
@@ -92,9 +92,9 @@ export default function ExportModal({
                   style={{
                     background: isChecked
                       ? 'var(--mews-indigo)'
-                      : 'rgba(45,44,55,0.06)',
-                    border: `2px solid ${isChecked ? 'transparent' : 'rgba(45,44,55,0.15)'}`,
-                    boxShadow: isChecked ? '0 2px 8px rgba(179,178,251,0.3)' : 'none',
+                      : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)',
+                    border: `2px solid ${isChecked ? 'transparent' : 'color-mix(in srgb, var(--mews-charcoal) 15%, transparent)'}`,
+                    boxShadow: isChecked ? '0 2px 8px color-mix(in srgb, var(--mews-indigo) 30%, transparent)' : 'none',
                   }}
                 >
                   {isChecked && (
@@ -125,22 +125,22 @@ export default function ExportModal({
         {/* Footer */}
         <div
           className="p-5 pt-4 flex gap-3"
-          style={{ borderTop: '1px solid rgba(45,44,55,0.06)' }}
+          style={{ borderTop: '1px solid color-mix(in srgb, var(--mews-charcoal) 6%, transparent)' }}
         >
           <button
             onClick={onClose}
             disabled={isExporting}
             className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150"
             style={{
-              background: 'rgba(45,44,55,0.05)',
-              border: '1px solid rgba(45,44,55,0.08)',
+              background: 'color-mix(in srgb, var(--mews-charcoal) 5%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--mews-charcoal) 8%, transparent)',
               color: 'var(--roi-gray-700)',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.10)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 10%, transparent)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.05)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 5%, transparent)';
             }}
           >
             {t.labels.cancel}
@@ -157,7 +157,7 @@ export default function ExportModal({
               boxShadow:
                 selectedSections.length === 0 || isExporting
                   ? 'none'
-                  : '0 4px 12px rgba(45,44,55,0.3)',
+                  : '0 4px 12px color-mix(in srgb, var(--mews-charcoal) 30%, transparent)',
               cursor: selectedSections.length === 0 || isExporting ? 'not-allowed' : 'pointer',
             }}
           >

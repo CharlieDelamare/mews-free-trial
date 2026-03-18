@@ -11,9 +11,9 @@ export default function PropertyContextLine({ contextString }: PropertyContextLi
     <div
       className="inline-flex items-center gap-2 px-4 py-2 rounded-full mx-auto"
       style={{
-        background: 'rgba(255,255,255,0.7)',
+        background: 'color-mix(in srgb, var(--mews-white) 70%, transparent)',
         backdropFilter: 'blur(8px)',
-        border: '1px solid rgba(28,29,36,0.08)',
+        border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
       }}
     >
       <Building2 className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />

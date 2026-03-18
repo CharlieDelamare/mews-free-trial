@@ -140,7 +140,7 @@ export default function HeroNumber({
           'cost',
           costLevers,
           <TrendingDown className="w-3.5 h-3.5 text-emerald-600" />,
-          'rgba(16,185,129,0.1)',
+          'color-mix(in srgb, var(--mews-success) 10%, transparent)',
           'cost savings',
           <span className="text-base font-bold text-gray-800 tabular-nums">{formatCompact(costSavings, currencySymbol)}</span>,
         )}
@@ -149,7 +149,7 @@ export default function HeroNumber({
           'revenue',
           revenueLevers,
           <TrendingUp className="w-3.5 h-3.5 text-blue-600" />,
-          'rgba(59,130,246,0.1)',
+          'color-mix(in srgb, var(--mews-indigo) 10%, transparent)',
           'revenue uplift',
           <span className="text-base font-bold text-gray-800 tabular-nums">{formatCompact(revenueUplift, currencySymbol)}</span>,
         )}
@@ -158,7 +158,7 @@ export default function HeroNumber({
           'time',
           timeLevers,
           <Clock className="w-3.5 h-3.5 text-violet-600" />,
-          'rgba(139,92,246,0.1)',
+          'color-mix(in srgb, var(--roi-module-gx) 10%, transparent)',
           'hours reclaimed',
           <span className="text-base font-bold text-gray-800 tabular-nums">{Math.round(totalTime).toLocaleString()}</span>,
         )}

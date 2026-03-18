@@ -23,10 +23,10 @@ export default function ActionDock({
     <div
       className="fixed bottom-0 left-0 right-0 z-30"
       style={{
-        background: 'rgba(255,255,255,0.85)',
+        background: 'color-mix(in srgb, var(--mews-white) 85%, transparent)',
         backdropFilter: 'blur(16px)',
-        borderTop: '1px solid rgba(28,29,36,0.08)',
-        boxShadow: '0 -4px 24px rgba(28,29,36,0.06)',
+        borderTop: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
+        boxShadow: '0 -4px 24px color-mix(in srgb, var(--mews-night-black) 6%, transparent)',
       }}
     >
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
@@ -56,14 +56,14 @@ export default function ActionDock({
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
             style={{
               background: 'linear-gradient(135deg, var(--mews-night-black) 0%, var(--roi-navy-light) 100%)',
-              color: '#fff',
-              boxShadow: '0 2px 12px rgba(28,29,36,0.25)',
+              color: 'var(--mews-white)',
+              boxShadow: '0 2px 12px color-mix(in srgb, var(--mews-night-black) 25%, transparent)',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(28,29,36,0.35)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px color-mix(in srgb, var(--mews-night-black) 35%, transparent)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px rgba(28,29,36,0.25)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px color-mix(in srgb, var(--mews-night-black) 25%, transparent)';
             }}
           >
             <Presentation className="w-4 h-4" />
@@ -78,14 +78,14 @@ export default function ActionDock({
             onClick={onDiscovery}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 transition-all duration-200"
             style={{
-              background: 'rgba(28,29,36,0.04)',
-              border: '1px solid rgba(28,29,36,0.08)',
+              background: 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.08)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 8%, transparent)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.04)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)';
             }}
           >
             <Compass className="w-4 h-4" />
@@ -97,14 +97,14 @@ export default function ActionDock({
             onClick={onExport}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 transition-all duration-200"
             style={{
-              background: 'rgba(28,29,36,0.04)',
-              border: '1px solid rgba(28,29,36,0.08)',
+              background: 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.08)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 8%, transparent)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.04)';
+              (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)';
             }}
           >
             <FileDown className="w-4 h-4" />

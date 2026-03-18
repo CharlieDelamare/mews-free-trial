@@ -8,8 +8,8 @@ const IBE_THEME_CONFIG: Record<IbeTheme, { displayName: string; primaryColor: st
   luxury: { displayName: 'Luxury Retreat', primaryColor: '#1C1D24', description: 'Premium experiences for discerning travellers' },
   city: { displayName: 'City Break', primaryColor: '#172135', description: 'Urban escapes in the heart of the city' },
   resort: { displayName: 'Resort & Spa', primaryColor: '#222B28', description: 'Relaxation and wellness in a resort setting' },
-  conference: { displayName: 'Conference & Events', primaryColor: '#2D3748', description: 'Professional venues for meetings and events' },
-  budget: { displayName: 'Budget Smart', primaryColor: '#2C5282', description: 'Great value stays without compromising quality' },
+  conference: { displayName: 'Conference & Events', primaryColor: 'var(--mews-charcoal)', description: 'Professional venues for meetings and events' },
+  budget: { displayName: 'Budget Smart', primaryColor: 'var(--mews-deep-blue)', description: 'Great value stays without compromising quality' },
 };
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];

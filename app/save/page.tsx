@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import SearchableSelect from '@/components/SearchableSelect';
+import { useToast } from '@/components/Toast';
 
 interface Environment {
   enterpriseId: string;
@@ -20,8 +21,8 @@ export default function SaveSandboxPage() {
   const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchEnvironments();
@@ -48,15 +49,13 @@ export default function SaveSandboxPage() {
       const response = await fetch('/api/environments/list');
       const data = await response.json();
       if (data.success) {
-        // Filter to trial-type sandboxes only (they have expiration timers)
-        const trialEnvironments = (data.environments || [])
-          .filter((env: Environment) => env.type === 'trial')
+        const sorted = (data.environments || [])
           .sort((a: Environment, b: Environment) => {
             const nameA = (a.propertyName || a.enterpriseName || '').toLowerCase();
             const nameB = (b.propertyName || b.enterpriseName || '').toLowerCase();
             return nameA.localeCompare(nameB);
           });
-        setEnvironments(trialEnvironments);
+        setEnvironments(sorted);
       }
     } catch (error) {
       console.error('Failed to fetch environments:', error);
@@ -73,7 +72,6 @@ export default function SaveSandboxPage() {
   const handleSaveConfirm = async () => {
     setShowConfirmDialog(false);
     setSubmitting(true);
-    setResult(null);
 
     try {
       const response = await fetch('/api/save-sandbox', {
@@ -87,21 +85,12 @@ export default function SaveSandboxPage() {
       if (data.success) {
         const env = environments.find(e => e.enterpriseId === selectedEnvironment);
         const envName = env?.propertyName || env?.enterpriseName || selectedEnvironment;
-        setResult({
-          type: 'success',
-          text: `Successfully saved "${envName}". The sandbox will no longer expire.`,
-        });
+        showToast(`Successfully saved "${envName}". The sandbox will no longer expire.`, 'success');
       } else {
-        setResult({
-          type: 'error',
-          text: data.error || 'Failed to save sandbox.',
-        });
+        showToast(data.error || 'Failed to save sandbox.', 'error');
       }
     } catch (error) {
-      setResult({
-        type: 'error',
-        text: 'Network error. Please try again.',
-      });
+      showToast('Network error. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +124,6 @@ export default function SaveSandboxPage() {
                   value={selectedEnvironment}
                   onChange={(val) => {
                     setSelectedEnvironment(val);
-                    setResult(null);
                   }}
                   options={environments.map((env) => ({
                     value: env.enterpriseId,

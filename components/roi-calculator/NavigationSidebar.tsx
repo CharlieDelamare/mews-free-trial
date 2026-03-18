@@ -65,10 +65,10 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
       <div
         className="lg:hidden sticky top-0 z-20 -mx-4 px-4 py-2.5"
         style={{
-          background: 'rgba(248,250,255,0.92)',
+          background: 'color-mix(in srgb, var(--mews-light-indigo) 92%, transparent)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid rgba(28,29,36,0.07)',
+          borderBottom: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)',
         }}
       >
         <nav className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
@@ -84,12 +84,12 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
                     ? {
                         background: 'linear-gradient(135deg, var(--mews-night-black) 0%, var(--roi-navy-light) 100%)',
                         color: 'var(--roi-white)',
-                        boxShadow: '0 2px 8px rgba(28,29,36,0.3)',
+                        boxShadow: '0 2px 8px color-mix(in srgb, var(--mews-night-black) 30%, transparent)',
                       }
                     : {
-                        background: 'rgba(255,255,255,0.85)',
+                        background: 'color-mix(in srgb, var(--mews-white) 85%, transparent)',
                         color: 'var(--roi-gray-500)',
-                        border: '1px solid rgba(28,29,36,0.08)',
+                        border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
                       }
                 }
               >
@@ -105,16 +105,16 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
         <div
           className="rounded-2xl p-4 w-56"
           style={{
-            background: 'rgba(255,255,255,0.85)',
+            background: 'color-mix(in srgb, var(--mews-white) 85%, transparent)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(28,29,36,0.08)',
-            boxShadow: '0 4px 20px rgba(28,29,36,0.08), 0 1px 4px rgba(0,0,0,0.04)',
+            border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
+            boxShadow: '0 4px 20px color-mix(in srgb, var(--mews-night-black) 8%, transparent), 0 1px 4px color-mix(in srgb, var(--mews-black) 4%, transparent)',
           }}
         >
           <h3
             className="text-xs font-bold mb-3 px-2 uppercase tracking-widest"
-            style={{ color: 'rgba(28,29,36,0.4)' }}
+            style={{ color: 'color-mix(in srgb, var(--mews-night-black) 40%, transparent)' }}
           >
             Navigation
           </h3>
@@ -131,7 +131,7 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
                   style={
                     isActive
                       ? {
-                          background: 'linear-gradient(135deg, rgba(179,178,251,0.12) 0%, rgba(28,29,36,0.06) 100%)',
+                          background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 12%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 6%, transparent) 100%)',
                           color: 'var(--mews-night-black)',
                           fontWeight: 600,
                         }
@@ -141,7 +141,7 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
                   }
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.04)';
+                      (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)';
                       (e.currentTarget as HTMLElement).style.color = 'var(--roi-gray-700)';
                     }
                   }}
@@ -155,7 +155,7 @@ export default function NavigationSidebar({ sections }: NavigationSidebarProps) 
                   <div
                     className="flex-shrink-0 w-1.5 h-1.5 rounded-full transition-all duration-300"
                     style={{
-                      background: isActive ? 'var(--mews-indigo)' : 'rgba(28,29,36,0.2)',
+                      background: isActive ? 'var(--mews-indigo)' : 'color-mix(in srgb, var(--mews-night-black) 20%, transparent)',
                       transform: isActive ? 'scale(1.4)' : 'scale(1)',
                     }}
                   />
