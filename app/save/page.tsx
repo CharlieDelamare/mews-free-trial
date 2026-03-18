@@ -114,18 +114,18 @@ export default function SaveSandboxPage() {
       <main className="min-h-screen bg-mews-linen py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Save Sandbox</h1>
-            <p className="text-gray-600">Permanently remove the expiration timer from a sandbox</p>
+            <h1 className="text-3xl font-bold text-mews-night-black mb-2">Save Sandbox</h1>
+            <p className="text-neutral-600">Permanently remove the expiration timer from a sandbox</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+          <div className="bg-white rounded-xl border border-neutral-100 shadow-sm p-8 space-y-6">
             {/* Sandbox Dropdown */}
             <div>
-              <label htmlFor="selectedEnvironment" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="selectedEnvironment" className="block text-sm font-medium text-neutral-700 mb-1">
                 Select Sandbox *
               </label>
               {environmentsLoading ? (
-                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                <div className="w-full px-4 py-2 border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-500">
                   Loading sandboxes...
                 </div>
               ) : (
@@ -145,7 +145,7 @@ export default function SaveSandboxPage() {
                 />
               )}
               {!environmentsLoading && environments.length === 0 && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-neutral-500 mt-2">
                   No trial sandboxes found. Only sandboxes created by this app can be saved.
                 </p>
               )}
@@ -164,7 +164,7 @@ export default function SaveSandboxPage() {
               className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
                 !selectedEnvironment || submitting
                   ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                  : 'bg-primary-600 text-white hover:bg-primary-700'
+                  : 'bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover'
               }`}
             >
               {submitting ? 'Saving...' : 'Save Sandbox'}
@@ -181,7 +181,7 @@ export default function SaveSandboxPage() {
               </div>
             )}
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-neutral-500 text-center">
               This will cancel the automatic deletion of the selected sandbox
             </p>
           </div>
@@ -195,26 +195,26 @@ export default function SaveSandboxPage() {
         aria-labelledby="save-dialog-title"
         className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-gray-900/50"
       >
-        <h2 id="save-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
+        <h2 id="save-dialog-title" className="text-xl font-semibold text-mews-night-black mb-4">
           Confirm Save Sandbox
         </h2>
-        <p className="text-gray-700 mb-4">
+        <p className="text-neutral-700 mb-4">
           Are you sure you want to permanently remove the expiration from{' '}
           <strong>{selectedEnv?.propertyName || selectedEnv?.enterpriseName || 'this sandbox'}</strong>?
         </p>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-neutral-500 mb-6">
           This sandbox will no longer be automatically deleted and will remain active indefinitely.
         </p>
         <div className="flex gap-3">
           <button
             onClick={() => setShowConfirmDialog(false)}
-            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+            className="flex-1 py-2 px-4 bg-neutral-100 text-neutral-700 font-semibold rounded-lg hover:bg-neutral-200 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSaveConfirm}
-            className="flex-1 py-2 px-4 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-mews-primary text-mews-night-black font-semibold rounded-lg hover:bg-mews-primary-hover transition-colors"
           >
             Yes, Save Sandbox
           </button>

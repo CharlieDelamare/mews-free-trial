@@ -57,7 +57,7 @@ export default function SandboxFillerPage() {
 
   const CHEVRON_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2374757D'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E")`;
   const selectStyle = { backgroundImage: CHEVRON_SVG } as const;
-  const selectClasses = "w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 pr-10 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_12px_center]";
+  const selectClasses = "w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 pr-10 text-sm md:text-base leading-tight border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_12px_center]";
 
   useEffect(() => {
     fetchEnvironments();
@@ -182,21 +182,21 @@ export default function SandboxFillerPage() {
     <main className="min-h-screen bg-mews-linen py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Demo Filler</h1>
-          <p className="text-gray-600">Add reservations to an existing sandbox</p>
+          <h1 className="text-3xl font-bold text-mews-night-black mb-2">Demo Filler</h1>
+          <p className="text-neutral-600">Add reservations to an existing sandbox</p>
         </div>
 
-        <form onSubmit={handleSandboxFillerSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+        <form onSubmit={handleSandboxFillerSubmit} className="bg-white rounded-xl border border-neutral-100 shadow-sm p-8 space-y-6">
           {/* Sandbox Dropdown */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-neutral-700">
                 Select Sandbox *
               </label>
               <button
                 type="button"
                 onClick={openManualAddModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-neutral-400 hover:text-neutral-600 transition-colors"
                 title="Add environment manually"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -205,7 +205,7 @@ export default function SandboxFillerPage() {
               </button>
             </div>
             {environmentsLoading ? (
-              <div className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+              <div className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-500">
                 Loading sandboxes...
               </div>
             ) : (
@@ -231,22 +231,22 @@ export default function SandboxFillerPage() {
               />
             )}
             {!environmentsLoading && environments.length === 0 && (
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-neutral-500 mt-2">
                 No sandboxes found. Create a sandbox or add one manually.
               </p>
             )}
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-neutral-500 mt-2">
               If your property isn&apos;t available in the dropdown, please add the &ldquo;Mews Sandbox Manager&rdquo; integration in the Marketplace within Mews.
             </p>
           </div>
 
           {/* Service Dropdown */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Select Service *
             </label>
             {servicesLoading ? (
-              <div className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+              <div className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-500">
                 Loading services...
               </div>
             ) : !sandboxFillerData.selectedEnvironment ? (
@@ -282,7 +282,7 @@ export default function SandboxFillerPage() {
 
           {/* Start Date */}
           <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="startDate" className="block text-sm font-medium text-neutral-700 mb-1">
               Start Date *
             </label>
             <input
@@ -293,14 +293,14 @@ export default function SandboxFillerPage() {
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, startDate: e.target.value }))}
               min={new Date().toISOString().split('T')[0]}
               required
-              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
+              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary appearance-none"
               style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
             />
           </div>
 
           {/* End Date */}
           <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="endDate" className="block text-sm font-medium text-neutral-700 mb-1">
               End Date *
             </label>
             <input
@@ -311,14 +311,14 @@ export default function SandboxFillerPage() {
               onChange={(e) => setDemoFillerData(prev => ({ ...prev, endDate: e.target.value }))}
               min={sandboxFillerData.startDate || new Date().toISOString().split('T')[0]}
               required
-              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none"
+              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary appearance-none"
               style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
             />
           </div>
 
           {/* Reservation Count */}
           <div>
-            <label htmlFor="reservationCount" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="reservationCount" className="block text-sm font-medium text-neutral-700 mb-1">
               Number of Reservations *
             </label>
             <input
@@ -330,9 +330,9 @@ export default function SandboxFillerPage() {
               required
               min="1"
               max="500"
-              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 text-sm md:text-base leading-tight border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-neutral-500 mt-1">
               Enter a number between 1 and 500
             </p>
           </div>
@@ -345,13 +345,13 @@ export default function SandboxFillerPage() {
             className={`w-full py-3 px-4 font-semibold rounded-lg transition-colors ${
               !sandboxFillerData.selectedEnvironment || !selectedServiceId || sandboxFillerLoading
                 ? 'bg-gray-400 text-white cursor-not-allowed opacity-60'
-                : 'bg-primary-600 text-white hover:bg-primary-700'
+                : 'bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover'
             }`}
           >
             {sandboxFillerLoading ? 'Creating Reservations...' : 'Create Reservations'}
           </button>
 
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-neutral-500 text-center">
             All reservations will be created in Confirmed state with random check-in dates and stay lengths (1-4 nights)
           </p>
         </form>
@@ -362,15 +362,15 @@ export default function SandboxFillerPage() {
       {showManualAdd && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            <h2 className="text-lg font-semibold text-mews-night-black mb-1">
               Add existing environment
             </h2>
-            <p className="text-sm text-gray-500 mb-5">
+            <p className="text-sm text-neutral-500 mb-5">
               Paste an access token to add an environment without waiting for the webhook.
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Access Token
                 </label>
                 <input
@@ -378,7 +378,7 @@ export default function SandboxFillerPage() {
                   value={manualToken}
                   onChange={(e) => setManualToken(e.target.value)}
                   placeholder="Paste access token here"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
                 />
               </div>
               {manualAddMessage && (
@@ -390,7 +390,7 @@ export default function SandboxFillerPage() {
                 <button
                   type="button"
                   onClick={closeManualAddModal}
-                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-2 px-4 bg-neutral-100 text-neutral-700 font-semibold rounded-lg hover:bg-neutral-200 transition-colors"
                 >
                   {manualAddMessage?.type === 'success' ? 'Done' : 'Cancel'}
                 </button>

@@ -137,21 +137,21 @@ export default function ResetSandboxPage() {
       <main className="min-h-screen bg-mews-linen py-12 px-4">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Sandbox</h1>
-            <p className="text-gray-600">Reset an existing sandbox</p>
+            <h1 className="text-3xl font-bold text-mews-night-black mb-2">Reset Sandbox</h1>
+            <p className="text-neutral-600">Reset an existing sandbox</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+          <div className="bg-white rounded-xl border border-neutral-100 shadow-sm p-8 space-y-6">
             {/* Sandbox Dropdown */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label htmlFor="selectedEnvironment" className="text-sm font-medium text-gray-700">
+                <label htmlFor="selectedEnvironment" className="text-sm font-medium text-neutral-700">
                   Select Sandbox *
                 </label>
                 <button
                   type="button"
                   onClick={openManualAddModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors"
                   title="Add environment manually"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -160,7 +160,7 @@ export default function ResetSandboxPage() {
                 </button>
               </div>
               {environmentsLoading ? (
-                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                <div className="w-full px-4 py-2 border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-500">
                   Loading sandboxes...
                 </div>
               ) : (
@@ -177,11 +177,11 @@ export default function ResetSandboxPage() {
                 />
               )}
               {!environmentsLoading && environments.length === 0 && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-neutral-500 mt-2">
                   No sandboxes found. Create a sandbox or add one manually.
                 </p>
               )}
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-neutral-500 mt-2">
                 If your property isn&apos;t available in the dropdown, please add the &ldquo;Mews Sandbox Manager&rdquo; integration in the Marketplace within Mews.
               </p>
             </div>
@@ -200,7 +200,7 @@ export default function ResetSandboxPage() {
               {resetting ? 'Resetting Sandbox...' : 'Reset Sandbox'}
             </button>
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-neutral-500 text-center">
               Resetting will cancel reservations, close bills, and create fresh sample data for the next 7 days
             </p>
           </div>
@@ -211,15 +211,15 @@ export default function ResetSandboxPage() {
       {showManualAdd && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            <h2 className="text-lg font-semibold text-mews-night-black mb-1">
               Add existing environment
             </h2>
-            <p className="text-sm text-gray-500 mb-5">
+            <p className="text-sm text-neutral-500 mb-5">
               Paste an access token to add an environment without waiting for the webhook.
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">
                   Access Token
                 </label>
                 <input
@@ -227,7 +227,7 @@ export default function ResetSandboxPage() {
                   value={manualToken}
                   onChange={(e) => setManualToken(e.target.value)}
                   placeholder="Paste access token here"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
                 />
               </div>
               {manualAddMessage && (
@@ -239,7 +239,7 @@ export default function ResetSandboxPage() {
                 <button
                   type="button"
                   onClick={closeManualAddModal}
-                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-2 px-4 bg-neutral-100 text-neutral-700 font-semibold rounded-lg hover:bg-neutral-200 transition-colors"
                 >
                   {manualAddMessage?.type === 'success' ? 'Done' : 'Cancel'}
                 </button>
@@ -270,13 +270,13 @@ export default function ResetSandboxPage() {
         aria-labelledby="reset-dialog-title"
         className="rounded-xl shadow-xl max-w-md w-full p-6 backdrop:bg-gray-900/50"
       >
-        <h2 id="reset-dialog-title" className="text-xl font-semibold text-gray-900 mb-4">
+        <h2 id="reset-dialog-title" className="text-xl font-semibold text-mews-night-black mb-4">
           Confirm Sandbox Reset
         </h2>
-        <p className="text-gray-700 mb-4">
+        <p className="text-neutral-700 mb-4">
           This will perform the following actions:
         </p>
-        <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-1">
+        <ul className="list-disc list-inside text-sm text-neutral-600 mb-6 space-y-1">
           <li>Cancel all confirmed and optional reservations</li>
           <li>Close all open bills (with automatic payments)</li>
           <li>Create fresh sample reservations for the next 7 days</li>
@@ -287,7 +287,7 @@ export default function ResetSandboxPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowConfirmDialog(false)}
-            className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+            className="flex-1 py-2 px-4 bg-neutral-100 text-neutral-700 font-semibold rounded-lg hover:bg-neutral-200 transition-colors"
           >
             Cancel
           </button>
