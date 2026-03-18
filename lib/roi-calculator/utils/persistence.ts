@@ -1,8 +1,11 @@
 import type { CalculatorState } from '@/lib/roi-calculator/types/calculator';
+import type { ConfidenceMap } from '@/lib/roi-calculator/types/confidence';
 import { calcAll } from '@/lib/roi-calculator/utils/calculations';
 import { defaultCalculatorState } from '@/lib/roi-calculator/utils/defaultState';
 
-export type PersistedState = Omit<CalculatorState, 'ui'>;
+export type PersistedState = Omit<CalculatorState, 'ui'> & {
+  confidenceMap?: ConfidenceMap;
+};
 
 export interface PresentationMetadata {
   country: string;
@@ -12,9 +15,9 @@ export interface PresentationMetadata {
 }
 
 /** Strip the ephemeral ui slice before storing in the DB. */
-export function serializeState(state: CalculatorState): PersistedState {
+export function serializeState(state: CalculatorState, confidenceMap?: ConfidenceMap): PersistedState {
   const { ui: _ui, ...rest } = state;
-  return rest;
+  return confidenceMap ? { ...rest, confidenceMap } : rest;
 }
 
 /**
@@ -33,6 +36,7 @@ export function deserializeState(json: unknown): PersistedState | null {
       guestExperience: { ...d.guestExperience, ...(stored.guestExperience as object ?? {}) },
       payment: { ...d.payment, ...(stored.payment as object ?? {}) },
       rms: { ...d.rms, ...(stored.rms as object ?? {}) },
+      ...(stored.confidenceMap ? { confidenceMap: stored.confidenceMap as ConfidenceMap } : {}),
     };
   } catch (err) {
     console.error('[ROI] Failed to deserialize state:', err);

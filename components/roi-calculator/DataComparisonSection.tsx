@@ -12,7 +12,6 @@ import {
   CreditCard,
   TrendingUp,
   Edit3,
-  RotateCcw,
   Zap,
   BarChart3,
 } from 'lucide-react';
@@ -27,7 +26,6 @@ interface DataComparisonSectionProps {
   getFieldStatus: (key: string) => ConfidenceStatus;
   onValueChange: (slice: string, field: string, value: number) => void;
   onConfirmField: (key: string) => void;
-  onAdjustField: (key: string) => void;
   score: ConfidenceScore;
 }
 
@@ -91,18 +89,6 @@ function statusBadge(status: ConfidenceStatus) {
           <CheckCircle2 className="w-3 h-3" /> Confirmed
         </span>
       );
-    case 'adjusted':
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-          <Edit3 className="w-3 h-3" /> Adjusted
-        </span>
-      );
-    case 'unknown':
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-          <AlertCircle className="w-3 h-3" /> Unknown
-        </span>
-      );
     default:
       return (
         <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
@@ -120,7 +106,6 @@ export default function DataComparisonSection({
   getFieldStatus,
   onValueChange,
   onConfirmField,
-  onAdjustField,
   score,
 }: DataComparisonSectionProps) {
   // Track which groups are expanded; start all collapsed
@@ -151,7 +136,7 @@ export default function DataComparisonSection({
     const parsed = parseFloat(editValue);
     if (!isNaN(parsed) && parsed >= input.min && parsed <= input.max) {
       onValueChange(input.slice, input.field, parsed);
-      onAdjustField(input.key);
+      onConfirmField(input.key);
     }
     setEditingField(null);
   };
@@ -169,14 +154,6 @@ export default function DataComparisonSection({
       onValueChange(input.mewsMapping.slice, input.mewsMapping.field, parsed);
     }
     setEditingMewsField(null);
-  };
-
-  const resetToBenchmark = (input: PriorityInput) => {
-    const benchmark = getBenchmarkValue(input.key);
-    if (benchmark !== undefined) {
-      onValueChange(input.slice, input.field, benchmark);
-      onConfirmField(input.key);
-    }
   };
 
   return (
@@ -211,14 +188,8 @@ export default function DataComparisonSection({
         const groupHasMews = inputs.some((i) => !!i.mewsMapping || !!i.mewsLabel);
 
         // Per-group status summary for the header pill
-        const confirmed = inputs.filter((i) => {
-          const s = getFieldStatus(i.key);
-          return s === 'confirmed' || s === 'adjusted';
-        }).length;
-        const benchmarks = inputs.filter((i) => {
-          const s = getFieldStatus(i.key);
-          return s === 'benchmark' || s === 'unknown';
-        }).length;
+        const confirmed = inputs.filter((i) => getFieldStatus(i.key) === 'confirmed').length;
+        const benchmarks = inputs.filter((i) => getFieldStatus(i.key) === 'benchmark').length;
 
         return (
           <div
@@ -351,16 +322,6 @@ export default function DataComparisonSection({
                             {/* Status */}
                             <div className="flex items-center gap-1">
                               {!input.readOnly && statusBadge(status)}
-                              {status === 'adjusted' && (
-                                <button
-                                  type="button"
-                                  onClick={() => resetToBenchmark(input)}
-                                  className="p-1 rounded hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100"
-                                  title="Reset to benchmark"
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5 text-gray-400" />
-                                </button>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -497,19 +458,9 @@ export default function DataComparisonSection({
                           )}
                         </div>
 
-                        {/* Status + Actions */}
+                        {/* Status */}
                         <div className="col-span-2 flex items-center justify-end gap-1.5">
                           {!input.readOnly && statusBadge(status)}
-                          {status === 'adjusted' && (
-                            <button
-                              type="button"
-                              onClick={() => resetToBenchmark(input)}
-                              className="p-1 rounded hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100"
-                              title="Reset to benchmark"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5 text-gray-400" />
-                            </button>
-                          )}
                         </div>
                       </div>
                     );

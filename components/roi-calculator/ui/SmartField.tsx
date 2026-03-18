@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Check, HelpCircle, RotateCcw, Pencil, Info } from 'lucide-react';
+import { Check, Pencil, Info } from 'lucide-react';
 import type { ConfidenceStatus } from '@/lib/roi-calculator/types/confidence';
 
 interface SmartFieldProps {
@@ -17,8 +17,7 @@ interface SmartFieldProps {
   step: number;
   onChange: (value: number) => void;
   onConfirm: () => void;
-  onMarkUnknown: () => void;
-  onAdjust: () => void;
+  onRevertToBenchmark: () => void;
   compact?: boolean;           // Inline mode for review screens
   showQuestion?: boolean;      // Show conversational question
   benchmarkSourceInfo?: string; // Explanation of where benchmark data comes from
@@ -45,20 +44,6 @@ const STATUS_STYLES: Record<ConfidenceStatus, {
     label: 'Confirmed',
     labelColor: 'text-emerald-600',
   },
-  adjusted: {
-    borderColor: 'border-blue-200',
-    bgColor: 'bg-blue-50/40',
-    dotColor: 'bg-blue-500',
-    label: 'Prospect adjusted',
-    labelColor: 'text-blue-600',
-  },
-  unknown: {
-    borderColor: 'border-gray-200',
-    bgColor: 'bg-gray-50/50',
-    dotColor: 'bg-gray-400',
-    label: 'Not validated',
-    labelColor: 'text-gray-500',
-  },
 };
 
 export default function SmartField({
@@ -74,8 +59,7 @@ export default function SmartField({
   step,
   onChange,
   onConfirm,
-  onMarkUnknown,
-  onAdjust,
+  onRevertToBenchmark,
   compact = false,
   showQuestion = false,
   benchmarkSourceInfo,
@@ -118,7 +102,9 @@ export default function SmartField({
       const clamped = Math.max(min, Math.min(max, parsed));
       onChange(clamped);
       if (clamped !== benchmarkValue) {
-        onAdjust();
+        onConfirm();
+      } else {
+        onRevertToBenchmark();
       }
     }
     setIsEditing(false);
@@ -131,13 +117,11 @@ export default function SmartField({
 
   const handleSliderChange = (newVal: number) => {
     onChange(newVal);
-    if (newVal !== benchmarkValue && status === 'benchmark') {
-      onAdjust();
+    if (newVal !== benchmarkValue) {
+      onConfirm();
+    } else {
+      onRevertToBenchmark();
     }
-  };
-
-  const resetToBenchmark = () => {
-    onChange(benchmarkValue);
   };
 
   const hasDeviation = Math.abs(value - benchmarkValue) > step * 0.5;
@@ -247,18 +231,11 @@ export default function SmartField({
           )}
 
           {/* Deviation indicator */}
-          {hasDeviation && status !== 'benchmark' && (
+          {hasDeviation && status === 'confirmed' && (
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className={`text-xs font-medium ${deviationPercent > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {deviationPercent > 0 ? '+' : ''}{deviationPercent}% vs benchmark
               </span>
-              <button
-                onClick={resetToBenchmark}
-                className="p-1 rounded-md hover:bg-white/80 text-gray-400 hover:text-gray-600 transition-colors"
-                title="Reset to benchmark"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
             </div>
           )}
         </div>
@@ -273,15 +250,15 @@ export default function SmartField({
           onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
           className="w-full cursor-pointer mb-4"
           style={{
-            background: `linear-gradient(to right, ${status === 'confirmed' || status === 'adjusted' ? 'var(--mews-success)' : '#f59e0b'} 0%, ${status === 'confirmed' || status === 'adjusted' ? 'var(--mews-success)' : '#f59e0b'} ${((value - min) / (max - min)) * 100}%, #e5e7eb ${((value - min) / (max - min)) * 100}%, #e5e7eb 100%)`,
+            background: `linear-gradient(to right, ${status === 'confirmed' ? 'var(--mews-success)' : '#f59e0b'} 0%, ${status === 'confirmed' ? 'var(--mews-success)' : '#f59e0b'} ${((value - min) / (max - min)) * 100}%, #e5e7eb ${((value - min) / (max - min)) * 100}%, #e5e7eb 100%)`,
             height: '6px',
             borderRadius: '99px',
           }}
         />
 
-        {/* Action buttons — the core validation UX */}
+        {/* Action buttons */}
         <div className="flex items-center gap-2 flex-wrap">
-          {status !== 'confirmed' && (
+          {status === 'benchmark' && (
             <button
               onClick={onConfirm}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
@@ -296,22 +273,15 @@ export default function SmartField({
               Confirmed
             </span>
           )}
-          {status !== 'adjusted' && !isEditing && (
+          {!isEditing && (
             <button
               onClick={startEditing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" />
-              Adjust
+              Edit
             </button>
           )}
-          <button
-            onClick={onMarkUnknown}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            {status === 'unknown' ? 'Skipped — using estimate' : "Don't know"}
-          </button>
         </div>
       </div>
 
