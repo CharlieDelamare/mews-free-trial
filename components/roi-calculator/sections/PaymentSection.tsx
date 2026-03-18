@@ -44,7 +44,7 @@ export default function PaymentSection({
       headerless={headerless}
     >
       <div className="space-y-8">
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Tokenization</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -87,7 +87,7 @@ export default function PaymentSection({
                 <p className="text-xs text-gray-500 mt-1">⚙️ Shared variable - synced across all sections</p>
               </div>
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>With Mews</h3>
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-4">
@@ -120,7 +120,7 @@ export default function PaymentSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Chargeback Management</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -158,7 +158,7 @@ export default function PaymentSection({
                 tooltip="Total monthly cost of chargebacks including fees, labor, and lost revenue. Default: ~1.5% of monthly revenue. Source: HFTP, Mews research. | Ask: What's the total monthly cost of chargebacks for you - including fees, staff time, and lost revenue?"
               />
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>With Mews</h3>
               <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
                 <p className="text-sm text-gray-600 mb-2">Mews Expected Chargeback Rate</p>
@@ -181,7 +181,7 @@ export default function PaymentSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Payment Reconciliation</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -211,7 +211,7 @@ export default function PaymentSection({
                 <p className="text-xs text-gray-500 mt-1">⚙️ Shared variable - synced across all sections</p>
               </div>
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>With Mews</h3>
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-4">
@@ -244,7 +244,7 @@ export default function PaymentSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">No-Show Revenue Protection</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -286,7 +286,7 @@ export default function PaymentSection({
                 tooltip="Proportion of no-shows where cancellation/no-show fee is not collected. Default: 50%. Source: Mews research, HFTP. | Ask: Of your no-shows, what percentage do you actually manage to collect the fee from?"
               />
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>With Mews</h3>
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-4">
@@ -314,7 +314,7 @@ export default function PaymentSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Multi-Currency Support</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -345,7 +345,7 @@ export default function PaymentSection({
                 tooltip="Share of revenue from international guests paying in foreign currencies. Major cities: 25-45%, tourist destinations: 40-70%. Source: HFTP, Mews research. | Ask: What share of your guests are international travelers? Do they ask about paying in their own currency?"
               />
             </div>
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>Mews Impact</h3>
               <Slider
                 label="Multi-Currency Adoption Rate"

@@ -57,11 +57,11 @@ export default function StickyROIBar({
         <div
           className="flex items-center justify-between gap-4 px-5 py-3 rounded-2xl"
           style={{
-            background: 'rgba(0,35,71,0.92)',
+            background: 'color-mix(in srgb, var(--roi-navy-dark) 92%, transparent)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: '0 8px 32px rgba(0,35,71,0.4), 0 2px 8px rgba(0,0,0,0.2)',
-            border: '1px solid rgba(179,178,251,0.15)',
+            boxShadow: '0 8px 32px color-mix(in srgb, var(--roi-navy-dark) 40%, transparent), 0 2px 8px color-mix(in srgb, var(--mews-black) 20%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)',
           }}
         >
           {/* Left: key metrics */}
@@ -92,9 +92,9 @@ export default function StickyROIBar({
               onClick={onToggleDemoMode}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
               style={{
-                background: demoMode ? 'rgba(179,178,251,0.25)' : 'rgba(255,255,255,0.08)',
-                color: demoMode ? 'var(--roi-savings-highlight)' : 'rgba(255,255,255,0.6)',
-                border: `1px solid ${demoMode ? 'rgba(179,178,251,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                background: demoMode ? 'color-mix(in srgb, var(--mews-indigo) 25%, transparent)' : 'color-mix(in srgb, var(--mews-white) 8%, transparent)',
+                color: demoMode ? 'var(--roi-savings-highlight)' : 'color-mix(in srgb, var(--mews-white) 60%, transparent)',
+                border: `1px solid ${demoMode ? 'color-mix(in srgb, var(--mews-indigo) 40%, transparent)' : 'color-mix(in srgb, var(--mews-white) 10%, transparent)'}`,
               }}
             >
               {demoMode ? <MonitorOff className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />}
@@ -104,17 +104,17 @@ export default function StickyROIBar({
               onClick={onExportClick}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
               style={{
-                background: 'rgba(255,255,255,0.08)',
-                color: 'rgba(255,255,255,0.6)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'color-mix(in srgb, var(--mews-white) 8%, transparent)',
+                color: 'color-mix(in srgb, var(--mews-white) 60%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--mews-white) 10%, transparent)',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.15)';
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.85)';
+                (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 15%, transparent)';
+                (e.currentTarget as HTMLElement).style.color = 'color-mix(in srgb, var(--mews-white) 85%, transparent)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)';
+                (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 8%, transparent)';
+                (e.currentTarget as HTMLElement).style.color = 'color-mix(in srgb, var(--mews-white) 60%, transparent)';
               }}
             >
               <FileDown className="w-3.5 h-3.5" />

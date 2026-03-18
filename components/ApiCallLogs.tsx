@@ -111,7 +111,7 @@ function ApiCallRow({
       </div>
 
       {isExpanded && (
-        <div className="bg-gray-900 text-gray-100 p-3 text-xs font-mono rounded mx-2 mb-1 overflow-hidden">
+        <div className="text-gray-100 p-3 text-xs font-mono rounded mx-2 mb-1 overflow-hidden" style={{ backgroundColor: 'var(--mews-night-black)' }}>
           {detailLoading ? (
             <div className="flex items-center gap-2 text-gray-400">
               <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
@@ -264,9 +264,10 @@ export function ApiCallLogs({ logId }: { logId: string }) {
                     onClick={() => handleGroupFilter(null)}
                     className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
                       activeGroup === null
-                        ? 'bg-gray-800 text-white'
+                        ? 'text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
+                    style={activeGroup === null ? { backgroundColor: 'var(--mews-charcoal)' } : undefined}
                   >
                     All ({total})
                   </button>
@@ -281,9 +282,10 @@ export function ApiCallLogs({ logId }: { logId: string }) {
                         onClick={() => handleGroupFilter(g.group)}
                         className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
                           activeGroup === g.group
-                            ? 'bg-gray-800 text-white'
+                            ? 'text-white'
                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
+                        style={activeGroup === g.group ? { backgroundColor: 'var(--mews-charcoal)' } : undefined}
                       >
                         {GROUP_LABELS[g.group] || g.group} ({g.count})
                       </button>

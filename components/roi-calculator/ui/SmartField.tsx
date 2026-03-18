@@ -216,7 +216,7 @@ export default function SmartField({
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
               className="flex-1 px-3 py-2 text-lg font-bold rounded-lg border border-blue-300 bg-white outline-none text-gray-900"
-              style={{ boxShadow: '0 0 0 3px rgba(59,130,246,0.12)' }}
+              style={{ boxShadow: '0 0 0 3px color-mix(in srgb, var(--mews-indigo) 12%, transparent)' }}
             />
           ) : (
             <button

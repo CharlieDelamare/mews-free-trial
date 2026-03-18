@@ -123,7 +123,7 @@ export default function CinematicOverlay({
             onClick={() => dispatch({ type: 'TOGGLE_CINEMATIC_AUTO' })}
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
             style={{
-              background: autoAdvance ? 'rgba(179,178,251,0.15)' : 'rgba(255,255,255,0.05)',
+              background: autoAdvance ? 'color-mix(in srgb, var(--mews-indigo) 15%, transparent)' : 'color-mix(in srgb, var(--mews-white) 5%, transparent)',
             }}
           >
             {autoAdvance ? (
@@ -152,7 +152,7 @@ export default function CinematicOverlay({
           onClick={prev}
           disabled={slideIndex === 0}
           className="w-10 h-10 rounded-full flex items-center justify-center transition-colors disabled:opacity-20"
-          style={{ background: 'rgba(255,255,255,0.08)' }}
+          style={{ background: 'color-mix(in srgb, var(--mews-white) 8%, transparent)' }}
         >
           <ChevronLeft className="w-5 h-5 text-white" />
         </button>
@@ -174,7 +174,7 @@ export default function CinematicOverlay({
                 width: i === slideIndex ? '24px' : '8px',
                 height: '8px',
                 borderRadius: '4px',
-                background: i === slideIndex ? 'var(--mews-indigo)' : 'rgba(255,255,255,0.2)',
+                background: i === slideIndex ? 'var(--mews-indigo)' : 'color-mix(in srgb, var(--mews-white) 20%, transparent)',
               }}
             />
           ))}
@@ -184,7 +184,7 @@ export default function CinematicOverlay({
           onClick={next}
           disabled={slideIndex >= totalSlides - 1}
           className="w-10 h-10 rounded-full flex items-center justify-center transition-colors disabled:opacity-20"
-          style={{ background: 'rgba(255,255,255,0.08)' }}
+          style={{ background: 'color-mix(in srgb, var(--mews-white) 8%, transparent)' }}
         >
           <ChevronRight className="w-5 h-5 text-white" />
         </button>

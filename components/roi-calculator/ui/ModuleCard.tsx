@@ -44,14 +44,14 @@ export default function ModuleCard({
     <div
       className="rounded-2xl overflow-hidden transition-all duration-300"
       style={{
-        background: enabled ? 'var(--mews-white)' : 'rgba(255,255,255,0.5)',
+        background: enabled ? 'var(--mews-white)' : 'color-mix(in srgb, var(--mews-white) 50%, transparent)',
         border: isActiveDetail
           ? `2px solid ${color}`
-          : `1px solid ${enabled ? 'rgba(45,44,55,0.08)' : 'rgba(45,44,55,0.04)'}`,
+          : `1px solid ${enabled ? 'color-mix(in srgb, var(--mews-charcoal) 8%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 4%, transparent)'}`,
         boxShadow: isActiveDetail
-          ? `0 4px 20px ${color}20, 0 2px 8px rgba(0,0,0,0.06)`
+          ? `0 4px 20px ${color}20, 0 2px 8px color-mix(in srgb, var(--mews-black) 6%, transparent)`
           : enabled
-            ? '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(45,44,55,0.05)'
+            ? '0 1px 4px color-mix(in srgb, var(--mews-black) 4%, transparent), 0 4px 16px color-mix(in srgb, var(--mews-charcoal) 5%, transparent)'
             : 'none',
         opacity: enabled ? 1 : 0.55,
         filter: enabled ? 'none' : 'grayscale(0.4)',
@@ -80,7 +80,7 @@ export default function ModuleCard({
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
             className="flex-shrink-0 w-11 h-6 rounded-full transition-all duration-200 relative"
             style={{
-              background: enabled ? color : 'rgba(45,44,55,0.12)',
+              background: enabled ? color : 'color-mix(in srgb, var(--mews-charcoal) 12%, transparent)',
               boxShadow: enabled ? `0 2px 8px ${color}40` : 'none',
             }}
             aria-label={`${enabled ? 'Disable' : 'Enable'} ${label}`}
@@ -89,7 +89,7 @@ export default function ModuleCard({
               className="w-5 h-5 rounded-full bg-white absolute top-0.5 transition-all duration-200"
               style={{
                 left: enabled ? '22px' : '2px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                boxShadow: '0 1px 3px color-mix(in srgb, var(--mews-black) 15%, transparent)',
               }}
             />
           </button>
@@ -117,9 +117,9 @@ export default function ModuleCard({
             onClick={onViewDetails}
             className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group"
             style={{
-              background: isActiveDetail ? `${color}10` : 'rgba(45,44,55,0.03)',
+              background: isActiveDetail ? `${color}10` : 'color-mix(in srgb, var(--mews-charcoal) 3%, transparent)',
               color: isActiveDetail ? color : 'var(--roi-gray-500)',
-              border: `1px solid ${isActiveDetail ? `${color}30` : 'rgba(45,44,55,0.06)'}`,
+              border: `1px solid ${isActiveDetail ? `${color}30` : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)'}`,
             }}
             onMouseEnter={(e) => {
               if (!isActiveDetail) {
@@ -130,8 +130,8 @@ export default function ModuleCard({
             }}
             onMouseLeave={(e) => {
               if (!isActiveDetail) {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(45,44,55,0.03)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(45,44,55,0.06)';
+                (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-charcoal) 3%, transparent)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)';
                 (e.currentTarget as HTMLElement).style.color = 'var(--roi-gray-500)';
               }
             }}
