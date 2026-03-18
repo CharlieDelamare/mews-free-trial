@@ -52,8 +52,8 @@ export default function ContributionChart({ contributions, totalSavings, currenc
                 <div
                   className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-10 px-3 py-2 rounded-lg whitespace-nowrap"
                   style={{
-                    background: 'rgba(0,0,0,0.85)',
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                    background: 'color-mix(in srgb, var(--mews-black) 85%, transparent)',
+                    boxShadow: '0 4px 16px color-mix(in srgb, var(--mews-black) 30%, transparent)',
                   }}
                 >
                   <p className="text-xs font-bold text-white">{c.label}</p>
@@ -62,7 +62,7 @@ export default function ContributionChart({ contributions, totalSavings, currenc
                   </p>
                   <div
                     className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 rotate-45"
-                    style={{ background: 'rgba(0,0,0,0.85)', marginTop: '-4px' }}
+                    style={{ background: 'color-mix(in srgb, var(--mews-black) 85%, transparent)', marginTop: '-4px' }}
                   />
                 </div>
               )}
