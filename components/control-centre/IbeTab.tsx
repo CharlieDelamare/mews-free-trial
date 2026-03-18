@@ -32,11 +32,11 @@ export default function IbeTab({ enterpriseId }: Props) {
           >
             {label[0]}
           </div>
-          <h3 className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors mb-1">
+          <h3 className="text-base font-semibold text-mews-night-black group-hover:text-mews-primary transition-colors mb-1">
             {label}
           </h3>
-          <p className="text-sm text-gray-500">{description}</p>
-          <p className="text-xs text-indigo-500 mt-2 font-medium">Open IBE →</p>
+          <p className="text-sm text-neutral-500">{description}</p>
+          <p className="text-xs text-mews-primary mt-2 font-medium">Open IBE →</p>
         </button>
       ))}
     </div>

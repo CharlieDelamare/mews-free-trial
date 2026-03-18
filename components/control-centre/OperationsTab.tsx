@@ -100,16 +100,16 @@ export default function OperationsTab({ enterpriseId }: Props) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {OPERATIONS.map(op => (
         <div key={op.key} className="bg-white rounded-xl p-5 shadow-sm">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">{op.label}</h3>
-          <p className="text-sm text-gray-500 mb-4">{op.description}</p>
+          <h3 className="text-base font-semibold text-mews-night-black mb-1">{op.label}</h3>
+          <p className="text-sm text-neutral-500 mb-4">{op.description}</p>
 
           {confirming === op.key ? (
             <div className="space-y-3">
-              <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{op.confirmText}</p>
+              <p className="text-sm text-neutral-700 bg-neutral-50 rounded-lg p-3">{op.confirmText}</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirming(null)}
-                  className="flex-1 py-2 px-3 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-2 px-3 bg-neutral-100 text-neutral-700 text-sm font-medium rounded-lg hover:bg-neutral-200 transition-colors"
                 >
                   Cancel
                 </button>
