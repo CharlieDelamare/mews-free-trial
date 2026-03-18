@@ -41,6 +41,8 @@ All three default to selected (preserves current behaviour).
 
 **Validation:** Continue button is disabled with a "Select at least one product" hint when all three are false.
 
+**Product selection is immutable once the user advances to the intake step.** The wizard has no back navigation from intake to identity, so `selectedModules` cannot be changed mid-intake. `useConfidence` state is therefore always consistent with the filtered `priorityInputs`.
+
 **Extensibility:** Adding a new product only requires adding a key to `ModuleKey`, `EnabledModules`, and `MODULE_META` — the card list renders from `MODULE_KEYS`.
 
 ### 2. Intake Filtering
@@ -60,13 +62,19 @@ export function getPriorityInputs(
 const GROUP_MODULE_FILTER: Record<string, ModuleKey | 'all'> = {
   property:   'all',           // always shown
   operations: 'guestExperience',
-  revenue:    'guestExperience',
+  revenue:    'guestExperience',  // deliberate simplification: all three revenue fields (currentDirectBookingPercent, averageCommission, currentCheckInPercentage) are guestExperience slice. Note: currentCheckInPercentage is validationOnly — no special handling needed in the filter.
   payments:   'payment',
   rms:        'rms',
 };
 ```
 
-When `enabledModules` is provided, the returned array is filtered to exclude inputs whose group maps to a disabled module. The `property` group is always included.
+When `enabledModules` is provided, the returned array is filtered to exclude inputs whose group maps to a disabled module. The `property` group is always included. `staffHourlyWage` is in the `property` group and is always shown — it is used in both Guest Experience (check-in savings) and Payment (reconciliation) calculations, so this is correct.
+
+**`hasExistingRMS` question:** This question is passed as separate props to `ProspectIntake` (not as a `priorityInput`), and is currently always shown. When `selectedModules.rms === false`, `PresentationWizard` must pass `hasExistingRMS={false}` and a no-op `onHasExistingRMSChange` to suppress the question. This prevents confusing the sales rep with an RMS question when they have already deselected RMS.
+
+**Confidence scoring:** Filtering inputs to selected-module fields means the confidence score is computed only over those fields. A payment-only run will produce a score based on ~6 fields rather than ~12. This is accepted — the score still reflects how well the rep has populated the relevant fields. This is not addressed further in this PR.
+
+**`useConfidence` and country/hotelType changes mid-intake:** `country` and `hotelType` are editable during intake, which already triggers `priorityInputs` to regenerate via `useMemo`. This pre-existing behaviour is not introduced or changed by this spec and is explicitly out of scope.
 
 **Callsite in `PresentationWizard`:**
 ```ts
@@ -76,7 +84,7 @@ const priorityInputs = useMemo(
 );
 ```
 
-`ProspectIntake` receives `priorityInputs` as a prop and requires no changes.
+`ProspectIntake` receives `priorityInputs` as a prop and requires no changes beyond the `hasExistingRMS` suppression above.
 
 ### 3. Persisting Selection on Submission
 
@@ -90,7 +98,7 @@ const stateToSave = {
 state: serializeState(stateToSave),
 ```
 
-The saved presentation opens with exactly the selected modules enabled. The `activePreset` field may not perfectly reflect the selection but is cosmetic — it controls which preset button is highlighted and self-corrects on first module interaction.
+The saved presentation opens with exactly the selected modules enabled. The `activePreset` field in the serialized state will not be updated here. On load, `detectPreset` computes the correct preset label from `enabledModules` — for a combination that matches a known preset (e.g. `payment`-only), it shows that preset name; for a non-matching combination (e.g. GE + RMS), it returns `'custom'`. Both are correct and expected — no stale or misleading label is shown.
 
 **No changes required to:** API routes, database schema, or `serializeState`.
 
