@@ -71,8 +71,8 @@ export function computeConfidenceScore(
   for (const input of priorityInputs) {
     const conf: FieldConfidence | undefined = confidenceMap[input.key];
     // Treat legacy 'adjusted'/'unknown' statuses gracefully
-    const rawStatus = conf?.status ?? 'benchmark';
-    const status: ConfidenceStatus = (rawStatus === 'adjusted') ? 'confirmed' : (rawStatus === 'unknown' ? 'benchmark' : rawStatus);
+    const rawStatus: string = conf?.status ?? 'benchmark';
+    const status: ConfidenceStatus = (rawStatus === 'adjusted') ? 'confirmed' : (rawStatus === 'unknown' ? 'benchmark' : rawStatus as ConfidenceStatus);
     const weight = WEIGHT[input.importance] ?? 1;
 
     weightedScore += STATUS_SCORE[status] * weight;
