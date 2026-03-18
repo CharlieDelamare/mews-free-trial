@@ -55,6 +55,8 @@ interface ProspectIntakeProps {
   onHasExistingRMSChange: (value: boolean) => void;
   // Completion callback
   onComplete: () => void;
+  // Render as full page instead of modal
+  fullPage?: boolean;
 }
 
 export default function ProspectIntake({
@@ -81,6 +83,7 @@ export default function ProspectIntake({
   hasExistingRMS,
   onHasExistingRMSChange,
   onComplete,
+  fullPage = false,
 }: ProspectIntakeProps) {
   // ── Group inputs by category (exclude validation-only inputs from wizard) ──
   const groups = useMemo(() => {
@@ -120,15 +123,10 @@ export default function ProspectIntake({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Panel */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] mx-4 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+  const panel = (
+    <div className={`w-full bg-white flex flex-col overflow-hidden ${fullPage ? 'min-h-screen' : 'max-w-2xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
         {/* Header */}
-        <div className="px-6 pt-5 pb-4 border-b border-gray-100">
+        <div className={`px-6 pt-5 pb-4 border-b border-gray-100 bg-white ${fullPage ? 'sticky top-0 z-10 max-w-2xl w-full mx-auto' : ''}`}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Build Your Business Case</h2>
@@ -136,12 +134,14 @@ export default function ProspectIntake({
                 Validate key assumptions with the prospect for a stronger ROI
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {!fullPage && (
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {/* Progress bar */}
@@ -160,7 +160,7 @@ export default function ProspectIntake({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className={`flex-1 px-6 py-5 ${fullPage ? 'max-w-2xl w-full mx-auto pb-24' : 'overflow-y-auto'}`}>
           {/* Step 0: Property Configuration */}
           {currentStep === 0 && (
             <div className="space-y-5">
@@ -438,8 +438,8 @@ export default function ProspectIntake({
         </div>
 
         {/* Footer navigation */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="flex items-center justify-between">
+        <div className={`border-t border-gray-100 bg-white ${fullPage ? 'fixed bottom-0 left-0 right-0 z-20' : 'bg-gray-50/50'}`}>
+          <div className={`flex items-center justify-between px-6 py-4 ${fullPage ? 'max-w-2xl mx-auto' : ''}`}>
             <button
               onClick={currentStep === 0 ? onClose : goPrev}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
@@ -472,6 +472,16 @@ export default function ProspectIntake({
           </div>
         </div>
       </div>
+  );
+
+  if (fullPage) {
+    return panel;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+      {panel}
     </div>
   );
 }
