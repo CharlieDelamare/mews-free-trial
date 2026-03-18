@@ -136,24 +136,24 @@ export function Navbar() {
   return (
     <>
       {/* Top bar */}
-      <nav aria-label="Main navigation" className="bg-white border-b border-gray-200">
+      <nav aria-label="Main navigation" className="bg-mews-linen border-b border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-14 gap-3">
             <button
               type="button"
               onClick={() => setOpen(true)}
               aria-label="Open menu"
-              className="p-2 -ml-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-md text-neutral-600 hover:text-mews-night-black hover:bg-neutral-100 transition-colors"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
               </svg>
             </button>
-            <span className="text-sm font-semibold text-gray-900">Mews Sandbox Manager</span>
+            <span className="text-sm font-semibold text-mews-night-black">Mews Sandbox Manager</span>
             {pageLabel && (
               <>
-                <span className="text-gray-300 select-none">·</span>
-                <span className="text-sm text-gray-500">{pageLabel}</span>
+                <span className="text-neutral-300 select-none">·</span>
+                <span className="text-sm text-neutral-500">{pageLabel}</span>
               </>
             )}
           </div>
