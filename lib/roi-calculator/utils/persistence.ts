@@ -1,9 +1,10 @@
-import type { CalculatorState } from '@/lib/roi-calculator/types/calculator';
+import type { CalculatorState, EnabledModules } from '@/lib/roi-calculator/types/calculator';
 import type { ConfidenceMap } from '@/lib/roi-calculator/types/confidence';
 import { calcAll } from '@/lib/roi-calculator/utils/calculations';
 import { defaultCalculatorState } from '@/lib/roi-calculator/utils/defaultState';
 
 export type PersistedState = Omit<CalculatorState, 'ui'> & {
+  enabledModules?: EnabledModules;
   confidenceMap?: ConfidenceMap;
 };
 
@@ -14,10 +15,14 @@ export interface PresentationMetadata {
   totalAnnualSavings: number;
 }
 
-/** Strip the ephemeral ui slice before storing in the DB. */
+/** Strip the ephemeral ui slice before storing in the DB, but preserve enabledModules. */
 export function serializeState(state: CalculatorState, confidenceMap?: ConfidenceMap): PersistedState {
-  const { ui: _ui, ...rest } = state;
-  return confidenceMap ? { ...rest, confidenceMap } : rest;
+  const { ui, ...rest } = state;
+  return {
+    ...rest,
+    enabledModules: ui.enabledModules,
+    ...(confidenceMap ? { confidenceMap } : {}),
+  };
 }
 
 /**
@@ -36,6 +41,7 @@ export function deserializeState(json: unknown): PersistedState | null {
       guestExperience: { ...d.guestExperience, ...(stored.guestExperience as object ?? {}) },
       payment: { ...d.payment, ...(stored.payment as object ?? {}) },
       rms: { ...d.rms, ...(stored.rms as object ?? {}) },
+      enabledModules: (stored.enabledModules as EnabledModules | undefined) ?? d.ui.enabledModules,
       ...(stored.confidenceMap ? { confidenceMap: stored.confidenceMap as ConfidenceMap } : {}),
     };
   } catch (err) {
