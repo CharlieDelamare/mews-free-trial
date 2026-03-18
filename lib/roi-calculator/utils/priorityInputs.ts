@@ -1,4 +1,5 @@
 import type { PriorityInput } from '@/lib/roi-calculator/types/confidence';
+import type { EnabledModules } from '@/lib/roi-calculator/types/calculator';
 
 // ── The Minimum Viable Inputs for a Credible ROI ─────────────────────
 // These are the ~12 fields that drive 80%+ of the ROI calculation.
@@ -13,6 +14,7 @@ export function getPriorityInputs(
   currencySymbol: string,
   country: string,
   hotelType: string,
+  enabledModules?: EnabledModules,
 ): PriorityInput[] {
   const inputs: PriorityInput[] = [
     // ── Group 1: Property Basics (everyone knows these) ──────────────
@@ -438,6 +440,29 @@ export function getPriorityInputs(
         mewsLabel: 'Instant',
       },
   );
+
+  // Filter by enabled modules if provided
+  if (enabledModules) {
+    return inputs.filter((input) => {
+      // Always include property group
+      if (input.group === 'property') {
+        return true;
+      }
+      // Include operations and revenue only if guestExperience is enabled
+      if ((input.group === 'operations' || input.group === 'revenue') && !enabledModules.guestExperience) {
+        return false;
+      }
+      // Include payments only if payment is enabled
+      if (input.group === 'payments' && !enabledModules.payment) {
+        return false;
+      }
+      // Include rms only if rms is enabled
+      if (input.group === 'rms' && !enabledModules.rms) {
+        return false;
+      }
+      return true;
+    });
+  }
 
   return inputs;
 }
