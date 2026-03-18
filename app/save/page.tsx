@@ -158,17 +158,6 @@ export default function SaveSandboxPage() {
               {submitting ? 'Saving...' : 'Save Sandbox'}
             </button>
 
-            {/* Result Message */}
-            {result && (
-              <div className={`p-4 rounded-lg text-sm ${
-                result.type === 'success'
-                  ? 'bg-success-50 text-success-700 border border-success-100'
-                  : 'bg-error-50 text-error-700 border border-error-100'
-              }`}>
-                {result.text}
-              </div>
-            )}
-
             <p className="text-xs text-neutral-500 text-center">
               This will cancel the automatic deletion of the selected sandbox
             </p>
