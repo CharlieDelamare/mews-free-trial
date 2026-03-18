@@ -26,7 +26,7 @@ const OPERATIONS: Operation[] = [
     isLongRunning: false,
     confirmText: 'Mark all dirty and clean rooms as Inspected?',
     endpoint: '/api/control-centre/inspect',
-    buttonColor: 'bg-blue-600 hover:bg-blue-700',
+    buttonColor: 'bg-[#E3FFFD] hover:bg-[#CCFAF7] text-mews-night-black',
   },
   {
     key: 'close_overdue_tasks',
@@ -35,7 +35,7 @@ const OPERATIONS: Operation[] = [
     isLongRunning: false,
     confirmText: 'Close all overdue tasks?',
     endpoint: '/api/control-centre/close-overdue-tasks',
-    buttonColor: 'bg-orange-600 hover:bg-orange-700',
+    buttonColor: 'bg-[#FF5303] hover:bg-[#E64A00] text-white',
   },
   {
     key: 'morning_prep',
@@ -44,7 +44,7 @@ const OPERATIONS: Operation[] = [
     isLongRunning: true,
     confirmText: 'Run morning prep? This will fix reservation times and inspect all rooms.',
     endpoint: '/api/control-centre/morning-prep',
-    buttonColor: 'bg-indigo-600 hover:bg-indigo-700',
+    buttonColor: 'bg-[#EFFD91] hover:bg-[#E8F57A] text-mews-night-black',
   },
   {
     key: 'auto_checkout',
@@ -53,7 +53,7 @@ const OPERATIONS: Operation[] = [
     isLongRunning: true,
     confirmText: "Check out all of today's departures?",
     endpoint: '/api/control-centre/auto-checkout',
-    buttonColor: 'bg-green-600 hover:bg-green-700',
+    buttonColor: 'bg-[#D1F9D6] hover:bg-[#B8F4BF] text-mews-night-black',
   },
 ];
 
@@ -100,22 +100,22 @@ export default function OperationsTab({ enterpriseId }: Props) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {OPERATIONS.map(op => (
         <div key={op.key} className="bg-white rounded-xl p-5 shadow-sm">
-          <h3 className="text-base font-semibold text-gray-900 mb-1">{op.label}</h3>
-          <p className="text-sm text-gray-500 mb-4">{op.description}</p>
+          <h3 className="text-base font-semibold text-mews-night-black mb-1">{op.label}</h3>
+          <p className="text-sm text-neutral-500 mb-4">{op.description}</p>
 
           {confirming === op.key ? (
             <div className="space-y-3">
-              <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{op.confirmText}</p>
+              <p className="text-sm text-neutral-700 bg-neutral-50 rounded-lg p-3">{op.confirmText}</p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setConfirming(null)}
-                  className="flex-1 py-2 px-3 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-2 px-3 bg-neutral-100 text-neutral-700 text-sm font-medium rounded-lg hover:bg-neutral-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleConfirm(op)}
-                  className={`flex-1 py-2 px-3 text-white text-sm font-medium rounded-lg transition-colors ${op.buttonColor}`}
+                  className={`flex-1 py-2 px-3 text-sm font-medium rounded-lg transition-colors ${op.buttonColor}`}
                 >
                   Confirm
                 </button>
@@ -125,8 +125,8 @@ export default function OperationsTab({ enterpriseId }: Props) {
             <button
               onClick={() => setConfirming(op.key)}
               disabled={loading === op.key}
-              className={`w-full py-2 px-4 text-white text-sm font-semibold rounded-lg transition-colors ${
-                loading === op.key ? 'bg-gray-400 cursor-not-allowed' : op.buttonColor
+              className={`w-full py-2 px-4 text-sm font-semibold rounded-lg transition-colors ${
+                loading === op.key ? 'bg-neutral-200 text-neutral-500 cursor-not-allowed' : op.buttonColor
               }`}
             >
               {loading === op.key ? 'Running...' : op.label}

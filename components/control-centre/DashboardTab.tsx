@@ -23,7 +23,7 @@ export default function DashboardTab({ metrics, loading }: Props) {
 
   if (!metrics) {
     return (
-      <p className="text-gray-500 text-sm">Select a property to view dashboard metrics.</p>
+      <p className="text-neutral-500 text-sm">Select a property to view dashboard metrics.</p>
     );
   }
 
@@ -48,25 +48,25 @@ export default function DashboardTab({ metrics, loading }: Props) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map(stat => (
           <div key={stat.label} className="bg-white rounded-xl p-5 shadow-sm">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{stat.label}</p>
+            <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">{stat.label}</p>
             <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
 
       <div className="bg-white rounded-xl p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">Room Status</h3>
+        <h3 className="text-sm font-semibold text-neutral-700 mb-4">Room Status</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
-            { label: 'Total', value: metrics.rooms.total, bg: 'bg-gray-100' },
+            { label: 'Total', value: metrics.rooms.total, bg: 'bg-neutral-100' },
             { label: 'Clean', value: metrics.rooms.clean, bg: 'bg-green-100' },
             { label: 'Dirty', value: metrics.rooms.dirty, bg: 'bg-red-100' },
             { label: 'Inspected', value: metrics.rooms.inspected, bg: 'bg-blue-100' },
             { label: 'Out of Order', value: metrics.rooms.outOfOrder, bg: 'bg-yellow-100' },
           ].map(item => (
             <div key={item.label} className={`${item.bg} rounded-lg p-3 text-center`}>
-              <p className="text-xs text-gray-600 mb-1">{item.label}</p>
-              <p className="text-2xl font-bold text-gray-800">{item.value}</p>
+              <p className="text-xs text-neutral-600 mb-1">{item.label}</p>
+              <p className="text-2xl font-bold text-mews-night-black">{item.value}</p>
             </div>
           ))}
         </div>

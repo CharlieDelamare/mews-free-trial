@@ -27,8 +27,8 @@ Use CSS variables. Never hardcode hex values directly in components.
   /* Legacy core tokens — retained for backward compatibility */
   --mews-night-black: #1C1D24;
   --mews-white: #FFFFFF;
-  --mews-deep-blue: #172135;
-  --mews-linen: #F8F5F2;
+  --mews-deep-blue: #2D2C37;
+  --mews-linen: #FFFCF6;
   --mews-light-indigo: #EFEFFF;
   --mews-blue: #D6E2FC;
   --mews-olive-green: #222B28;
@@ -60,6 +60,17 @@ Use CSS variables. Never hardcode hex values directly in components.
 | **Max** | Social posts, Digital ads, Campaign heroes, Swag | Bold primary pink + orange prominent, full palette in play |
 
 This app is a **Mid** volume context (internal demo tool). Use balanced brand presence — not fully muted, not campaign-level loud.
+
+## App primary colour
+
+`--mews-primary: #FF83DA` — hot pink, the primary action colour for this app.
+`--mews-primary-hover: #ff6dd0` — hover state for primary interactive elements.
+
+These are Tailwind tokens exposed via `tailwind.config.js` as `bg-mews-primary`, `text-mews-primary`, `focus:ring-mews-primary`, and `hover:bg-mews-primary-hover`. Use these in TSX files — never the raw hex.
+
+In this app `--mews-primary` is used for buttons, focus rings, and active nav states.
+
+Text on `--mews-primary` backgrounds must use `--mews-night-black` (#1C1D24). White text fails WCAG AA contrast on this background (~2.1:1). Dark text passes (~4.6:1).
 
 ## Typography
 

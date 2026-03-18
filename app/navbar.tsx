@@ -121,8 +121,8 @@ export function Navbar() {
   const linkClasses = (path: string) =>
     `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
       isActive(path)
-        ? 'text-white bg-white/15'
-        : 'text-white/60 hover:text-white hover:bg-white/10'
+        ? 'text-mews-night-black bg-mews-primary/15'
+        : 'text-neutral-600 hover:text-mews-night-black hover:bg-neutral-100'
     }`;
 
   const renderLinks = (links: typeof sandboxLinks) =>
@@ -136,24 +136,24 @@ export function Navbar() {
   return (
     <>
       {/* Top bar */}
-      <nav aria-label="Main navigation" className="bg-white border-b border-gray-200">
+      <nav aria-label="Main navigation" className="bg-mews-linen border-b border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-14 gap-3">
             <button
               type="button"
               onClick={() => setOpen(true)}
               aria-label="Open menu"
-              className="p-2 -ml-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="p-2 -ml-2 rounded-md text-neutral-600 hover:text-mews-night-black hover:bg-neutral-100 transition-colors"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
               </svg>
             </button>
-            <span className="text-sm font-semibold text-gray-900">Mews Sandbox Manager</span>
+            <span className="text-sm font-semibold text-mews-night-black">Mews Sandbox Manager</span>
             {pageLabel && (
               <>
-                <span className="text-gray-300 select-none">·</span>
-                <span className="text-sm text-gray-500">{pageLabel}</span>
+                <span className="text-neutral-300 select-none">·</span>
+                <span className="text-sm text-neutral-500">{pageLabel}</span>
               </>
             )}
           </div>
@@ -172,20 +172,19 @@ export function Navbar() {
 
       {/* Slide-out sidebar */}
       <aside
-        style={{ backgroundColor: 'var(--mews-deep-blue)' }}
-        className={`fixed inset-y-0 left-0 z-50 w-60 shadow-xl flex flex-col ${mounted ? 'transition-transform duration-300 ease-in-out' : ''} ${
+        className={`fixed inset-y-0 left-0 z-50 w-60 shadow-xl flex flex-col bg-mews-linen ${mounted ? 'transition-transform duration-300 ease-in-out' : ''} ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label="Navigation menu"
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between px-4 h-14 border-b border-white/10">
-          <span className="text-sm font-semibold text-white">Mews Sandbox Manager</span>
+        <div className="flex items-center justify-between px-4 h-14 border-b border-neutral-200">
+          <span className="text-sm font-semibold text-mews-night-black">Mews Sandbox Manager</span>
           <button
             type="button"
             onClick={close}
             aria-label="Close menu"
-            className="p-1.5 rounded-md text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-md text-neutral-500 hover:text-mews-night-black hover:bg-neutral-100 transition-colors"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -196,7 +195,7 @@ export function Navbar() {
         {/* Main nav links */}
         <nav className="flex-1 flex flex-col px-2 py-3 overflow-y-auto">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1" style={{ color: 'var(--mews-indigo)', opacity: 0.7 }}>
+            <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1 text-neutral-400">
               Sandboxes
             </p>
             <div className="space-y-0.5">
@@ -205,7 +204,7 @@ export function Navbar() {
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1" style={{ color: 'var(--mews-indigo)', opacity: 0.7 }}>
+            <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1 text-neutral-400">
               Operations
             </p>
             <div className="space-y-0.5">
@@ -214,7 +213,7 @@ export function Navbar() {
           </div>
 
           <div className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1" style={{ color: 'var(--mews-indigo)', opacity: 0.7 }}>Tools</p>
+            <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1 text-neutral-400">Tools</p>
             <div className="space-y-1">
               <Link key="/roi-calculator" href="/roi-calculator" onClick={close} className={linkClasses('/roi-calculator')}>
                 <span className="flex items-center gap-2">
@@ -226,7 +225,7 @@ export function Navbar() {
           </div>
 
           {/* Logs pinned to bottom */}
-          <div className="mt-auto pt-3 border-t border-white/10">
+          <div className="mt-auto pt-3 border-t border-neutral-200">
             <Link href={logsLink.href} onClick={close} className={linkClasses(logsLink.href)}>
               {logsLink.icon}
               {logsLink.label}

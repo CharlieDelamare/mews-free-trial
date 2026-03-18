@@ -130,40 +130,40 @@ export default function IbePage({ params }: { params: { theme: string } }) {
         {/* Step: Search */}
         {step === 'search' && (
           <div className="bg-white rounded-xl shadow-sm p-6 max-w-lg mx-auto">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Find Availability</h2>
+            <h2 className="text-lg font-semibold text-mews-night-black mb-4">Find Availability</h2>
             <form onSubmit={handleSearch} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Check-in</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Check-in</label>
                   <input
                     type="date"
                     value={checkIn}
                     onChange={e => setCheckIn(e.target.value)}
                     min={getTodayDate()}
                     required
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Check-out</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Check-out</label>
                   <input
                     type="date"
                     value={checkOut}
                     onChange={e => setCheckOut(e.target.value)}
                     min={checkIn}
                     required
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Guests</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Guests</label>
                 <input
                   type="number"
                   value={guestCount}
                   onChange={e => setGuestCount(parseInt(e.target.value) || 1)}
                   min={1} max={10} required
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg"
                 />
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
@@ -183,26 +183,26 @@ export default function IbePage({ params }: { params: { theme: string } }) {
         {step === 'results' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">{results.length} option{results.length !== 1 ? 's' : ''} available</h2>
-              <button onClick={() => setStep('search')} className="text-sm text-gray-500 hover:text-gray-700">&larr; Modify search</button>
+              <h2 className="text-lg font-semibold text-mews-night-black">{results.length} option{results.length !== 1 ? 's' : ''} available</h2>
+              <button onClick={() => setStep('search')} className="text-sm text-neutral-500 hover:text-neutral-700">&larr; Modify search</button>
             </div>
             {results.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No availability found for these dates.</p>
+              <p className="text-neutral-500 text-center py-8">No availability found for these dates.</p>
             ) : (
               results.map((result, i) => (
                 <div
                   key={i}
                   onClick={() => { setSelectedResult(result); setStep('booking'); }}
-                  className="bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md transition-shadow border border-transparent hover:border-indigo-200"
+                  className="bg-white rounded-xl shadow-sm p-5 cursor-pointer hover:shadow-md transition-shadow border border-transparent hover:border-mews-primary/30"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900">{result.resourceCategoryName}</p>
-                      <p className="text-sm text-gray-500">{result.rateName}</p>
+                      <p className="font-semibold text-mews-night-black">{result.resourceCategoryName}</p>
+                      <p className="text-sm text-neutral-500">{result.rateName}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xl font-bold text-gray-900">&euro;{result.markedUpPrice}</p>
-                      <p className="text-xs text-gray-400">per night</p>
+                      <p className="text-xl font-bold text-mews-night-black">&euro;{result.markedUpPrice}</p>
+                      <p className="text-xs text-neutral-400">per night</p>
                     </div>
                   </div>
                   <button
@@ -221,44 +221,44 @@ export default function IbePage({ params }: { params: { theme: string } }) {
         {step === 'booking' && selectedResult && (
           <div className="bg-white rounded-xl shadow-sm p-6 max-w-lg mx-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Guest Details</h2>
-              <button onClick={() => setStep('results')} className="text-sm text-gray-500 hover:text-gray-700">&larr; Back</button>
+              <h2 className="text-lg font-semibold text-mews-night-black">Guest Details</h2>
+              <button onClick={() => setStep('results')} className="text-sm text-neutral-500 hover:text-neutral-700">&larr; Back</button>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
+            <div className="bg-neutral-50 rounded-lg p-3 mb-4 text-sm">
               <p className="font-medium">{selectedResult.resourceCategoryName}</p>
-              <p className="text-gray-500">{checkIn} &rarr; {checkOut} &middot; {guestCount} guest{guestCount !== 1 ? 's' : ''} &middot; &euro;{selectedResult.markedUpPrice}/night</p>
+              <p className="text-neutral-500">{checkIn} &rarr; {checkOut} &middot; {guestCount} guest{guestCount !== 1 ? 's' : ''} &middot; &euro;{selectedResult.markedUpPrice}/night</p>
             </div>
             <form onSubmit={handleBook} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">First Name</label>
                   <input
                     type="text"
                     value={bookingForm.firstName}
                     onChange={e => setBookingForm(p => ({ ...p, firstName: e.target.value }))}
                     required
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Last Name</label>
                   <input
                     type="text"
                     value={bookingForm.lastName}
                     onChange={e => setBookingForm(p => ({ ...p, lastName: e.target.value }))}
                     required
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
                 <input
                   type="email"
                   value={bookingForm.email}
                   onChange={e => setBookingForm(p => ({ ...p, email: e.target.value }))}
                   required
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg"
                 />
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
@@ -283,11 +283,11 @@ export default function IbePage({ params }: { params: { theme: string } }) {
             >
               &#10003;
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+            <h2 className="text-xl font-bold text-mews-night-black mb-2">Booking Confirmed!</h2>
             {confirmation.confirmationNumber && (
-              <p className="text-gray-600 mb-1">Confirmation: <span className="font-mono font-medium">{confirmation.confirmationNumber}</span></p>
+              <p className="text-neutral-600 mb-1">Confirmation: <span className="font-mono font-medium">{confirmation.confirmationNumber}</span></p>
             )}
-            <p className="text-xs text-gray-400 mb-6">Reservation ID: {confirmation.reservationId}</p>
+            <p className="text-xs text-neutral-400 mb-6">Reservation ID: {confirmation.reservationId}</p>
             <button
               onClick={() => { setStep('search'); setConfirmation(null); setSelectedResult(null); }}
               style={{ backgroundColor: themeConfig.primaryColor }}

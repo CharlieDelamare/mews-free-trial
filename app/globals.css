@@ -6,8 +6,8 @@
   /* Core Mews Colors */
   --mews-night-black: #1C1D24;
   --mews-white: #FFFFFF;
-  --mews-deep-blue: #172135;
-  --mews-linen: #F8F5F2;
+  --mews-deep-blue: #2D2C37;
+  --mews-linen: #FFFCF6;
   --mews-light-indigo: #EFEFFF;
   --mews-blue: #D6E2FC;
   --mews-olive-green: #222B28;
@@ -35,6 +35,8 @@
   --mews-coral: #FF5A65;
   --mews-pink: #F7BCF1;
   --mews-indigo: #B3B2FB;
+  --mews-primary: #FF83DA;
+  --mews-primary-hover: #ff6dd0;
 
   /* Neutral scale (derived from Night Black #1C1D24) */
   --neutral-50: #F5F5F6;

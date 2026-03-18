@@ -147,18 +147,18 @@ function ControlCentreContent() {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Control Centre</h1>
-          <p className="text-gray-500 text-sm mt-1">Operational tools for managing sandbox properties</p>
+          <h1 className="text-2xl font-bold text-mews-night-black">Control Centre</h1>
+          <p className="text-neutral-500 text-sm mt-1">Operational tools for managing sandbox properties</p>
         </div>
 
         {/* Property Selector */}
         <div className="bg-white rounded-xl shadow-sm p-5">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">Select Property</label>
+            <label className="text-sm font-medium text-neutral-700">Select Property</label>
             <button
               type="button"
               onClick={() => { setManualToken(''); setManualAddMessage(null); setShowManualAdd(true); }}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-neutral-400 hover:text-neutral-600 transition-colors"
               title="Add environment manually"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
@@ -167,7 +167,7 @@ function ControlCentreContent() {
             </button>
           </div>
           {environmentsLoading ? (
-            <div className="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+            <div className="w-full px-4 py-2 text-sm border border-neutral-200 rounded-lg bg-neutral-50 text-neutral-500">
               Loading properties...
             </div>
           ) : (
@@ -185,14 +185,14 @@ function ControlCentreContent() {
                 label: `${env.propertyName || env.enterpriseName} (${env.enterpriseId})`,
               }))}
               placeholder="-- Select a property --"
-              className="w-full px-4 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full px-4 py-2 pr-10 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
             />
           )}
         </div>
 
         {/* Tab Bar */}
         <div className="bg-white rounded-xl shadow-sm">
-          <div className="flex overflow-x-auto border-b border-gray-200">
+          <div className="flex overflow-x-auto border-b border-neutral-200">
             {TABS.map(tab => (
               <button
                 key={tab.key}
@@ -200,8 +200,8 @@ function ControlCentreContent() {
                 disabled={!selectedEnterpriseId}
                 className={`flex-shrink-0 px-5 py-3 text-sm font-medium transition-colors border-b-2 ${
                   activeTab === tab.key
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-mews-primary text-mews-night-black'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
                 } ${!selectedEnterpriseId ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {tab.label}
@@ -211,7 +211,7 @@ function ControlCentreContent() {
 
           <div className="p-5">
             {!selectedEnterpriseId ? (
-              <p className="text-sm text-gray-400 text-center py-8">Select a property above to get started.</p>
+              <p className="text-sm text-neutral-400 text-center py-8">Select a property above to get started.</p>
             ) : (
               <>
                 {activeTab === 'dashboard' && <DashboardTab metrics={metrics} loading={metricsLoading} />}
@@ -231,17 +231,17 @@ function ControlCentreContent() {
       {showManualAdd && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={() => setShowManualAdd(false)}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">Add existing environment</h2>
-            <p className="text-sm text-gray-500 mb-5">Paste an access token to add an environment without waiting for the webhook.</p>
+            <h2 className="text-lg font-semibold text-mews-night-black mb-1">Add existing environment</h2>
+            <p className="text-sm text-neutral-500 mb-5">Paste an access token to add an environment without waiting for the webhook.</p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Access Token</label>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Access Token</label>
                 <input
                   type="text"
                   value={manualToken}
                   onChange={e => setManualToken(e.target.value)}
                   placeholder="Paste access token here"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
                 />
               </div>
               {manualAddMessage && (
@@ -253,7 +253,7 @@ function ControlCentreContent() {
                 <button
                   type="button"
                   onClick={() => setShowManualAdd(false)}
-                  className="flex-1 py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 py-2 px-4 bg-neutral-100 text-neutral-700 font-semibold rounded-lg hover:bg-neutral-200 transition-colors"
                 >
                   {manualAddMessage?.type === 'success' ? 'Done' : 'Cancel'}
                 </button>

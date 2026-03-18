@@ -34,6 +34,8 @@ module.exports = {
           'yellow': 'var(--mews-yellow)',
           'pink': 'var(--mews-pink)',
           'indigo': 'var(--mews-indigo)',
+          'primary': 'var(--mews-primary)',
+          'primary-hover': 'var(--mews-primary-hover)',
         },
         /* Semantic: Primary (Indigo-based) */
         primary: {
