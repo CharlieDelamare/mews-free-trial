@@ -70,6 +70,10 @@ export default function PresentationWizard() {
     setIsSubmitting(true);
     setSubmitError('');
     try {
+      const stateToSave = {
+        ...state,
+        ui: { ...state.ui, enabledModules: selectedModules },
+      };
       const res = await fetch('/api/roi-presentations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,7 +81,7 @@ export default function PresentationWizard() {
           name: name.trim(),
           salesforceAccountId: salesforceAccountId.trim() || undefined,
           createdBy: createdBy.trim() || undefined,
-          state: serializeState(state),
+          state: serializeState(stateToSave),
         }),
       });
       const data = await res.json();
