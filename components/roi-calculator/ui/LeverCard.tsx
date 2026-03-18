@@ -43,20 +43,20 @@ export default function LeverCard({
       onClick={onClick}
       className="w-full text-left p-4 rounded-xl transition-all duration-200 group"
       style={{
-        background: isExpanded ? `${accentColor}08` : 'rgba(255,255,255,0.8)',
-        border: `1px solid ${isExpanded ? `${accentColor}30` : 'rgba(45,44,55,0.06)'}`,
+        background: isExpanded ? `${accentColor}08` : 'color-mix(in srgb, var(--mews-white) 80%, transparent)',
+        border: `1px solid ${isExpanded ? `${accentColor}30` : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)'}`,
         boxShadow: isExpanded ? `0 2px 8px ${accentColor}10` : 'none',
       }}
       onMouseEnter={(e) => {
         if (!isExpanded) {
           (e.currentTarget as HTMLElement).style.borderColor = `${accentColor}25`;
-          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.95)';
+          (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 95%, transparent)';
         }
       }}
       onMouseLeave={(e) => {
         if (!isExpanded) {
-          (e.currentTarget as HTMLElement).style.borderColor = 'rgba(45,44,55,0.06)';
-          (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.8)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)';
+          (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 80%, transparent)';
         }
       }}
     >

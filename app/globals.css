@@ -15,9 +15,24 @@
   --mews-success: #10b981;
   --mews-success-dark: #059669;
 
+  /* Brand palette — primary */
+  --mews-primary-pink: #FF83DA;
+
+  /* Brand palette — secondary */
+  --mews-orange: #FF5303;
+  --mews-yellow-green: #E8FF5B;
+  --mews-yellow: #EFFD91;
+  --mews-light-green: #D1F9D6;
+  --mews-light-cyan: #E3FFFD;
+  --mews-light-lavender: #F7E1F7;
+
+  /* Supporting neutrals */
+  --mews-charcoal: #2D2C37;
+  --mews-black: #000000;
+  --mews-cream: #FFFCF6;
+
   /* Highlights — max 10% of any composition */
   --mews-coral: #FF5A65;
-  --mews-yellow: #EFF258;
   --mews-pink: #F7BCF1;
   --mews-indigo: #B3B2FB;
 
@@ -103,11 +118,11 @@ dialog::backdrop {
 .scrollbar-thin::-webkit-scrollbar { width: 4px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(28, 29, 36, 0.2);
+  background: color-mix(in srgb, var(--mews-night-black) 20%, transparent);
   border-radius: 99px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(28, 29, 36, 0.35);
+  background: color-mix(in srgb, var(--mews-night-black) 35%, transparent);
 }
 
 /* Range slider — Mews indigo thumb
@@ -128,23 +143,23 @@ input[type='range']::-webkit-slider-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--mews-white);
   border: 2px solid var(--mews-indigo);
-  box-shadow: 0 2px 8px rgba(179,178,251,0.25), 0 0 0 3px rgba(179,178,251,0.08);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--mews-indigo) 25%, transparent), 0 0 0 3px color-mix(in srgb, var(--mews-indigo) 8%, transparent);
   cursor: pointer;
   transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 200ms ease;
 }
 input[type='range']::-webkit-slider-thumb:hover {
   transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(179,178,251,0.35), 0 0 0 5px rgba(179,178,251,0.12);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--mews-indigo) 35%, transparent), 0 0 0 5px color-mix(in srgb, var(--mews-indigo) 12%, transparent);
 }
 input[type='range']::-moz-range-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--mews-white);
   border: 2px solid var(--mews-indigo);
-  box-shadow: 0 2px 8px rgba(179,178,251,0.25), 0 0 0 3px rgba(179,178,251,0.08);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--mews-indigo) 25%, transparent), 0 0 0 3px color-mix(in srgb, var(--mews-indigo) 8%, transparent);
   cursor: pointer;
 }
 input[type='checkbox'] { accent-color: var(--mews-indigo); }
@@ -153,7 +168,7 @@ input[type='checkbox'] { accent-color: var(--mews-indigo); }
 .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
 .section-content { animation: sectionReveal 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
 .shimmer-bg {
-  background: linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.6) 50%,rgba(255,255,255,0) 100%);
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--mews-white) 60%, transparent) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
@@ -175,14 +190,14 @@ input[type='checkbox'] { accent-color: var(--mews-indigo); }
 
 /* Card */
 .roi-card {
-  background: #ffffff;
+  background: var(--mews-white);
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(28,29,36,0.06);
-  border: 1px solid rgba(28,29,36,0.08);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--mews-black) 6%, transparent), 0 4px 16px color-mix(in srgb, var(--mews-night-black) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent);
   transition: box-shadow 200ms ease, transform 200ms ease;
 }
 .roi-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 12px 32px rgba(28,29,36,0.10);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--mews-black) 8%, transparent), 0 12px 32px color-mix(in srgb, var(--mews-night-black) 10%, transparent);
 }
 
 /* Misc */
@@ -190,7 +205,7 @@ input[type='checkbox'] { accent-color: var(--mews-indigo); }
 
 /* ROI Calculator hero number gradient (replaces teal gradient from source) */
 .gradient-text-teal {
-  background: linear-gradient(135deg, rgba(179,178,251,0.8) 0%, var(--mews-indigo) 50%, rgba(179,178,251,0.6) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 80%, transparent) 0%, var(--mews-indigo) 50%, color-mix(in srgb, var(--mews-indigo) 60%, transparent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

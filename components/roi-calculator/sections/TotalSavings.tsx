@@ -16,7 +16,7 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
       className="relative overflow-hidden rounded-2xl"
       style={{
         background: 'linear-gradient(135deg, var(--roi-navy-dark) 0%, var(--mews-night-black) 50%, var(--roi-navy-mid) 100%)',
-        boxShadow: '0 8px 32px rgba(0,35,71,0.25), 0 2px 8px rgba(0,0,0,0.15)',
+        boxShadow: '0 8px 32px color-mix(in srgb, var(--roi-navy-dark) 25%, transparent), 0 2px 8px color-mix(in srgb, var(--mews-black) 15%, transparent)',
       }}
     >
       {/* Decorative background glows */}
@@ -24,7 +24,7 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse at 90% 20%, rgba(179,178,251,0.25) 0%, transparent 55%), radial-gradient(ellipse at 10% 80%, rgba(179,178,251,0.12) 0%, transparent 45%)',
+            'radial-gradient(ellipse at 90% 20%, color-mix(in srgb, var(--mews-indigo) 25%, transparent) 0%, transparent 55%), radial-gradient(ellipse at 10% 80%, color-mix(in srgb, var(--mews-indigo) 12%, transparent) 0%, transparent 45%)',
         }}
       />
       {/* Subtle grid pattern */}
@@ -32,7 +32,7 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            'linear-gradient(color-mix(in srgb, var(--mews-white) 50%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--mews-white) 50%, transparent) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
         }}
       />
@@ -44,8 +44,8 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: 'rgba(179,178,251,0.2)',
-                border: '1px solid rgba(179,178,251,0.3)',
+                background: 'color-mix(in srgb, var(--mews-indigo) 20%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--mews-indigo) 30%, transparent)',
               }}
             >
               <TrendingUp className="w-5 h-5 text-teal-400" />
@@ -66,8 +66,8 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
           <div
             className="rounded-xl p-4 md:p-5"
             style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'color-mix(in srgb, var(--mews-white) 6%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--mews-white) 10%, transparent)',
               backdropFilter: 'blur(8px)',
             }}
           >
@@ -86,8 +86,8 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
           <div
             className="rounded-xl p-4 md:p-5"
             style={{
-              background: 'rgba(179,178,251,0.15)',
-              border: '1px solid rgba(179,178,251,0.3)',
+              background: 'color-mix(in srgb, var(--mews-indigo) 15%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--mews-indigo) 30%, transparent)',
               backdropFilter: 'blur(8px)',
             }}
           >
@@ -112,18 +112,18 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
             onClick={onDiscoveryClick}
             className="w-full group flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 mb-3"
             style={{
-              background: 'linear-gradient(135deg, rgba(179,178,251,0.18) 0%, rgba(179,178,251,0.28) 100%)',
-              border: '1.5px solid rgba(179,178,251,0.45)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 18%, transparent) 0%, color-mix(in srgb, var(--mews-indigo) 28%, transparent) 100%)',
+              border: '1.5px solid color-mix(in srgb, var(--mews-indigo) 45%, transparent)',
               color: 'var(--roi-white)',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(179,178,251,0.30) 0%, rgba(179,178,251,0.42) 100%)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(179,178,251,0.70)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(179,178,251,0.30)';
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 30%, transparent) 0%, color-mix(in srgb, var(--mews-indigo) 42%, transparent) 100%)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--mews-indigo) 70%, transparent)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px color-mix(in srgb, var(--mews-indigo) 30%, transparent)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, rgba(179,178,251,0.18) 0%, rgba(179,178,251,0.28) 100%)';
-              (e.currentTarget as HTMLElement).style.borderColor = 'rgba(179,178,251,0.45)';
+              (e.currentTarget as HTMLElement).style.background = 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 18%, transparent) 0%, color-mix(in srgb, var(--mews-indigo) 28%, transparent) 100%)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--mews-indigo) 45%, transparent)';
               (e.currentTarget as HTMLElement).style.boxShadow = 'none';
             }}
           >
@@ -131,7 +131,7 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
             <span>Start Discovery Process</span>
             <span
               className="ml-1 text-xs font-normal px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(179,178,251,0.25)', color: 'rgba(255,255,255,0.80)' }}
+              style={{ background: 'color-mix(in srgb, var(--mews-indigo) 25%, transparent)', color: 'color-mix(in srgb, var(--mews-white) 80%, transparent)' }}
             >
               Sandler Style
             </span>
@@ -145,17 +145,17 @@ export default function TotalSavings({ totalSavings, totalTime, currencySymbol, 
               onClick={onExportClick}
               className="group flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200"
               style={{
-                background: 'rgba(255,255,255,0.10)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                color: 'rgba(255,255,255,0.85)',
+                background: 'color-mix(in srgb, var(--mews-white) 10%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--mews-white) 18%, transparent)',
+                color: 'color-mix(in srgb, var(--mews-white) 85%, transparent)',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.18)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)';
+                (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 18%, transparent)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--mews-white) 30%, transparent)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.10)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)';
+                (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-white) 10%, transparent)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--mews-white) 18%, transparent)';
               }}
             >
               <FileDown className="w-4 h-4" />

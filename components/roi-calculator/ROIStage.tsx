@@ -13,12 +13,12 @@ import DataComparisonSection from '@/components/roi-calculator/DataComparisonSec
 import DiscoverySection from '@/components/roi-calculator/sections/DiscoverySection';
 import ExportModal from '@/components/roi-calculator/ui/ExportModal';
 import PDFTemplate from '@/components/roi-calculator/PDFTemplate';
-import { countries, hotelTypes, usStates } from '@/lib/roi-calculator/utils/hotelDefaults';
+import { countries, hotelTypes, usStates, getSmartDefaults, getBenchmarkForField } from '@/lib/roi-calculator/utils/hotelDefaults';
 import { getTranslations } from '@/lib/roi-calculator/translations';
 import { useROICalculator } from '@/hooks/useROICalculator';
 import { useConfidence } from '@/hooks/useConfidence';
 import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
-import { buildInitialConfidenceMap } from '@/lib/roi-calculator/utils/confidenceScoring';
+import { buildInitialConfidenceMap, inferConfidenceMap } from '@/lib/roi-calculator/utils/confidenceScoring';
 import { serializeState } from '@/lib/roi-calculator/utils/persistence';
 import type { PersistedState } from '@/lib/roi-calculator/utils/persistence';
 import type {
@@ -65,7 +65,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     getBenchmarkValue,
     setFieldConfidence,
     confirmField,
-    markUnknown,
+    revertToBenchmark,
     initConfidence,
   } = useConfidence(priorityInputs);
 
@@ -76,6 +76,8 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
   // Always hold the latest state so the debounced save never uses a stale snapshot
   const latestStateRef = useRef(state);
   latestStateRef.current = state;
+  const latestConfidenceRef = useRef(confidenceState.map);
+  latestConfidenceRef.current = confidenceState.map;
 
   useEffect(() => {
     if (!presentationId) return;
@@ -95,7 +97,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
           headers: { 'Content-Type': 'application/json' },
           // Use latestStateRef to always capture the most recent state, even if
           // the user kept editing during the 1.5s debounce window.
-          body: JSON.stringify({ state: serializeState(latestStateRef.current) }),
+          body: JSON.stringify({ state: serializeState(latestStateRef.current, latestConfidenceRef.current) }),
         });
         if (!res.ok) throw new Error(`Save failed: ${res.status}`);
         setSaveStatus('saved');
@@ -112,9 +114,10 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
       if (savedClearRef.current) clearTimeout(savedClearRef.current);
     };
   // Depend only on non-ui slices so UI-only changes (opening modals, cinematic mode)
-  // don't trigger unnecessary PATCH requests.
+  // don't trigger unnecessary PATCH requests. Confidence map is included because
+  // confirmed/adjusted/unknown statuses are meaningful and must be persisted.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, presentationId]);
+  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, confidenceState.map, presentationId]);
 
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
@@ -133,7 +136,33 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     [dispatch],
   );
 
-  // Initialize confidence map when benchmarks are applied
+  // On mount, restore confidence map from a saved presentation.
+  // For new presentations saved after the confidence-persistence fix: use the stored map.
+  // For old presentations (no stored map): infer status by comparing saved values vs benchmarks.
+  const hasRestoredConfidence = useRef(false);
+  useEffect(() => {
+    if (hasRestoredConfidence.current || !initialState) return;
+    hasRestoredConfidence.current = true;
+    if (initialState.confidenceMap) {
+      initConfidence(initialState.confidenceMap);
+    } else {
+      const defaults = getSmartDefaults(
+        initialState.config.country,
+        initialState.config.hotelType,
+        initialState.config.usState || undefined,
+      );
+      const map = inferConfidenceMap(
+        priorityInputs,
+        (slice, field) => getBenchmarkForField(defaults, slice, field) ?? getSliceValue(slice, field),
+        getSliceValue,
+      );
+      initConfidence(map);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Initialize confidence map when benchmarks are applied (new presentations, or
+  // when the user explicitly changes country / hotel type on an existing one).
   useEffect(() => {
     if (!config.isInitialLoad) {
       const map = buildInitialConfidenceMap(priorityInputs, getSliceValue);
@@ -142,9 +171,9 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.country, config.hotelType]);
 
-  const handleAdjustField = useCallback(
-    (key: string) => setFieldConfidence(key, 'adjusted'),
-    [setFieldConfidence],
+  const handleRevertFieldToBenchmark = useCallback(
+    (key: string) => revertToBenchmark(key),
+    [revertToBenchmark],
   );
 
   const handleIntakeComplete = useCallback(() => {
@@ -362,7 +391,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             <select
               value={config.country}
               onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
             >
               {countries.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}</option>
@@ -372,7 +401,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
               <select
                 value={config.usState}
                 onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: e.target.value })}
-                className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+                className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
               >
                 <option value="">All states (national avg)</option>
                 {usStates.map((s) => (
@@ -383,7 +412,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             <select
               value={config.hotelType}
               onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
             >
               {hotelTypes.map((ht) => (
                 <option key={ht} value={ht}>{ht}</option>
@@ -422,7 +451,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
                   key={moduleKey}
                   className="inline-flex items-center rounded-2xl border-2 bg-white transition-all duration-200 select-none"
                   style={{
-                    borderColor: isActive ? meta.color : enabled ? meta.color + '55' : '#e5e7eb',
+                    borderColor: isActive ? meta.color : enabled ? meta.color + '55' : 'var(--neutral-200)',
                     opacity: enabled ? 1 : 0.55,
                     boxShadow: isActive ? `0 2px 12px ${meta.color}30` : 'none',
                   }}
@@ -443,7 +472,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
                     {/* Visual toggle track */}
                     <span
                       className="relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
-                      style={{ background: enabled ? meta.color : '#d1d5db' }}
+                      style={{ background: enabled ? meta.color : 'var(--neutral-300)' }}
                     >
                       {/* Knob */}
                       <span
@@ -489,7 +518,6 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             getFieldStatus={getFieldStatus}
             onValueChange={setSliceValue}
             onConfirmField={confirmField}
-            onAdjustField={handleAdjustField}
             score={score}
           />
 
@@ -568,8 +596,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         getFieldStatus={getFieldStatus}
         getBenchmarkValue={getBenchmarkValue}
         onConfirmField={confirmField}
-        onAdjustField={handleAdjustField}
-        onMarkUnknown={markUnknown}
+        onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
         country={config.country}
         usState={config.usState}

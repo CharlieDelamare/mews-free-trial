@@ -12,24 +12,24 @@ export default function ResultCard({ label, value, unit = '', large = false }: R
     <div
       className="relative overflow-hidden rounded-xl p-4 transition-all duration-200"
       style={{
-        background: 'linear-gradient(135deg, rgba(107,163,176,0.08) 0%, rgba(45,44,55,0.05) 100%)',
-        border: '1px solid rgba(107,163,176,0.2)',
-        boxShadow: '0 1px 4px rgba(107,163,176,0.08)',
+        background: `linear-gradient(135deg, color-mix(in srgb, var(--roi-slider-teal) 8%, transparent) 0%, color-mix(in srgb, var(--mews-charcoal) 5%, transparent) 100%)`,
+        border: `1px solid color-mix(in srgb, var(--roi-slider-teal) 20%, transparent)`,
+        boxShadow: `0 1px 4px color-mix(in srgb, var(--roi-slider-teal) 8%, transparent)`,
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(107,163,176,0.16)';
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,163,176,0.35)';
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 4px 16px color-mix(in srgb, var(--roi-slider-teal) 16%, transparent)`;
+        (e.currentTarget as HTMLElement).style.borderColor = `color-mix(in srgb, var(--roi-slider-teal) 35%, transparent)`;
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 4px rgba(107,163,176,0.08)';
-        (e.currentTarget as HTMLElement).style.borderColor = 'rgba(107,163,176,0.2)';
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 1px 4px color-mix(in srgb, var(--roi-slider-teal) 8%, transparent)`;
+        (e.currentTarget as HTMLElement).style.borderColor = `color-mix(in srgb, var(--roi-slider-teal) 20%, transparent)`;
       }}
     >
       {/* Subtle corner accent */}
       <div
         className="absolute top-0 right-0 w-16 h-16 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at 100% 0%, rgba(107,163,176,0.12) 0%, transparent 70%)',
+          background: `radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--roi-slider-teal) 12%, transparent) 0%, transparent 70%)`,
         }}
       />
 

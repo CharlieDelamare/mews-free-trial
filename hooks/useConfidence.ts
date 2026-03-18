@@ -42,14 +42,14 @@ function reducer(state: ConfidenceState, action: ConfidenceAction | { type: 'SET
           },
         },
       };
-    case 'MARK_UNKNOWN':
+    case 'REVERT_TO_BENCHMARK':
       return {
         ...state,
         map: {
           ...state.map,
           [action.key]: {
             ...state.map[action.key],
-            status: 'unknown',
+            status: 'benchmark',
           },
         },
       };
@@ -108,8 +108,8 @@ export function useConfidence(priorityInputs: PriorityInput[]) {
     [],
   );
 
-  const markUnknown = useCallback(
-    (key: string) => dispatch({ type: 'MARK_UNKNOWN', key }),
+  const revertToBenchmark = useCallback(
+    (key: string) => dispatch({ type: 'REVERT_TO_BENCHMARK', key }),
     [],
   );
 
@@ -126,7 +126,7 @@ export function useConfidence(priorityInputs: PriorityInput[]) {
     getBenchmarkValue,
     setFieldConfidence,
     confirmField,
-    markUnknown,
+    revertToBenchmark,
     initConfidence,
   };
 }

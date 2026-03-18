@@ -58,7 +58,7 @@ export default function RMSSection({
       headerless={headerless}
     >
       <div className="space-y-8">
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Rate Update Automation</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -89,7 +89,7 @@ export default function RMSSection({
                   </button>
                 </div>
                 {inputs.hasExistingRMS && (
-                  <div className="mt-3 flex items-start gap-2 p-3 rounded-lg" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                  <div className="mt-3 flex items-start gap-2 p-3 rounded-lg" style={{ background: 'color-mix(in srgb, var(--roi-module-gx) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--roi-module-gx) 20%, transparent)' }}>
                     <Info className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-purple-800">
                       Since you already have an RMS, the incremental uplift from switching to Mews RMS is estimated at ~2% rather than the full uplift for a property without one. Time savings from rate automation are also excluded since your current RMS already handles this.
@@ -166,20 +166,20 @@ export default function RMSSection({
               </div>
             </div>
 
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>Mews RMS Impact</h3>
 
-              <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(28,29,36,0.08)' }}>
+              <div className="rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--mews-white) 80%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)' }}>
                 <p className="text-sm text-gray-600 mb-2">Estimated Revenue Uplift</p>
                 <p className="text-2xl font-bold text-gray-900">{results.estimatedRevenueUplift.toFixed(2)}%</p>
               </div>
 
-              <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(28,29,36,0.08)' }}>
+              <div className="rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--mews-white) 80%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)' }}>
                 <p className="text-sm text-gray-600 mb-2">RevPAR Uplift</p>
                 <p className="text-2xl font-bold text-gray-900">{currencySymbol} {results.revPARUplift.toFixed(2)}</p>
               </div>
 
-              <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(28,29,36,0.08)' }}>
+              <div className="rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--mews-white) 80%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)' }}>
                 <p className="text-sm text-gray-600 mb-2">New Hotel RevPAR</p>
                 <p className="text-2xl font-bold text-gray-900">{currencySymbol} {results.newHotelRevPAR.toFixed(2)}</p>
               </div>
@@ -208,7 +208,7 @@ export default function RMSSection({
           />
         </div>
 
-        <div className="rounded-xl p-5 md:p-6" style={{ background: 'rgba(28,29,36,0.02)', border: '1px solid rgba(28,29,36,0.07)' }}>
+        <div className="rounded-xl p-5 md:p-6" style={{ background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 7%, transparent)' }}>
           <h3 className="text-base font-bold text-gray-900 mb-5">Operational Impact</h3>
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
@@ -267,10 +267,10 @@ export default function RMSSection({
               </div>
             </div>
 
-            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+            <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
               <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>With Mews RMS</h3>
 
-              <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(28,29,36,0.08)' }}>
+              <div className="rounded-xl p-4" style={{ background: 'color-mix(in srgb, var(--mews-white) 80%, transparent)', border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)' }}>
                 <p className="text-sm text-gray-600 mb-2">Avg. Updates per Week</p>
                 <p className="text-2xl font-bold text-gray-900">{results.avgUpdatesPerWeek.toFixed(2)}</p>
               </div>

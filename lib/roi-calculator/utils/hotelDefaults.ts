@@ -376,3 +376,13 @@ export function getSmartDefaults(country: string, hotelType: string, usState?: s
     estimatedRevenueUplift,
   };
 }
+
+/**
+ * Returns the benchmark value for a given state slice.field from a HotelDefaults object.
+ * Most fields share the same name; the one exception is staffHourlyWage → averageStaffWage.
+ * Returns undefined when the field is not tracked in HotelDefaults.
+ */
+export function getBenchmarkForField(defaults: HotelDefaults, slice: string, field: string): number | undefined {
+  if (slice === 'sharedVariables' && field === 'staffHourlyWage') return defaults.averageStaffWage;
+  return (defaults as unknown as Record<string, number>)[field];
+}

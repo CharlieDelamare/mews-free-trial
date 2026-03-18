@@ -13,9 +13,8 @@ export default function ConfidenceBar({ score, onValidateClick }: ConfidenceBarP
   const total = score.totalTracked || 1;
 
   // Stacked bar segments
-  const confirmedPct = ((score.confirmedCount + score.adjustedCount) / total) * 100;
+  const confirmedPct = (score.confirmedCount / total) * 100;
   const benchmarkPct = (score.benchmarkCount / total) * 100;
-  const unknownPct = (score.unknownCount / total) * 100;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm p-4">
@@ -51,7 +50,7 @@ export default function ConfidenceBar({ score, onValidateClick }: ConfidenceBarP
           <div
             className="h-full bg-emerald-500 transition-all duration-500"
             style={{ width: `${confirmedPct}%` }}
-            title={`${score.confirmedCount + score.adjustedCount} confirmed/adjusted`}
+            title={`${score.confirmedCount} confirmed`}
           />
         )}
         {benchmarkPct > 0 && (
@@ -61,31 +60,18 @@ export default function ConfidenceBar({ score, onValidateClick }: ConfidenceBarP
             title={`${score.benchmarkCount} benchmark estimates`}
           />
         )}
-        {unknownPct > 0 && (
-          <div
-            className="h-full bg-gray-300 transition-all duration-500"
-            style={{ width: `${unknownPct}%` }}
-            title={`${score.unknownCount} unknown`}
-          />
-        )}
       </div>
 
       {/* Legend */}
       <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          {score.confirmedCount + score.adjustedCount} validated
+          {score.confirmedCount} confirmed
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-amber-400" />
           {score.benchmarkCount} estimated
         </span>
-        {score.unknownCount > 0 && (
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-gray-300" />
-            {score.unknownCount} unknown
-          </span>
-        )}
       </div>
     </div>
   );

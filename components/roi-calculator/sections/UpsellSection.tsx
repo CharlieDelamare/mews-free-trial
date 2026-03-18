@@ -56,7 +56,7 @@ export default function UpsellSection({
           />
         </div>
 
-        <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, rgba(179,178,251,0.07) 0%, rgba(28,29,36,0.04) 100%)', border: '1px solid rgba(179,178,251,0.15)' }}>
+        <div className="space-y-6 p-5 rounded-xl" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 7%, transparent) 0%, color-mix(in srgb, var(--mews-night-black) 4%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--mews-indigo) 15%, transparent)' }}>
           <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--mews-indigo)' }}>Mews Impact</h3>
           <Slider
             label="% Reservations Checked In Online"

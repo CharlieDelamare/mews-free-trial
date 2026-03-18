@@ -4,9 +4,7 @@
 
 export type ConfidenceStatus =
   | 'benchmark'      // Prefilled from industry benchmark — not yet validated
-  | 'confirmed'      // Prospect confirmed the benchmark value is correct
-  | 'adjusted'       // Prospect provided their own specific number
-  | 'unknown';       // Prospect doesn't know — benchmark used as fallback
+  | 'confirmed';     // Prospect confirmed or changed the value
 
 // A single field's confidence metadata
 export interface FieldConfidence {
@@ -64,9 +62,7 @@ export interface ConfidenceScore {
   overall: number;                  // 0-100 percentage
   level: 'directional' | 'indicative' | 'validated' | 'high-confidence';
   confirmedCount: number;
-  adjustedCount: number;
   benchmarkCount: number;
-  unknownCount: number;
   totalTracked: number;
   // Fields still needing validation (sorted by impact)
   unvalidatedFields: Array<{
@@ -85,6 +81,6 @@ export type IntakeMode = 'fast' | 'validated';
 export type ConfidenceAction =
   | { type: 'SET_CONFIDENCE'; key: string; status: ConfidenceStatus }
   | { type: 'CONFIRM_FIELD'; key: string }
-  | { type: 'MARK_UNKNOWN'; key: string }
+  | { type: 'REVERT_TO_BENCHMARK'; key: string }
   | { type: 'INIT_CONFIDENCE'; map: ConfidenceMap }
   | { type: 'SET_INTAKE_MODE'; mode: IntakeMode };
