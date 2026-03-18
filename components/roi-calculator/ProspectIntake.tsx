@@ -39,8 +39,7 @@ interface ProspectIntakeProps {
   getFieldStatus: (key: string) => ConfidenceStatus;
   getBenchmarkValue: (key: string) => number | undefined;
   onConfirmField: (key: string) => void;
-  onAdjustField: (key: string) => void;
-  onMarkUnknown: (key: string) => void;
+  onRevertFieldToBenchmark: (key: string) => void;
   score: ConfidenceScore;
   // Property config
   country: string;
@@ -68,8 +67,7 @@ export default function ProspectIntake({
   getFieldStatus,
   getBenchmarkValue,
   onConfirmField,
-  onAdjustField,
-  onMarkUnknown,
+  onRevertFieldToBenchmark,
   score,
   country,
   usState,
@@ -154,7 +152,7 @@ export default function ProspectIntake({
           <div className="flex justify-between mt-1.5">
             <span className="text-xs text-gray-400">Step {currentStep + 1} of {totalSteps}</span>
             <span className="text-xs text-gray-400">
-              {score.confirmedCount + score.adjustedCount} of {score.totalTracked} validated
+              {score.confirmedCount} of {score.totalTracked} confirmed
             </span>
           </div>
         </div>
@@ -307,8 +305,7 @@ export default function ProspectIntake({
                     step={input.step}
                     onChange={(v) => onValueChange(input.slice, input.field, v)}
                     onConfirm={() => onConfirmField(input.key)}
-                    onAdjust={() => onAdjustField(input.key)}
-                    onMarkUnknown={() => onMarkUnknown(input.key)}
+                    onRevertToBenchmark={() => onRevertFieldToBenchmark(input.key)}
                     showQuestion={intakeMode === 'validated'}
                     benchmarkSourceInfo={input.benchmarkSourceInfo}
                   />
@@ -362,22 +359,14 @@ export default function ProspectIntake({
               </div>
 
               {/* Stats grid */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="bg-emerald-50 rounded-lg p-3 text-center">
                   <div className="text-lg font-bold text-emerald-700">{score.confirmedCount}</div>
                   <div className="text-xs text-emerald-600">Confirmed</div>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-blue-700">{score.adjustedCount}</div>
-                  <div className="text-xs text-blue-600">Adjusted</div>
-                </div>
                 <div className="bg-amber-50 rounded-lg p-3 text-center">
                   <div className="text-lg font-bold text-amber-700">{score.benchmarkCount}</div>
                   <div className="text-xs text-amber-600">Estimated</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-gray-600">{score.unknownCount}</div>
-                  <div className="text-xs text-gray-500">Unknown</div>
                 </div>
               </div>
 
@@ -403,8 +392,7 @@ export default function ProspectIntake({
                           step={input.step}
                           onChange={(v) => onValueChange(input.slice, input.field, v)}
                           onConfirm={() => onConfirmField(input.key)}
-                          onAdjust={() => onAdjustField(input.key)}
-                          onMarkUnknown={() => onMarkUnknown(input.key)}
+                          onRevertToBenchmark={() => onRevertFieldToBenchmark(input.key)}
                           benchmarkSourceInfo={input.benchmarkSourceInfo}
                           compact
                         />

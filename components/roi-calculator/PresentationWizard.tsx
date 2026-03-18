@@ -35,14 +35,13 @@ export default function PresentationWizard() {
     score,
     getFieldStatus,
     getBenchmarkValue,
-    setFieldConfidence,
     confirmField,
-    markUnknown,
+    revertToBenchmark,
   } = useConfidence(priorityInputs);
 
-  const handleAdjustField = useCallback(
-    (key: string) => setFieldConfidence(key, 'adjusted'),
-    [setFieldConfidence],
+  const handleRevertFieldToBenchmark = useCallback(
+    (key: string) => revertToBenchmark(key),
+    [revertToBenchmark],
   );
 
   function handleIdentitySubmit(e: React.FormEvent) {
@@ -181,8 +180,7 @@ export default function PresentationWizard() {
         getFieldStatus={getFieldStatus}
         getBenchmarkValue={getBenchmarkValue}
         onConfirmField={confirmField}
-        onAdjustField={handleAdjustField}
-        onMarkUnknown={markUnknown}
+        onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
         country={config.country}
         usState={config.usState}

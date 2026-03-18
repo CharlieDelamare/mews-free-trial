@@ -13,12 +13,12 @@ import DataComparisonSection from '@/components/roi-calculator/DataComparisonSec
 import DiscoverySection from '@/components/roi-calculator/sections/DiscoverySection';
 import ExportModal from '@/components/roi-calculator/ui/ExportModal';
 import PDFTemplate from '@/components/roi-calculator/PDFTemplate';
-import { countries, hotelTypes, usStates } from '@/lib/roi-calculator/utils/hotelDefaults';
+import { countries, hotelTypes, usStates, getSmartDefaults, getBenchmarkForField } from '@/lib/roi-calculator/utils/hotelDefaults';
 import { getTranslations } from '@/lib/roi-calculator/translations';
 import { useROICalculator } from '@/hooks/useROICalculator';
 import { useConfidence } from '@/hooks/useConfidence';
 import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
-import { buildInitialConfidenceMap } from '@/lib/roi-calculator/utils/confidenceScoring';
+import { buildInitialConfidenceMap, inferConfidenceMap } from '@/lib/roi-calculator/utils/confidenceScoring';
 import { serializeState } from '@/lib/roi-calculator/utils/persistence';
 import type {
   SharedVariables,
@@ -65,7 +65,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     getBenchmarkValue,
     setFieldConfidence,
     confirmField,
-    markUnknown,
+    revertToBenchmark,
     initConfidence,
   } = useConfidence(priorityInputs);
 
@@ -76,6 +76,8 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
   // Always hold the latest state so the debounced save never uses a stale snapshot
   const latestStateRef = useRef(state);
   latestStateRef.current = state;
+  const latestConfidenceRef = useRef(confidenceState.map);
+  latestConfidenceRef.current = confidenceState.map;
 
   useEffect(() => {
     if (!presentationId) return;
@@ -95,7 +97,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
           headers: { 'Content-Type': 'application/json' },
           // Use latestStateRef to always capture the most recent state, even if
           // the user kept editing during the 1.5s debounce window.
-          body: JSON.stringify({ state: serializeState(latestStateRef.current) }),
+          body: JSON.stringify({ state: serializeState(latestStateRef.current, latestConfidenceRef.current) }),
         });
         if (!res.ok) throw new Error(`Save failed: ${res.status}`);
         setSaveStatus('saved');
@@ -112,9 +114,10 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
       if (savedClearRef.current) clearTimeout(savedClearRef.current);
     };
   // Depend only on non-ui slices so UI-only changes (opening modals, cinematic mode)
-  // don't trigger unnecessary PATCH requests.
+  // don't trigger unnecessary PATCH requests. Confidence map is included because
+  // confirmed/adjusted/unknown statuses are meaningful and must be persisted.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, presentationId]);
+  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, confidenceState.map, presentationId]);
 
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
@@ -133,7 +136,33 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     [dispatch],
   );
 
-  // Initialize confidence map when benchmarks are applied
+  // On mount, restore confidence map from a saved presentation.
+  // For new presentations saved after the confidence-persistence fix: use the stored map.
+  // For old presentations (no stored map): infer status by comparing saved values vs benchmarks.
+  const hasRestoredConfidence = useRef(false);
+  useEffect(() => {
+    if (hasRestoredConfidence.current || !initialState) return;
+    hasRestoredConfidence.current = true;
+    if (initialState.confidenceMap) {
+      initConfidence(initialState.confidenceMap);
+    } else {
+      const defaults = getSmartDefaults(
+        initialState.config.country,
+        initialState.config.hotelType,
+        initialState.config.usState || undefined,
+      );
+      const map = inferConfidenceMap(
+        priorityInputs,
+        (slice, field) => getBenchmarkForField(defaults, slice, field) ?? getSliceValue(slice, field),
+        getSliceValue,
+      );
+      initConfidence(map);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Initialize confidence map when benchmarks are applied (new presentations, or
+  // when the user explicitly changes country / hotel type on an existing one).
   useEffect(() => {
     if (!config.isInitialLoad) {
       const map = buildInitialConfidenceMap(priorityInputs, getSliceValue);
@@ -142,9 +171,9 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.country, config.hotelType]);
 
-  const handleAdjustField = useCallback(
-    (key: string) => setFieldConfidence(key, 'adjusted'),
-    [setFieldConfidence],
+  const handleRevertFieldToBenchmark = useCallback(
+    (key: string) => revertToBenchmark(key),
+    [revertToBenchmark],
   );
 
   const handleIntakeComplete = useCallback(() => {
@@ -489,7 +518,6 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             getFieldStatus={getFieldStatus}
             onValueChange={setSliceValue}
             onConfirmField={confirmField}
-            onAdjustField={handleAdjustField}
             score={score}
           />
 
@@ -568,8 +596,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         getFieldStatus={getFieldStatus}
         getBenchmarkValue={getBenchmarkValue}
         onConfirmField={confirmField}
-        onAdjustField={handleAdjustField}
-        onMarkUnknown={markUnknown}
+        onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
         country={config.country}
         usState={config.usState}
