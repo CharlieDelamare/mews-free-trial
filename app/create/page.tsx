@@ -27,7 +27,7 @@ export default function SandboxCreationPage() {
   /* Chevron color matches --neutral-500 (#74757D) from design system */
   const CHEVRON_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2374757D'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E")`;
   const selectStyle = { backgroundImage: CHEVRON_SVG } as const;
-  const selectClasses = "w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_12px_center]";
+  const selectClasses = "w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_12px_center]";
 
   // Check if requestor is an admin (gets auto-populated test data and special treatment for duration and Salesforce ID)
   const isAdmin = isAdminEmail(formData.requestorEmail);
@@ -69,17 +69,24 @@ export default function SandboxCreationPage() {
     }
 
     try {
-      await fetch('/api/create-trial', {
+      const response = await fetch('/api/create-trial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
-      // Redirect to logs page regardless of response
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        showToast(data.error || 'Failed to create sandbox. Please try again.', 'error');
+        setLoading(false);
+        return;
+      }
+
       router.push('/logs');
     } catch {
-      // Still redirect to logs even on network error
-      router.push('/logs');
+      showToast('Network error. Please check your connection and try again.', 'error');
+      setLoading(false);
     }
   };
 
@@ -87,11 +94,11 @@ export default function SandboxCreationPage() {
     <main className="min-h-screen bg-mews-linen py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Mews Sandbox Manager</h1>
+          <h1 className="text-3xl font-bold text-mews-night-black mb-2">Mews Sandbox Manager</h1>
           <p className="text-gray-600">Create a demo sandbox environment</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-neutral-100 shadow-sm p-8 space-y-6">
             {/* Requestor Email */}
             <div>
               <label htmlFor="requestorEmail" className="block text-sm font-medium text-gray-700 mb-1">Your Email (Requestor) *</label>
@@ -103,7 +110,7 @@ export default function SandboxCreationPage() {
                 onChange={handleChange}
                 required
                 placeholder="your.email@company.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
 
@@ -121,7 +128,7 @@ export default function SandboxCreationPage() {
                   value={formData.firstName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
                 />
               </div>
               <div>
@@ -136,7 +143,7 @@ export default function SandboxCreationPage() {
                   value={formData.lastName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
                 />
               </div>
             </div>
@@ -157,7 +164,7 @@ export default function SandboxCreationPage() {
                 placeholder="customer@hotel.com"
                 data-1p-ignore
                 autoComplete="off"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
 
@@ -190,7 +197,7 @@ export default function SandboxCreationPage() {
                 onChange={handleChange}
                 required
                 placeholder="Hotel Grand Example"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
 
@@ -265,14 +272,14 @@ export default function SandboxCreationPage() {
                 onChange={handleChange}
                 required={!isAdmin}
                 placeholder="001..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 px-4 bg-mews-primary text-mews-night-black font-semibold rounded-lg hover:bg-mews-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Creating Sandbox... (this may take a few minutes)' : 'Create Sandbox'}
             </button>

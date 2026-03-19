@@ -81,7 +81,7 @@ export default function DoorsTab({ enterpriseId, isEnabled }: Props) {
   if (!isEnabled) {
     return (
       <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-        <p className="text-gray-500 text-sm">
+        <p className="text-neutral-500 text-sm">
           Door management is only available for the TradeShow property.
           Select the correct property to enable this feature.
         </p>
@@ -96,7 +96,7 @@ export default function DoorsTab({ enterpriseId, isEnabled }: Props) {
           onClick={handleProvision}
           disabled={provisioning}
           className={`py-2 px-4 text-white text-sm font-semibold rounded-lg transition-colors ${
-            provisioning ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+            provisioning ? 'bg-gray-400 cursor-not-allowed' : 'bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover'
           }`}
         >
           {provisioning ? 'Provisioning...' : 'Provision Doors'}
@@ -113,36 +113,36 @@ export default function DoorsTab({ enterpriseId, isEnabled }: Props) {
         <button
           onClick={fetchAssignments}
           disabled={loading}
-          className="py-2 px-4 text-gray-700 text-sm font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="py-2 px-4 text-neutral-700 text-sm font-semibold rounded-lg bg-neutral-100 hover:bg-neutral-200 transition-colors"
         >
           Refresh
         </button>
       </div>
 
       {loading ? (
-        <p className="text-sm text-gray-500">Loading assignments...</p>
+        <p className="text-sm text-neutral-500">Loading assignments...</p>
       ) : assignments.length === 0 ? (
-        <p className="text-sm text-gray-500">No door assignments found.</p>
+        <p className="text-sm text-neutral-500">No door assignments found.</p>
       ) : (
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-neutral-200">
+            <thead className="bg-neutral-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reservation</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Room</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Token</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valid From</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valid To</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Reservation</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Room</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Token</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Valid From</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Valid To</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-neutral-200">
               {assignments.map(a => (
                 <tr key={a.tokenId || a.reservationId}>
-                  <td className="px-4 py-3 text-xs text-gray-600 font-mono">{a.reservationId.slice(0, 8)}...</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{a.roomName || '—'}</td>
-                  <td className="px-4 py-3 text-xs font-mono text-gray-500">{a.tokenValue || '—'}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500">{a.validFrom ? new Date(a.validFrom).toLocaleDateString() : '—'}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500">{a.validTo ? new Date(a.validTo).toLocaleDateString() : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-neutral-600 font-mono">{a.reservationId.slice(0, 8)}...</td>
+                  <td className="px-4 py-3 text-sm text-neutral-700">{a.roomName || '—'}</td>
+                  <td className="px-4 py-3 text-xs font-mono text-neutral-500">{a.tokenValue || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-neutral-500">{a.validFrom ? new Date(a.validFrom).toLocaleDateString() : '—'}</td>
+                  <td className="px-4 py-3 text-xs text-neutral-500">{a.validTo ? new Date(a.validTo).toLocaleDateString() : '—'}</td>
                 </tr>
               ))}
             </tbody>

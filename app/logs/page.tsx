@@ -22,11 +22,11 @@ function getLogTypeLabel(type: UnifiedLog['logType']) {
     case 'close_bills':
       return { label: 'Close Bills', color: 'bg-warning-100 text-warning-700' };
     case 'morning_prep':
-      return { label: 'Morning Prep', color: 'bg-blue-100 text-blue-700' };
+      return { label: 'Morning Prep', color: 'bg-info-100 text-info-700' };
     case 'auto_checkout':
-      return { label: 'Auto Checkout', color: 'bg-green-100 text-green-700' };
+      return { label: 'Auto Checkout', color: 'bg-success-100 text-success-700' };
     case 'scenario':
-      return { label: 'Scenario', color: 'bg-purple-100 text-purple-700' };
+      return { label: 'Scenario', color: 'bg-primary-100 text-primary-700' };
     case 'doors':
       return { label: 'Door Provisioning', color: 'bg-gray-100 text-gray-700' };
     default:

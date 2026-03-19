@@ -171,8 +171,8 @@ export default function CinematicSlide(props: CinematicSlideProps) {
                 style={{
                   width: 'calc(33.333% - 0.5rem)',
                   minWidth: '160px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'color-mix(in srgb, var(--mews-white) 5%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--mews-white) 8%, transparent)',
                 }}
               >
                 <p className="text-xs text-gray-400 font-medium truncate">{leverLabel}</p>
@@ -258,7 +258,7 @@ export default function CinematicSlide(props: CinematicSlideProps) {
                   <span className="text-sm text-gray-400 w-40 text-right truncate flex-shrink-0">{moduleLabel}</span>
                   <div className="flex-1 flex flex-col gap-1.5">
                     {/* Monetary bar */}
-                    <div className="h-8 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="h-8 rounded-lg overflow-hidden" style={{ background: 'color-mix(in srgb, var(--mews-white) 5%, transparent)' }}>
                       <div
                         className="h-full rounded-lg flex items-center justify-start px-4"
                         style={{
@@ -274,12 +274,12 @@ export default function CinematicSlide(props: CinematicSlideProps) {
                     </div>
                     {/* Hours reclaimed bar */}
                     {c.time > 0 && (
-                      <div className="h-5 rounded-md overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                      <div className="h-5 rounded-md overflow-hidden" style={{ background: 'color-mix(in srgb, var(--mews-white) 3%, transparent)' }}>
                         <div
                           className="h-full rounded-md flex items-center justify-start px-3"
                           style={{
                             width: `${timeWidth}%`,
-                            background: 'linear-gradient(90deg, rgba(139,92,246,0.25), rgba(139,92,246,0.7))',
+                            background: 'linear-gradient(90deg, color-mix(in srgb, var(--roi-module-gx) 25%, transparent), color-mix(in srgb, var(--roi-module-gx) 70%, transparent))',
                             minWidth: '70px',
                           }}
                         >

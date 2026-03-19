@@ -116,9 +116,9 @@ export default function ScenariosTab({ enterpriseId }: Props) {
           <div key={scenario.type} className="bg-white rounded-xl p-5 shadow-sm">
             <div className="flex items-start justify-between mb-2">
               <div>
-                <h3 className="text-base font-semibold text-gray-900">{scenario.label}</h3>
-                <p className="text-sm text-gray-500">{scenario.description}</p>
-                <p className="text-xs text-gray-400 mt-1">{scenario.guestCount} reservations</p>
+                <h3 className="text-base font-semibold text-mews-night-black">{scenario.label}</h3>
+                <p className="text-sm text-neutral-500">{scenario.description}</p>
+                <p className="text-xs text-neutral-400 mt-1">{scenario.guestCount} reservations</p>
               </div>
               {badgeLabel && <StatusBadge status={badgeLabel} />}
             </div>
@@ -130,8 +130,8 @@ export default function ScenariosTab({ enterpriseId }: Props) {
                 status === 'provisioning'
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : status === 'completed'
-                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  ? 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                  : 'bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover'
               }`}
             >
               {status === 'provisioning' ? 'Provisioning...' : status === 'completed' ? 'Re-provision' : 'Provision'}

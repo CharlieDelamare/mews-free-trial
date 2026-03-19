@@ -58,14 +58,14 @@ export default function OtaTab({ enterpriseId }: Props) {
   return (
     <div className="max-w-lg">
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">Simulate OTA Booking</h3>
+        <h3 className="text-base font-semibold text-mews-night-black mb-4">Simulate OTA Booking</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Channel</label>
             <select
               value={channel}
               onChange={e => setChannel(e.target.value as OtaChannel)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
             >
               {CHANNELS.map(c => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -75,31 +75,31 @@ export default function OtaTab({ enterpriseId }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Check-in</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Check-in</label>
               <input
                 type="date"
                 value={checkIn}
                 onChange={e => setCheckIn(e.target.value)}
                 min={getTodayDate()}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Check-out</label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Check-out</label>
               <input
                 type="date"
                 value={checkOut}
                 onChange={e => setCheckOut(e.target.value)}
                 min={checkIn}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Guests</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Guests</label>
             <input
               type="number"
               value={guestCount}
@@ -107,7 +107,7 @@ export default function OtaTab({ enterpriseId }: Props) {
               min={1}
               max={10}
               required
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
             />
           </div>
 
@@ -115,7 +115,7 @@ export default function OtaTab({ enterpriseId }: Props) {
             type="submit"
             disabled={loading}
             className={`w-full py-2 px-4 text-white text-sm font-semibold rounded-lg transition-colors ${
-              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover'
             }`}
           >
             {loading ? 'Simulating...' : 'Simulate Booking'}

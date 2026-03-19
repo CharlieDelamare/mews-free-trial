@@ -76,8 +76,8 @@ function CountryCombobox({
       <div
         className="relative flex items-center rounded-xl overflow-hidden cursor-text"
         style={{
-          background: 'rgba(255,255,255,0.96)',
-          boxShadow: open ? `0 0 0 2px var(--mews-indigo), 0 2px 8px rgba(0,0,0,0.15)` : '0 2px 8px rgba(0,0,0,0.15)',
+          background: 'color-mix(in srgb, var(--mews-white) 96%, transparent)',
+          boxShadow: open ? `0 0 0 2px var(--mews-indigo), 0 2px 8px color-mix(in srgb, var(--mews-black) 15%, transparent)` : '0 2px 8px color-mix(in srgb, var(--mews-black) 15%, transparent)',
           transition: 'box-shadow 0.15s',
         }}
         onClick={() => { setOpen(true); inputRef.current?.focus(); }}
@@ -106,8 +106,8 @@ function CountryCombobox({
           className="absolute z-50 w-full mt-1.5 rounded-xl overflow-hidden"
           style={{
             background: 'var(--roi-white)',
-            boxShadow: '0 8px 32px rgba(28,29,36,0.18), 0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid rgba(28,29,36,0.08)',
+            boxShadow: '0 8px 32px color-mix(in srgb, var(--mews-night-black) 18%, transparent), 0 2px 8px color-mix(in srgb, var(--mews-black) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
             maxHeight: '220px',
             overflowY: 'auto',
           }}
@@ -123,12 +123,12 @@ function CountryCombobox({
                   onMouseDown={(e) => { e.preventDefault(); handleSelect(c.name); }}
                   className="w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors duration-100"
                   style={{
-                    background: isSelected ? 'rgba(179,178,251,0.1)' : 'transparent',
+                    background: isSelected ? 'color-mix(in srgb, var(--mews-indigo) 10%, transparent)' : 'transparent',
                     color: isSelected ? 'var(--mews-indigo)' : 'var(--roi-gray-700)',
                     fontWeight: isSelected ? 600 : 400,
                   }}
                   onMouseEnter={(e) => {
-                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.04)';
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)';
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -212,8 +212,8 @@ function StateCombobox({
       <div
         className="relative flex items-center rounded-xl overflow-hidden cursor-text"
         style={{
-          background: 'rgba(255,255,255,0.96)',
-          boxShadow: open ? `0 0 0 2px var(--mews-indigo), 0 2px 8px rgba(0,0,0,0.15)` : '0 2px 8px rgba(0,0,0,0.15)',
+          background: 'color-mix(in srgb, var(--mews-white) 96%, transparent)',
+          boxShadow: open ? `0 0 0 2px var(--mews-indigo), 0 2px 8px color-mix(in srgb, var(--mews-black) 15%, transparent)` : '0 2px 8px color-mix(in srgb, var(--mews-black) 15%, transparent)',
           transition: 'box-shadow 0.15s',
         }}
         onClick={() => { setOpen(true); inputRef.current?.focus(); }}
@@ -250,8 +250,8 @@ function StateCombobox({
           className="absolute z-50 w-full mt-1.5 rounded-xl overflow-hidden"
           style={{
             background: 'var(--roi-white)',
-            boxShadow: '0 8px 32px rgba(28,29,36,0.18), 0 2px 8px rgba(0,0,0,0.1)',
-            border: '1px solid rgba(28,29,36,0.08)',
+            boxShadow: '0 8px 32px color-mix(in srgb, var(--mews-night-black) 18%, transparent), 0 2px 8px color-mix(in srgb, var(--mews-black) 10%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
             maxHeight: '220px',
             overflowY: 'auto',
           }}
@@ -261,14 +261,14 @@ function StateCombobox({
             onMouseDown={(e) => { e.preventDefault(); handleSelect(''); }}
             className="w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors duration-100 border-b"
             style={{
-              background: !usState ? 'rgba(179,178,251,0.1)' : 'transparent',
+              background: !usState ? 'color-mix(in srgb, var(--mews-indigo) 10%, transparent)' : 'transparent',
               color: !usState ? 'var(--mews-indigo)' : 'var(--roi-gray-500)',
               fontWeight: !usState ? 600 : 400,
-              borderColor: 'rgba(28,29,36,0.06)',
+              borderColor: 'color-mix(in srgb, var(--mews-night-black) 6%, transparent)',
               fontStyle: 'italic',
             }}
             onMouseEnter={(e) => {
-              if (usState) (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.04)';
+              if (usState) (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)';
             }}
             onMouseLeave={(e) => {
               if (usState) (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -287,12 +287,12 @@ function StateCombobox({
                   onMouseDown={(e) => { e.preventDefault(); handleSelect(s.name); }}
                   className="w-full text-left px-4 py-2.5 text-sm flex items-center justify-between transition-colors duration-100"
                   style={{
-                    background: isSelected ? 'rgba(179,178,251,0.1)' : 'transparent',
+                    background: isSelected ? 'color-mix(in srgb, var(--mews-indigo) 10%, transparent)' : 'transparent',
                     color: isSelected ? 'var(--mews-indigo)' : 'var(--roi-gray-700)',
                     fontWeight: isSelected ? 600 : 400,
                   }}
                   onMouseEnter={(e) => {
-                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(28,29,36,0.04)';
+                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--mews-night-black) 4%, transparent)';
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent';
@@ -328,7 +328,7 @@ export default function HotelConfigSection({
       className="relative overflow-hidden rounded-2xl mb-6"
       style={{
         background: 'linear-gradient(135deg, var(--roi-navy-dark) 0%, var(--mews-night-black) 40%, var(--roi-navy-light) 100%)',
-        boxShadow: '0 8px 32px rgba(0,35,71,0.3), 0 2px 8px rgba(0,0,0,0.2)',
+        boxShadow: '0 8px 32px color-mix(in srgb, var(--roi-navy-dark) 30%, transparent), 0 2px 8px color-mix(in srgb, var(--mews-black) 20%, transparent)',
       }}
     >
       {/* Decorative background elements */}
@@ -336,7 +336,7 @@ export default function HotelConfigSection({
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse at 80% 50%, rgba(179,178,251,0.18) 0%, transparent 60%), radial-gradient(ellipse at 10% 80%, rgba(179,178,251,0.10) 0%, transparent 50%)',
+            'radial-gradient(ellipse at 80% 50%, color-mix(in srgb, var(--mews-indigo) 18%, transparent) 0%, transparent 60%), radial-gradient(ellipse at 10% 80%, color-mix(in srgb, var(--mews-indigo) 10%, transparent) 0%, transparent 50%)',
         }}
       />
 
@@ -373,8 +373,8 @@ export default function HotelConfigSection({
               onChange={(e) => setHotelType(e.target.value)}
               className="w-full px-4 py-3 rounded-xl text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all duration-200 text-sm"
               style={{
-                background: 'rgba(255,255,255,0.96)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                background: 'color-mix(in srgb, var(--mews-white) 96%, transparent)',
+                boxShadow: '0 2px 8px color-mix(in srgb, var(--mews-black) 15%, transparent)',
               }}
             >
               {hotelTypes.map((type) => (

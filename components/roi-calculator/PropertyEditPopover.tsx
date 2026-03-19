@@ -127,7 +127,7 @@ function CompactCountryCombobox({
         style={{
           background: 'white',
           boxShadow: open ? '0 0 0 2px var(--mews-indigo)' : 'none',
-          border: '1px solid rgba(0,0,0,0.1)',
+          border: '1px solid color-mix(in srgb, var(--mews-black) 10%, transparent)',
         }}
         onClick={() => { setOpen(true); inputRef.current?.focus(); }}
       >
@@ -152,9 +152,9 @@ function CompactCountryCombobox({
         <div
           className="absolute top-full left-0 z-50 w-full mt-1 rounded-lg overflow-hidden"
           style={{
-            background: '#fff',
-            boxShadow: '0 8px 32px rgba(28,29,36,0.18)',
-            border: '1px solid rgba(28,29,36,0.08)',
+            background: 'var(--mews-white)',
+            boxShadow: '0 8px 32px color-mix(in srgb, var(--mews-night-black) 18%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
             maxHeight: '200px',
             overflowY: 'auto',
           }}
@@ -167,7 +167,7 @@ function CompactCountryCombobox({
                 key={c.name}
                 onMouseDown={(e) => { e.preventDefault(); setCountry(c.name); setOpen(false); setQuery(''); }}
                 className="w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-gray-50 transition-colors"
-                style={{ background: c.name === country ? 'rgba(179,178,251,0.1)' : undefined, fontWeight: c.name === country ? 600 : 400 }}
+                style={{ background: c.name === country ? 'color-mix(in srgb, var(--mews-indigo) 10%, transparent)' : undefined, fontWeight: c.name === country ? 600 : 400 }}
               >
                 <span>{c.name}</span>
                 <span className="text-xs text-gray-400">{c.currencySymbol}</span>
@@ -219,13 +219,13 @@ export default function PropertyEditPopover({
       ref={popoverRef}
       className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-40 w-[90vw] max-w-lg rounded-2xl animate-scale-in"
       style={{
-        background: 'rgba(255,255,255,0.97)',
+        background: 'color-mix(in srgb, var(--mews-white) 97%, transparent)',
         backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(28,29,36,0.08)',
-        boxShadow: '0 16px 48px rgba(28,29,36,0.15), 0 4px 16px rgba(0,0,0,0.08)',
+        border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
+        boxShadow: '0 16px 48px color-mix(in srgb, var(--mews-night-black) 15%, transparent), 0 4px 16px color-mix(in srgb, var(--mews-black) 8%, transparent)',
       }}
     >
-      <div className="flex items-center justify-between p-4 pb-3" style={{ borderBottom: '1px solid rgba(28,29,36,0.06)' }}>
+      <div className="flex items-center justify-between p-4 pb-3" style={{ borderBottom: '1px solid color-mix(in srgb, var(--mews-night-black) 6%, transparent)' }}>
         <span className="text-sm font-bold text-gray-700">Property Configuration</span>
         <button
           onClick={onClose}
@@ -262,7 +262,7 @@ export default function PropertyEditPopover({
         </div>
 
         {/* Row 3: Derived */}
-        <div className="flex flex-wrap items-end gap-4 pt-2" style={{ borderTop: '1px solid rgba(28,29,36,0.06)' }}>
+        <div className="flex flex-wrap items-end gap-4 pt-2" style={{ borderTop: '1px solid color-mix(in srgb, var(--mews-night-black) 6%, transparent)' }}>
           <InlineNumberInput label="Staff Wage/hr" value={sharedVariables.staffHourlyWage} onChange={(v) => onSharedVariableChange('staffHourlyWage', v)} prefix={currencySymbol} min={1} max={100} />
           <InlineNumberInput label="Reservations/mo" value={sharedVariables.reservationsPerMonth} onChange={(v) => onSharedVariableChange('reservationsPerMonth', v)} min={1} max={50000} />
           <div className="flex flex-col gap-1">

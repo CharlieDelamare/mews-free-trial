@@ -48,16 +48,16 @@ export default function ModuleStoryPanel({
     <div
       className="rounded-2xl overflow-hidden animate-slide-up"
       style={{
-        background: 'rgba(255,255,255,0.9)',
+        background: 'color-mix(in srgb, var(--mews-white) 90%, transparent)',
         backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(28,29,36,0.08)',
-        boxShadow: '0 4px 24px rgba(28,29,36,0.08)',
+        border: '1px solid color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
+        boxShadow: '0 4px 24px color-mix(in srgb, var(--mews-night-black) 8%, transparent)',
       }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between px-5 py-4"
-        style={{ borderBottom: '1px solid rgba(28,29,36,0.06)' }}
+        style={{ borderBottom: '1px solid color-mix(in srgb, var(--mews-night-black) 6%, transparent)' }}
       >
         <div className="flex items-center gap-3">
           <span className="w-3 h-3 rounded-full" style={{ background: meta.color }} />
@@ -104,8 +104,8 @@ export default function ModuleStoryPanel({
             <div
               className="mt-4 p-4 rounded-xl animate-fade-in"
               style={{
-                background: 'rgba(28,29,36,0.02)',
-                border: '1px solid rgba(28,29,36,0.06)',
+                background: 'color-mix(in srgb, var(--mews-night-black) 2%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--mews-night-black) 6%, transparent)',
               }}
             >
               <div className="flex items-start justify-between gap-4">

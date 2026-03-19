@@ -8,6 +8,28 @@ import type {
 
 // ── Build initial confidence map from benchmark defaults ─────────────
 
+/**
+ * For presentations saved before confidence map persistence was added:
+ * reconstruct confidence status by comparing saved values against benchmark values.
+ * Fields that differ from their benchmark are marked 'adjusted'; equal ones stay 'benchmark'.
+ */
+export function inferConfidenceMap(
+  priorityInputs: PriorityInput[],
+  getBenchmark: (slice: string, field: string) => number,
+  getSaved: (slice: string, field: string) => number,
+): ConfidenceMap {
+  const map: ConfidenceMap = {};
+  for (const input of priorityInputs) {
+    const benchmarkValue = getBenchmark(input.slice, input.field);
+    const savedValue = getSaved(input.slice, input.field);
+    map[input.key] = {
+      benchmarkValue,
+      status: savedValue !== benchmarkValue ? 'confirmed' : 'benchmark',
+    };
+  }
+  return map;
+}
+
 export function buildInitialConfidenceMap(
   priorityInputs: PriorityInput[],
   getCurrentValue: (slice: string, field: string) => number,
@@ -32,9 +54,7 @@ const WEIGHT: Record<PriorityInput['importance'], number> = {
 
 const STATUS_SCORE: Record<ConfidenceStatus, number> = {
   confirmed: 1.0,
-  adjusted: 1.0,
   benchmark: 0.3,
-  unknown: 0.1,
 };
 
 export function computeConfidenceScore(
@@ -42,9 +62,7 @@ export function computeConfidenceScore(
   priorityInputs: PriorityInput[] = [],
 ): ConfidenceScore & { percentage: number } {
   let confirmedCount = 0;
-  let adjustedCount = 0;
   let benchmarkCount = 0;
-  let unknownCount = 0;
   let weightedScore = 0;
   let weightedMax = 0;
 
@@ -52,20 +70,18 @@ export function computeConfidenceScore(
 
   for (const input of priorityInputs) {
     const conf: FieldConfidence | undefined = confidenceMap[input.key];
-    const status = conf?.status ?? 'benchmark';
+    // Treat legacy 'adjusted'/'unknown' statuses gracefully
+    const rawStatus: string = conf?.status ?? 'benchmark';
+    const status: ConfidenceStatus = (rawStatus === 'adjusted') ? 'confirmed' : (rawStatus === 'unknown' ? 'benchmark' : rawStatus as ConfidenceStatus);
     const weight = WEIGHT[input.importance] ?? 1;
 
     weightedScore += STATUS_SCORE[status] * weight;
     weightedMax += weight;
 
-    switch (status) {
-      case 'confirmed': confirmedCount++; break;
-      case 'adjusted': adjustedCount++; break;
-      case 'unknown': unknownCount++; break;
-      default: benchmarkCount++; break;
-    }
-
-    if (status === 'benchmark' || status === 'unknown') {
+    if (status === 'confirmed') {
+      confirmedCount++;
+    } else {
+      benchmarkCount++;
       unvalidated.push({
         key: input.key,
         label: input.label,
@@ -92,9 +108,7 @@ export function computeConfidenceScore(
     percentage: overall,
     level,
     confirmedCount,
-    adjustedCount,
     benchmarkCount,
-    unknownCount,
     totalTracked,
     unvalidatedFields: unvalidated,
   };
