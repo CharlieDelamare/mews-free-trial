@@ -186,7 +186,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       Occupancy: 0,
       Lifetime: convertDaysToISO8601(durationDays),
       User: { Email: customerEmail },
-      Users: [{ Email: 'trial@mews.li' }],
+      Users: [{ Email: 'trial@mews.li' }, ...(requestorEmail ? [{ Email: requestorEmail }] : [])],
     };
 
     // Add property type specific configuration
