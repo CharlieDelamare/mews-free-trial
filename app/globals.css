@@ -102,6 +102,15 @@
   --roi-pdf-violet: #a78bfa;     /* PDF RMS metric color */
 }
 
+/* Override browser default focus ring — use Mews pink only */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--mews-pink) !important;
+  border-color: var(--mews-pink) !important;
+}
+
 /* Reset native dialog browser defaults for custom styling */
 dialog {
   border: none;
