@@ -13,7 +13,7 @@ beforeAll(() => {
   process.env.MEWS_CLIENT_TOKEN = 'test-client-token';
   process.env.MEWS_ACCESS_TOKEN = 'test-access-token';
   process.env.MEWS_API_URL = 'https://api.mews-test.com';
-  process.env.ZAPIER_WEBHOOK_URL = 'https://hooks.zapier.com/test';
+  process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.com/triggers/test';
   process.env.mews_free_trial_PRISMA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
   process.env.mews_free_trial_POSTGRES_URL = 'postgresql://test:test@localhost:5432/test';
 });

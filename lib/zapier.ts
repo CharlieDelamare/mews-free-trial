@@ -230,10 +230,10 @@ export async function sendZapierNotification(
   messageType: string,
   data: Partial<ZapierNotificationData>
 ): Promise<void> {
-  const webhookUrl = process.env.ZAPIER_WEBHOOK_URL;
+  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    console.log('[ZAPIER] Webhook URL not configured, skipping notification');
+    console.log('[SLACK] Webhook URL not configured, skipping notification');
     return;
   }
 
