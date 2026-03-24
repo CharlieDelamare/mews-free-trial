@@ -52,8 +52,8 @@ interface ProspectIntakeProps {
   // RMS existing system
   hasExistingRMS: boolean;
   onHasExistingRMSChange: (value: boolean) => void;
-  // Completion callback
-  onComplete: () => void;
+  // Completion callback (may return a promise for async saves)
+  onComplete: () => void | Promise<void>;
   // Render as full page instead of modal
   fullPage?: boolean;
 }
@@ -108,9 +108,15 @@ export default function ProspectIntake({
     if (currentStep > 0) setCurrentStep((s) => s - 1);
   }, [currentStep]);
 
-  const handleComplete = () => {
-    onComplete();
-    onClose();
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  const handleComplete = async () => {
+    setIsCompleting(true);
+    try {
+      await onComplete();
+    } catch {
+      setIsCompleting(false);
+    }
   };
 
   // Count confirmed/adjusted in current group
@@ -450,10 +456,11 @@ export default function ProspectIntake({
               ) : (
                 <button
                   onClick={handleComplete}
-                  className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+                  disabled={isCompleting}
+                  className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  See My ROI
+                  {isCompleting ? 'Saving…' : 'See My ROI'}
                 </button>
               )}
             </div>
