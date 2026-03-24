@@ -18,7 +18,7 @@ describe('sendZapierNotification', () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://hooks.zapier.com/test',
+      'https://hooks.slack.com/triggers/test',
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,9 +56,9 @@ describe('sendZapierNotification', () => {
     expect(callBody.slackMessage).toContain('John Doe');
   });
 
-  test('skips notification when ZAPIER_WEBHOOK_URL is not set', async () => {
-    const originalUrl = process.env.ZAPIER_WEBHOOK_URL;
-    delete process.env.ZAPIER_WEBHOOK_URL;
+  test('skips notification when SLACK_WEBHOOK_URL is not set', async () => {
+    const originalUrl = process.env.SLACK_WEBHOOK_URL;
+    delete process.env.SLACK_WEBHOOK_URL;
 
     await sendZapierNotification('environment_ready', {
       status: 'success',
@@ -67,7 +67,7 @@ describe('sendZapierNotification', () => {
     expect(global.fetch).not.toHaveBeenCalled();
 
     // Restore
-    process.env.ZAPIER_WEBHOOK_URL = originalUrl;
+    process.env.SLACK_WEBHOOK_URL = originalUrl;
   });
 
   test('does not throw when webhook request fails', async () => {
