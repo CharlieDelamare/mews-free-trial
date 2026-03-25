@@ -40,10 +40,10 @@ export const MODULE_PRESETS: Record<Exclude<PresetKey, 'custom'>, EnabledModules
   'operations': { guestExperience: true, payment: true, rms: false },
 };
 
-export const MODULE_META: Record<ModuleKey, { label: string; description: string; color: string }> = {
-  guestExperience: { label: 'Guest Experience', description: 'Streamline check-in, assignments & upsells', color: '#3b82f6' },
-  payment: { label: 'Payment & Billing', description: 'Automate payments, reduce chargebacks & no-shows', color: '#10b981' },
-  rms: { label: 'RMS', description: 'Optimize rates & maximize RevPAR', color: '#8b5cf6' },
+export const MODULE_META: Record<ModuleKey, { label: string; description: string; color: string; textColor: string }> = {
+  guestExperience: { label: 'Guest Experience', description: 'Streamline check-in, assignments & upsells', color: '#F7E1F7', textColor: '#6d28d9' },
+  payment: { label: 'Payment & Billing', description: 'Automate payments, reduce chargebacks & no-shows', color: '#D1F9D6', textColor: '#15803d' },
+  rms: { label: 'RMS', description: 'Optimize rates & maximize RevPAR', color: '#E8FF5B', textColor: '#3f6212' },
 };
 
 export const MODULE_KEYS: ModuleKey[] = ['guestExperience', 'payment', 'rms'];
@@ -419,6 +419,7 @@ export function useROICalculator(savedState?: PersistedState) {
         time: results.guestExperience.totalTime,
         costRevenue: split,
         color: MODULE_META.guestExperience.color,
+        textColor: MODULE_META.guestExperience.textColor,
       });
     }
     if (enabledModules.payment) {
@@ -434,6 +435,7 @@ export function useROICalculator(savedState?: PersistedState) {
         time: results.payment.totalTime,
         costRevenue: split,
         color: MODULE_META.payment.color,
+        textColor: MODULE_META.payment.textColor,
       });
     }
     if (enabledModules.rms) {
@@ -449,6 +451,7 @@ export function useROICalculator(savedState?: PersistedState) {
         time: results.rms.totalTime,
         costRevenue: split,
         color: MODULE_META.rms.color,
+        textColor: MODULE_META.rms.textColor,
       });
     }
 

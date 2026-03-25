@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { extractMetadata, serializeState } from '@/lib/roi-calculator/utils/persistence';
+import { extractMetadata } from '@/lib/roi-calculator/utils/persistence';
 import type { PersistedState } from '@/lib/roi-calculator/utils/persistence';
 
 export async function GET() {
@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Wizard sends PersistedState (ui already stripped); serializeState is idempotent here.
-    const persisted = serializeState(state as Parameters<typeof serializeState>[0]);
+    // Wizard sends PersistedState (ui already stripped by the client); use directly.
+    const persisted = state;
     const meta = extractMetadata(persisted);
 
     const presentation = await prisma.roiPresentation.create({

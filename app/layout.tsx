@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-body`}>
+      <body className={`${inter.variable} font-body bg-[--mews-linen]`}>
         <Providers>
           <Navbar />
           {children}

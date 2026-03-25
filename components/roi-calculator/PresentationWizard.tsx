@@ -94,65 +94,60 @@ export default function PresentationWizard() {
 
   if (step === 'identity') {
     return (
-      <div className="min-h-screen bg-[--mews-linen] flex items-center justify-center p-6">
-        <div className="w-full max-w-lg">
-          <h1 className="text-3xl font-bold text-[--mews-night-black] mb-2" style={{ fontFamily: 'var(--font-heading)' }}>
-            Build Your Business Case
-          </h1>
-          <p className="text-[--mews-night-black]/60 mb-8" style={{ fontFamily: 'var(--font-body)' }}>
-            Let&apos;s start with a few details about this presentation.
-          </p>
+      <main className="min-h-screen py-12 px-4">
+        <div className="max-w-lg mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-mews-night-black mb-2">Build Your Business Case</h1>
+            <p className="text-gray-600">Let&apos;s start with a few details about this presentation.</p>
+          </div>
 
-          <form onSubmit={handleIdentitySubmit} className="space-y-5">
+          <form onSubmit={handleIdentitySubmit} className="bg-white rounded-xl border border-neutral-100 shadow-sm p-8 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[--mews-night-black] mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
-                Hotel or group name <span className="text-[--mews-coral]">*</span>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Hotel or group name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. The Grand Berlin"
-                className="w-full px-4 py-3 rounded-xl border border-[--mews-night-black]/15 bg-white text-[--mews-night-black] placeholder:text-[--mews-night-black]/30 focus:outline-none focus:ring-2 focus:ring-[--mews-indigo]"
-                style={{ fontFamily: 'var(--font-body)' }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
                 autoFocus
               />
-              {nameError && <p className="mt-1.5 text-sm text-[--mews-coral]">{nameError}</p>}
+              {nameError && <p className="mt-1.5 text-sm text-red-500">{nameError}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[--mews-night-black] mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
-                Salesforce Account Number <span className="text-[--mews-night-black]/40 font-normal">(optional)</span>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Salesforce Account Number <span className="text-gray-500 font-normal">(optional)</span>
               </label>
               <input
                 type="text"
                 value={salesforceAccountId}
                 onChange={(e) => setSalesforceAccountId(e.target.value)}
                 placeholder="e.g. 0012000001AbCdE"
-                className="w-full px-4 py-3 rounded-xl border border-[--mews-night-black]/15 bg-white text-[--mews-night-black] placeholder:text-[--mews-night-black]/30 focus:outline-none focus:ring-2 focus:ring-[--mews-indigo]"
-                style={{ fontFamily: 'var(--font-body)' }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[--mews-night-black] mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
-                Your name <span className="text-[--mews-night-black]/40 font-normal">(optional)</span>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your name <span className="text-gray-500 font-normal">(optional)</span>
               </label>
               <input
                 type="text"
                 value={createdBy}
                 onChange={(e) => setCreatedBy(e.target.value)}
                 placeholder="e.g. Charlie"
-                className="w-full px-4 py-3 rounded-xl border border-[--mews-night-black]/15 bg-white text-[--mews-night-black] placeholder:text-[--mews-night-black]/30 focus:outline-none focus:ring-2 focus:ring-[--mews-indigo]"
-                style={{ fontFamily: 'var(--font-body)' }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[--mews-night-black] mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Which Mews products will they be using?
               </label>
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-1 gap-2 mt-2">
                 {(
                   [
                     {
@@ -170,8 +165,8 @@ export default function PresentationWizard() {
                       label: 'RMS',
                       description: 'Rate management, channel optimisation',
                     },
-                  ] satisfies { key: keyof EnabledModules; label: string; description: string }[]
-                ).map(({ key, label, description }) => {
+                  ] satisfies { key: keyof EnabledModules; label: string; description: string }[] // description kept for future use
+                ).map(({ key, label }) => {
                   const isSelected = selectedModules[key];
                   return (
                     <button
@@ -182,54 +177,40 @@ export default function PresentationWizard() {
                         if (modulesError) setModulesError('');
                       }}
                       className={[
-                        'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors',
+                        'w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors',
                         isSelected
-                          ? 'bg-[--mews-night-black] text-white border-[--mews-night-black]'
-                          : 'bg-white text-[--mews-night-black] border-[--mews-night-black]/15 hover:border-[--mews-night-black]/40',
+                          ? 'bg-mews-primary text-mews-night-black border-mews-primary'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400',
                       ].join(' ')}
-                      style={{ fontFamily: 'var(--font-body)' }}
                     >
                       <span
                         className={[
                           'flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-colors',
-                          isSelected
-                            ? 'bg-white border-white'
-                            : 'border-[--mews-night-black]/20',
+                          isSelected ? 'bg-mews-night-black border-mews-night-black' : 'border-gray-300',
                         ].join(' ')}
                       >
-                        {isSelected && <Check className="w-3 h-3 text-[--mews-night-black]" />}
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
                       </span>
-                      <span className="flex flex-col">
-                        <span className="text-sm font-medium leading-snug">{label}</span>
-                        <span
-                          className={[
-                            'text-xs leading-snug',
-                            isSelected ? 'text-white/70' : 'text-[--mews-night-black]/50',
-                          ].join(' ')}
-                        >
-                          {description}
-                        </span>
-                      </span>
+                      <span className="text-sm font-medium">{label}</span>
                     </button>
                   );
                 })}
               </div>
               {modulesError && (
-                <p className="mt-1.5 text-sm text-[--mews-coral]">{modulesError}</p>
+                <p className="mt-1.5 text-sm text-red-500">{modulesError}</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[--mews-night-black] text-white font-medium hover:bg-[--mews-deep-blue] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ fontFamily: 'var(--font-body)' }}
+              className="w-full py-3 px-4 bg-mews-primary text-mews-night-black font-semibold rounded-lg hover:bg-mews-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               Continue <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         </div>
-      </div>
+      </main>
     );
   }
 

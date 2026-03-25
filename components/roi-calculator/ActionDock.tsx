@@ -37,7 +37,7 @@ export default function ActionDock({
             <select
               value={presentationLanguage}
               onChange={(e) => onLanguageChange(e.target.value as LanguageCode)}
-              className="px-2 py-2 rounded-lg text-sm font-medium text-gray-700 bg-transparent border border-gray-200 hover:border-gray-300 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all cursor-pointer"
+              className="px-2 py-2 rounded-lg text-sm font-medium text-gray-700 bg-transparent border border-gray-200 hover:border-gray-300 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
                 <option key={lang.code} value={lang.code}>{lang.label}</option>
@@ -55,15 +55,15 @@ export default function ActionDock({
             onClick={onPresentationMode}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200"
             style={{
-              background: 'linear-gradient(135deg, var(--mews-night-black) 0%, var(--roi-navy-light) 100%)',
+              background: 'var(--mews-orange)',
               color: 'var(--mews-white)',
-              boxShadow: '0 2px 12px color-mix(in srgb, var(--mews-night-black) 25%, transparent)',
+              boxShadow: '0 2px 12px color-mix(in srgb, var(--mews-orange) 40%, transparent)',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px color-mix(in srgb, var(--mews-night-black) 35%, transparent)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px color-mix(in srgb, var(--mews-orange) 55%, transparent)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px color-mix(in srgb, var(--mews-night-black) 25%, transparent)';
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 12px color-mix(in srgb, var(--mews-orange) 40%, transparent)';
             }}
           >
             <Presentation className="w-4 h-4" />

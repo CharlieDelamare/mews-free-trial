@@ -188,6 +188,7 @@ export interface ModuleContribution {
   time: number;
   costRevenue: CostRevenueSplit;
   color: string;
+  textColor: string;
 }
 
 export interface FilteredResults {

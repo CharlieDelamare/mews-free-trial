@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Check, Pencil, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import type { ConfidenceStatus } from '@/lib/roi-calculator/types/confidence';
 
 interface SmartFieldProps {
@@ -31,18 +31,18 @@ const STATUS_STYLES: Record<ConfidenceStatus, {
   labelColor: string;
 }> = {
   benchmark: {
-    borderColor: 'border-amber-200',
-    bgColor: 'bg-amber-50/50',
-    dotColor: 'bg-amber-400',
+    borderColor: 'border-[#E8FF5B]',
+    bgColor: 'bg-[#E8FF5B]/20',
+    dotColor: 'bg-[#b8cc00]',
     label: 'Benchmark estimate',
-    labelColor: 'text-amber-600',
+    labelColor: 'text-[#3f6212]',
   },
   confirmed: {
-    borderColor: 'border-emerald-200',
-    bgColor: 'bg-emerald-50/40',
-    dotColor: 'bg-emerald-500',
+    borderColor: 'border-[#D1F9D6]',
+    bgColor: 'bg-[#D1F9D6]/40',
+    dotColor: 'bg-[#4ade80]',
     label: 'Confirmed',
-    labelColor: 'text-emerald-600',
+    labelColor: 'text-[#15803d]',
   },
 };
 
@@ -167,46 +167,39 @@ export default function SmartField({
   // ── Full mode (for intake flow) ─────────────────────────────────
   return (
     <div className={`rounded-xl border ${style.borderColor} ${style.bgColor} transition-all duration-300`}>
-      <div className="p-4 sm:p-5">
-        {/* Question / Label */}
-        {showQuestion && question ? (
-          <p className="text-base font-medium text-gray-800 mb-1 leading-snug">{question}</p>
-        ) : (
-          <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
-        )}
-
-        {/* Benchmark reference */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-4">
-          <span>
-            {benchmarkLabel}: <span className="font-medium text-gray-600">{formatDisplay(benchmarkValue)}</span>
-          </span>
-          {benchmarkSourceInfo && (
+      <div className="px-4 py-3">
+        {/* Label + value row */}
+        <div className="flex items-center justify-between gap-3 mb-2">
+          {/* Label + info icon */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <p className="text-sm font-medium text-gray-700 truncate">
+              {showQuestion && question ? question : label}
+            </p>
             <div
-              className="relative"
+              className="relative flex-shrink-0"
               onMouseEnter={() => setShowInfoTooltip(true)}
               onMouseLeave={() => setShowInfoTooltip(false)}
             >
               <button
                 type="button"
                 className="text-gray-400 hover:text-gray-600 transition-colors cursor-help"
-                aria-label="Data source info"
+                aria-label="Benchmark info"
               >
                 <Info className="w-3.5 h-3.5" />
               </button>
               {showInfoTooltip && (
-                <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 px-3 py-2.5 text-xs text-gray-700 bg-white rounded-lg shadow-lg border border-gray-200">
-                  {benchmarkSourceInfo}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+                <div className="absolute z-50 bottom-full left-0 mb-2 w-64 px-3 py-2.5 text-xs text-gray-700 bg-white rounded-lg shadow-lg border border-gray-200">
+                  <p className="font-medium mb-1">{benchmarkLabel}: {formatDisplay(benchmarkValue)}</p>
+                  {benchmarkSourceInfo && <p className="text-gray-500">{benchmarkSourceInfo}</p>}
+                  <div className="absolute top-full left-4 -mt-px">
                     <div className="w-2 h-2 bg-white border-r border-b border-gray-200 transform rotate-45" />
                   </div>
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Value display + edit */}
-        <div className="flex items-center gap-3 mb-3">
+          {/* Editable value */}
           {isEditing ? (
             <input
               ref={inputRef}
@@ -215,28 +208,20 @@ export default function SmartField({
               onChange={(e) => setEditText(e.target.value)}
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
-              className="flex-1 px-3 py-2 text-lg font-bold rounded-lg border border-blue-300 bg-white outline-none text-gray-900"
-              style={{ boxShadow: '0 0 0 3px color-mix(in srgb, var(--mews-indigo) 12%, transparent)' }}
+              className="w-32 px-2 py-0.5 text-lg font-bold text-right rounded-lg border bg-white text-gray-900 outline-none tabular-nums"
+              style={{
+                borderColor: 'var(--mews-indigo)',
+                boxShadow: '0 0 0 3px color-mix(in srgb, var(--mews-indigo) 12%, transparent)',
+              }}
             />
           ) : (
             <button
               onClick={startEditing}
-              className="flex-1 flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-white/60 transition-colors group"
+              className="text-xl font-bold text-gray-900 tabular-nums border-b border-dashed border-gray-400 hover:border-gray-700 transition-colors leading-tight flex-shrink-0"
+              title="Click to edit"
             >
-              <span className="text-2xl font-bold text-gray-900 tabular-nums">
-                {formatDisplay(value)}
-              </span>
-              <Pencil className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+              {formatDisplay(value)}
             </button>
-          )}
-
-          {/* Deviation indicator */}
-          {hasDeviation && status === 'confirmed' && (
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className={`text-xs font-medium ${deviationPercent > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                {deviationPercent > 0 ? '+' : ''}{deviationPercent}% vs benchmark
-              </span>
-            </div>
           )}
         </div>
 
@@ -248,46 +233,18 @@ export default function SmartField({
           step={step}
           value={value}
           onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
-          className="w-full cursor-pointer mb-4"
+          className="w-full cursor-pointer"
           style={{
-            background: `linear-gradient(to right, ${status === 'confirmed' ? 'var(--mews-success)' : '#f59e0b'} 0%, ${status === 'confirmed' ? 'var(--mews-success)' : '#f59e0b'} ${((value - min) / (max - min)) * 100}%, #e5e7eb ${((value - min) / (max - min)) * 100}%, #e5e7eb 100%)`,
+            background: `linear-gradient(to right, ${status === 'confirmed' ? '#4ade80' : '#E8FF5B'} 0%, ${status === 'confirmed' ? '#4ade80' : '#E8FF5B'} ${((value - min) / (max - min)) * 100}%, #e5e7eb ${((value - min) / (max - min)) * 100}%, #e5e7eb 100%)`,
             height: '6px',
             borderRadius: '99px',
           }}
         />
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {status === 'benchmark' && (
-            <button
-              onClick={onConfirm}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-            >
-              <Check className="w-3.5 h-3.5" />
-              Looks right
-            </button>
-          )}
-          {status === 'confirmed' && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-              <Check className="w-3.5 h-3.5" />
-              Confirmed
-            </span>
-          )}
-          {!isEditing && (
-            <button
-              onClick={startEditing}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200 transition-colors"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Status bar */}
-      <div className={`px-4 py-2 border-t ${style.borderColor} flex items-center gap-2`}>
-        <div className={`w-2 h-2 rounded-full ${style.dotColor}`} />
+      <div className={`px-4 py-1.5 border-t ${style.borderColor} flex items-center gap-2`}>
+        <div className={`w-1.5 h-1.5 rounded-full ${style.dotColor}`} />
         <span className={`text-xs font-medium ${style.labelColor}`}>{style.label}</span>
       </div>
     </div>

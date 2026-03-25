@@ -30,11 +30,11 @@ interface DataComparisonSectionProps {
 }
 
 const GROUP_META: Record<string, { label: string; icon: typeof Building2; color: string }> = {
-  property:   { label: 'Property Basics',     icon: Building2,  color: 'var(--roi-data-indigo)' },
-  operations: { label: 'Operations',          icon: Clock,      color: 'var(--roi-data-amber)'  },
-  payments:   { label: 'Payments & Billing',  icon: CreditCard, color: 'var(--roi-module-payment)' },
-  revenue:    { label: 'Revenue',             icon: TrendingUp, color: 'var(--mews-success)'    },
-  rms:        { label: 'Revenue Management',  icon: BarChart3,  color: 'var(--roi-module-gx)'   },
+  property:   { label: 'Property Basics',     icon: Building2,  color: 'var(--mews-night-black)' },
+  operations: { label: 'Operations',          icon: Clock,      color: 'var(--mews-night-black)' },
+  payments:   { label: 'Payments & Billing',  icon: CreditCard, color: 'var(--mews-night-black)' },
+  revenue:    { label: 'Revenue',             icon: TrendingUp, color: 'var(--mews-night-black)' },
+  rms:        { label: 'Revenue Management',  icon: BarChart3,  color: 'var(--mews-night-black)' },
 };
 
 const GROUP_ORDER = ['property', 'operations', 'payments', 'revenue', 'rms'];
@@ -165,14 +165,7 @@ export default function DataComparisonSection({
         </h3>
         <span
           className="text-sm font-bold"
-          style={{
-            color:
-              score.overall >= 70
-                ? 'var(--mews-success)'
-                : score.overall >= 45
-                  ? 'var(--roi-module-payment)'
-                  : 'var(--roi-data-amber)',
-          }}
+          style={{ color: 'var(--mews-primary)' }}
         >
           {score.overall}% confidence
         </span>
@@ -215,7 +208,7 @@ export default function DataComparisonSection({
               <div className="flex items-center gap-2">
                 {/* Status summary */}
                 {confirmed > 0 && (
-                  <span className="text-xs text-emerald-600 font-medium">
+                  <span className="text-xs text-[#15803d] font-medium">
                     {confirmed} confirmed
                   </span>
                 )}
@@ -223,7 +216,7 @@ export default function DataComparisonSection({
                   <span className="text-xs text-gray-300">·</span>
                 )}
                 {benchmarks > 0 && (
-                  <span className="text-xs text-amber-600 font-medium">
+                  <span className="text-xs font-medium" style={{ color: 'var(--mews-orange)' }}>
                     {benchmarks} benchmark{benchmarks !== 1 ? 's' : ''}
                   </span>
                 )}

@@ -86,7 +86,7 @@ export default function WaterfallChart({
                   >
                     <span
                       className="text-xs font-bold whitespace-nowrap"
-                      style={{ color: c.color }}
+                      style={{ color: c.textColor }}
                     >
                       {formatValue(c.savings, currencySymbol)}
                     </span>
@@ -122,7 +122,7 @@ export default function WaterfallChart({
                         </span>
                         <span
                           className="text-xs font-bold tabular-nums flex-shrink-0"
-                          style={{ color: c.color }}
+                          style={{ color: c.textColor }}
                         >
                           {lever.resultType === 'timeReclaimed'
                             ? `${Math.round(lever.resultValue).toLocaleString()} hrs`
@@ -137,10 +137,10 @@ export default function WaterfallChart({
                         <span
                           className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                             lever.resultType === 'timeReclaimed'
-                              ? 'bg-violet-50 text-violet-600'
+                              ? 'bg-[#E8FF5B]/30 text-[#3f6212]'
                               : lever.resultType === 'costSaving'
-                                ? 'bg-emerald-50 text-emerald-600'
-                                : 'bg-blue-50 text-blue-600'
+                                ? 'bg-[#D1F9D6] text-[#15803d]'
+                                : 'bg-[#F7E1F7] text-[#6d28d9]'
                           }`}
                         >
                           {lever.resultType === 'timeReclaimed' ? 'Time Reclaimed' : lever.resultType === 'costSaving' ? 'Cost Saving' : 'Revenue'}
