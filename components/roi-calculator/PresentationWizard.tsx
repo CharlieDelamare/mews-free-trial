@@ -71,6 +71,7 @@ export default function PresentationWizard() {
     try {
       const stateToSave = {
         ...state,
+        config: { ...state.config, title: name.trim() },
         ui: { ...state.ui, enabledModules: selectedModules },
       };
       const res = await fetch('/api/roi-presentations', {

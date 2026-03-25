@@ -68,6 +68,7 @@ export default function SmartField({
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
   const [editText, setEditText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const stableBenchmarkValue = useRef(benchmarkValue);
   const style = STATUS_STYLES[status];
 
   const isCurrency = unit && !['%', 'hrs', 'hours', 'min', 'minutes', 'rooms', 'people', 'sec', 'plans', 'channels', '/week', 'nights', 'reservations'].includes(unit);
@@ -124,9 +125,9 @@ export default function SmartField({
     }
   };
 
-  const hasDeviation = Math.abs(value - benchmarkValue) > step * 0.5;
-  const deviationPercent = benchmarkValue !== 0
-    ? Math.round(((value - benchmarkValue) / benchmarkValue) * 100)
+  const hasDeviation = Math.abs(value - stableBenchmarkValue.current) > step * 0.5;
+  const deviationPercent = stableBenchmarkValue.current !== 0
+    ? Math.round(((value - stableBenchmarkValue.current) / stableBenchmarkValue.current) * 100)
     : 0;
 
   // ── Compact mode (for review/summary) ───────────────────────────

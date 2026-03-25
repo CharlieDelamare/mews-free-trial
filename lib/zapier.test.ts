@@ -18,7 +18,7 @@ describe('sendZapierNotification', () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://hooks.zapier.com/test',
+      'https://hooks.slack.com/triggers/test',
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -26,12 +26,13 @@ describe('sendZapierNotification', () => {
     );
   });
 
-  test('includes messageType, status, and timestamp in payload', async () => {
+  test('includes messageType, status, timestamp, and data fields in payload', async () => {
     (global.fetch as any).mockResolvedValue({ ok: true });
 
     await sendZapierNotification('environment_ready', {
       status: 'success',
       propertyName: 'Test Hotel',
+      requestorEmail: 'rep@mews.com',
     });
 
     const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
@@ -39,26 +40,12 @@ describe('sendZapierNotification', () => {
     expect(callBody.status).toBe('success');
     expect(callBody.timestamp).toBeDefined();
     expect(callBody.propertyName).toBe('Test Hotel');
+    expect(callBody.requestorEmail).toBe('rep@mews.com');
   });
 
-  test('includes formatted slackMessage in payload', async () => {
-    (global.fetch as any).mockResolvedValue({ ok: true });
-
-    await sendZapierNotification('environment_ready', {
-      status: 'success',
-      propertyName: 'My Hotel',
-      customerName: 'John Doe',
-    });
-
-    const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-    expect(callBody.slackMessage).toBeDefined();
-    expect(callBody.slackMessage).toContain('My Hotel');
-    expect(callBody.slackMessage).toContain('John Doe');
-  });
-
-  test('skips notification when ZAPIER_WEBHOOK_URL is not set', async () => {
-    const originalUrl = process.env.ZAPIER_WEBHOOK_URL;
-    delete process.env.ZAPIER_WEBHOOK_URL;
+  test('skips notification when SLACK_WEBHOOK_URL is not set', async () => {
+    const originalUrl = process.env.SLACK_WEBHOOK_URL;
+    delete process.env.SLACK_WEBHOOK_URL;
 
     await sendZapierNotification('environment_ready', {
       status: 'success',
@@ -67,7 +54,7 @@ describe('sendZapierNotification', () => {
     expect(global.fetch).not.toHaveBeenCalled();
 
     // Restore
-    process.env.ZAPIER_WEBHOOK_URL = originalUrl;
+    process.env.SLACK_WEBHOOK_URL = originalUrl;
   });
 
   test('does not throw when webhook request fails', async () => {
@@ -77,7 +64,6 @@ describe('sendZapierNotification', () => {
       statusText: 'Internal Server Error',
     });
 
-    // Should not throw
     await expect(
       sendZapierNotification('environment_ready', { status: 'success' })
     ).resolves.toBeUndefined();
@@ -100,132 +86,23 @@ describe('sendZapierNotification', () => {
     expect(callBody.status).toBe('info');
   });
 
-  describe('message type formatting', () => {
-    test('formats trial_generation_failure message', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
+  test('passes all data fields through to payload', async () => {
+    (global.fetch as any).mockResolvedValue({ ok: true });
 
-      await sendZapierNotification('trial_generation_failure', {
-        status: 'failure',
-        propertyName: 'Failed Hotel',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        customerEmail: 'jane@example.com',
-        error: 'API timeout',
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).toContain('Trial Sandbox Generation Failed');
-      expect(callBody.slackMessage).toContain('Failed Hotel');
-      expect(callBody.slackMessage).toContain('Jane');
-      expect(callBody.slackMessage).toContain('API timeout');
+    await sendZapierNotification('environment_ready', {
+      status: 'success',
+      propertyName: 'My Hotel',
+      enterpriseId: 'ent-123',
+      loginEmail: 'guest@hotel.com',
+      loginPassword: 'Sample123',
+      signInUrl: 'https://app.mews-demo.com/signin/abc',
     });
 
-    test('includes signInUrl in environment_ready message when provided', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
-
-      await sendZapierNotification('environment_ready', {
-        status: 'success',
-        propertyName: 'Test Hotel',
-        customerName: 'John Doe',
-        loginUrl: 'https://app.mews-demo.com',
-        loginEmail: 'john@example.com',
-        loginPassword: 'Sample123',
-        signInUrl: 'https://app.mews-demo.com/signin/abc123',
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).toContain('Sign-in URL (passwordless)');
-      expect(callBody.slackMessage).toContain('signin/abc123');
-    });
-
-    test('omits signInUrl from environment_ready message when not provided', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
-
-      await sendZapierNotification('environment_ready', {
-        status: 'success',
-        propertyName: 'Test Hotel',
-        customerName: 'John Doe',
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).not.toContain('Sign-in URL');
-    });
-
-    test('formats access_token_no_match message', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
-
-      await sendZapierNotification('access_token_no_match', {
-        status: 'info',
-        enterpriseId: 'ent-1',
-        enterpriseName: 'Unknown Hotel',
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).toContain('No Matching Log Found');
-      expect(callBody.slackMessage).toContain('Unknown Hotel');
-    });
-
-    test('formats manual_environment_configured message', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
-
-      await sendZapierNotification('manual_environment_configured', {
-        status: 'success',
-        propertyName: 'Manual Hotel',
-        customerName: 'John Doe',
-        reservationsCanceled: 15,
-        customerCreated: true,
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).toContain('Manual Sandbox Configured');
-      expect(callBody.slackMessage).toContain('Manual Hotel');
-      expect(callBody.slackMessage).toContain('15');
-    });
-
-    test('formats manual_environment_added message', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
-
-      await sendZapierNotification('manual_environment_added', {
-        status: 'info',
-        enterpriseName: 'Added Hotel',
-        enterpriseId: 'ent-1',
-        reservationsCanceled: 3,
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).toContain('Manual Sandbox Added');
-      expect(callBody.slackMessage).toContain('Added Hotel');
-    });
-
-    test('formats reservation_created message', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
-
-      await sendZapierNotification('reservation_created', {
-        status: 'success',
-        firstName: 'Alice',
-        lastName: 'Wonder',
-        customerEmail: 'alice@example.com',
-        startDate: '2024-02-01',
-        endDate: '2024-02-05',
-        confirmationNumber: 'CONF-123',
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).toContain('Reservation Created');
-      expect(callBody.slackMessage).toContain('Alice');
-      expect(callBody.slackMessage).toContain('CONF-123');
-    });
-
-    test('formats unknown message types with generic template', async () => {
-      (global.fetch as any).mockResolvedValue({ ok: true });
-
-      await sendZapierNotification('custom_event_type', {
-        status: 'success',
-      });
-
-      const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
-      expect(callBody.slackMessage).toContain('custom_event_type');
-      expect(callBody.slackMessage).toContain('success');
-    });
+    const callBody = JSON.parse((global.fetch as any).mock.calls[0][1].body);
+    expect(callBody.propertyName).toBe('My Hotel');
+    expect(callBody.enterpriseId).toBe('ent-123');
+    expect(callBody.loginEmail).toBe('guest@hotel.com');
+    expect(callBody.loginPassword).toBe('Sample123');
+    expect(callBody.signInUrl).toBe('https://app.mews-demo.com/signin/abc');
   });
 });

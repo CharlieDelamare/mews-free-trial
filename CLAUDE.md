@@ -40,7 +40,7 @@ git worktree list                              # list active feature worktrees
 | `MEWS_CLIENT_TOKEN` | Mews Connector API client token |
 | `MEWS_ACCESS_TOKEN` | Mews Connector API access token |
 | `MEWS_API_URL` | Mews API base URL (default: https://api.mews-demo.com) |
-| `ZAPIER_WEBHOOK_URL` | Zapier webhook (Slack, CRM notifications) |
+| `SLACK_WEBHOOK_URL` | Slack Workflow webhook URL |
 | `RESEND_API_KEY` | Resend email API key |
 | `ADMIN_EMAILS` / `NEXT_PUBLIC_ADMIN_EMAILS` | Comma-separated admin emails (1-day trials, skip SF ID) |
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { extractMetadata, serializeState } from '@/lib/roi-calculator/utils/persistence';
-import type { CalculatorState } from '@/lib/roi-calculator/types/calculator';
+import { extractMetadata } from '@/lib/roi-calculator/utils/persistence';
+import type { PersistedState } from '@/lib/roi-calculator/utils/persistence';
 
 export async function GET(
   _req: NextRequest,
@@ -26,9 +26,9 @@ export async function PATCH(
 ) {
   const { id } = await params;
 
-  let state: CalculatorState | undefined;
+  let state: PersistedState | undefined;
   try {
-    ({ state } = await req.json() as { state: CalculatorState });
+    ({ state } = await req.json() as { state: PersistedState });
   } catch {
     return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -38,7 +38,7 @@ export async function PATCH(
   }
 
   try {
-    const persisted = serializeState(state);
+    const persisted = state;
     const meta = extractMetadata(persisted);
 
     await prisma.roiPresentation.update({
