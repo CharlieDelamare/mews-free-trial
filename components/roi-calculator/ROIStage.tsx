@@ -214,12 +214,12 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     [dispatch],
   );
 
-  // Export
-  const t = getTranslations(config.presentationLanguage);
+  // Export — modal UI always in English; PDF uses presentationLanguage
+  const enT = getTranslations('en');
   const exportableSections = [
-    { id: 'guest-experience', label: t.modules.guestExperience },
-    { id: 'payment', label: t.modules.payment },
-    { id: 'rms', label: t.modules.rms },
+    { id: 'guest-experience', label: enT.modules.guestExperience },
+    { id: 'payment', label: enT.modules.payment },
+    { id: 'rms', label: enT.modules.rms },
   ];
 
   const handleExportPDF = async () => {
@@ -367,7 +367,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         <div className="pt-6 md:pt-10">
           {/* Page heading */}
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--mews-night-black)', fontFamily: 'var(--font-heading)' }}>ROI Calculator</h1>
+            <h1 className="text-3xl font-bold text-mews-night-black">ROI Calculator</h1>
           </div>
 
           {/* Presentation title */}
@@ -391,7 +391,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             <select
               value={config.country}
               onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
+              className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
             >
               {countries.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}</option>
@@ -401,7 +401,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
               <select
                 value={config.usState}
                 onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: e.target.value })}
-                className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
+                className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
               >
                 <option value="">All states (national avg)</option>
                 {usStates.map((s) => (
@@ -412,7 +412,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             <select
               value={config.hotelType}
               onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 font-medium focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all cursor-pointer"
+              className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
             >
               {hotelTypes.map((ht) => (
                 <option key={ht} value={ht}>{ht}</option>
@@ -447,54 +447,38 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
                 return `${currencySymbol}${Math.round(v)}`;
               };
               return (
-                <div
+                <button
                   key={moduleKey}
-                  className="inline-flex items-center rounded-2xl border-2 bg-white transition-all duration-200 select-none"
+                  type="button"
+                  role="switch"
+                  aria-checked={enabled}
+                  aria-label={`${enabled ? 'Disable' : 'Enable'} ${meta.label}`}
+                  className="inline-flex items-center rounded-2xl border-2 bg-white transition-all duration-200 select-none cursor-pointer focus:outline-none pl-2 pr-3 py-2 gap-2"
                   style={{
                     borderColor: isActive ? meta.color : enabled ? meta.color + '55' : 'var(--neutral-200)',
                     opacity: enabled ? 1 : 0.55,
                     boxShadow: isActive ? `0 2px 12px ${meta.color}30` : 'none',
                   }}
+                  onClick={() => dispatch({ type: 'TOGGLE_MODULE', module: moduleKey })}
                 >
-                  {/* Toggle button — role="switch" for accessibility */}
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={enabled}
-                    aria-label={`${enabled ? 'Disable' : 'Enable'} ${meta.label}`}
-                    className="flex items-center cursor-pointer pl-2 pr-1 py-2 focus:outline-none"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      dispatch({ type: 'TOGGLE_MODULE', module: moduleKey });
-                    }}
+                  {/* Visual toggle track */}
+                  <span
+                    className="relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+                    style={{ background: enabled ? meta.color : 'var(--neutral-300)' }}
                   >
-                    {/* Visual toggle track */}
+                    {/* Knob */}
                     <span
-                      className="relative inline-flex w-10 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
-                      style={{ background: enabled ? meta.color : 'var(--neutral-300)' }}
-                    >
-                      {/* Knob */}
-                      <span
-                        className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
-                        style={{ transform: enabled ? 'translateX(19px)' : 'translateX(3px)' }}
-                      />
+                      className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
+                      style={{ transform: enabled ? 'translateX(19px)' : 'translateX(3px)' }}
+                    />
+                  </span>
+                  <span className="text-sm font-bold text-gray-800 whitespace-nowrap">{meta.label}</span>
+                  {enabled && savings > 0 && (
+                    <span className="text-xs font-semibold tabular-nums" style={{ color: meta.textColor }}>
+                      {fmt(savings)}
                     </span>
-                  </button>
-                  {/* Label — click expands detail panel */}
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 pr-3 pl-1 py-2 focus:outline-none"
-                    onClick={() => dispatch({ type: 'SET_ACTIVE_DETAIL', module: moduleKey })}
-                  >
-                    <span className="text-sm font-bold text-gray-800 whitespace-nowrap">{meta.label}</span>
-                    {enabled && savings > 0 && (
-                      <span className="text-xs font-semibold tabular-nums" style={{ color: meta.color }}>
-                        {fmt(savings)}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                  )}
+                </button>
               );
             })}
           </div>

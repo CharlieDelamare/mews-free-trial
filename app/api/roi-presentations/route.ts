@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Wizard sends PersistedState (ui already stripped); use directly.
+    // Wizard sends PersistedState (ui already stripped by the client); use directly.
     const persisted = state;
     const meta = extractMetadata(persisted);
 

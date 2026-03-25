@@ -32,7 +32,7 @@ export default function ExportModal({
 }: ExportModalProps) {
   if (!isOpen) return null;
 
-  const t = getTranslations(presentationLanguage ?? 'en');
+  const t = getTranslations('en');
 
   return (
     <div
@@ -43,7 +43,7 @@ export default function ExportModal({
       }}
     >
       <div
-        className="bg-white rounded-2xl max-w-sm w-full overflow-hidden flex flex-col animate-scale-in"
+        className="bg-white rounded-2xl max-w-sm w-full overflow-hidden flex flex-col animate-scale-in-modal"
         style={{
           boxShadow: '0 24px 64px color-mix(in srgb, var(--mews-deep-blue) 25%, transparent), 0 8px 24px color-mix(in srgb, var(--mews-black) 15%, transparent)',
         }}

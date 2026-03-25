@@ -136,7 +136,7 @@ export function Navbar() {
   return (
     <>
       {/* Top bar */}
-      <nav aria-label="Main navigation" className="sticky top-0 z-10 bg-mews-linen border-b border-neutral-200">
+      <nav aria-label="Main navigation" className="sticky top-0 z-50 bg-mews-linen border-b border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-14 gap-3">
             <button

@@ -56,9 +56,9 @@
   --font-body: var(--font-inter, 'Inter'), sans-serif;
 
   /* ROI Calculator module colors */
-  --roi-module-gx: #8b5cf6;          /* Guest Experience — purple */
-  --roi-module-payment: #3b82f6;     /* Payment — blue */
-  --roi-module-rms: #10b981;         /* RMS — green (same as --mews-success) */
+  --roi-module-gx: #F7E1F7;          /* Guest Experience — lavender */
+  --roi-module-payment: #D1F9D6;     /* Payment — light green */
+  --roi-module-rms: #E8FF5B;         /* RMS — yellow-green */
   --roi-slider-teal: var(--mews-indigo); /* Replaces #6BA3B0 / #4d8a96 teal */
   --roi-neutral-border: #d1d5db;     /* Light gray border */
   --roi-white: #ffffff;              /* Pure white (only where --mews-white can't be used inline) */
@@ -214,17 +214,24 @@ input[type='checkbox'] { accent-color: var(--mews-indigo); }
 /* Misc */
 .tabular-nums { font-variant-numeric: tabular-nums; }
 
-/* ROI Calculator hero number gradient (replaces teal gradient from source) */
+/* ROI Calculator hero number gradient — Mews primary pink */
 .gradient-text-teal {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--mews-indigo) 80%, transparent) 0%, var(--mews-indigo) 50%, color-mix(in srgb, var(--mews-indigo) 60%, transparent) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mews-primary) 80%, transparent) 0%, var(--mews-primary) 50%, color-mix(in srgb, var(--mews-primary) 60%, transparent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ROI Calculator scale-in animation (for popovers) */
+/* ROI Calculator scale-in animation (for popovers with left:50% positioning) */
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95) translateX(-50%); }
   to { opacity: 1; transform: scale(1) translateX(-50%); }
 }
 .animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
+
+/* Scale-in for flex-centered modals (no translateX offset) */
+@keyframes scaleInModal {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in-modal { animation: scaleInModal 0.2s ease-out forwards; }

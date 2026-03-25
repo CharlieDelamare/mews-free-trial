@@ -124,7 +124,7 @@ export default function ProspectIntake({
   const panel = (
     <div className={`w-full bg-white flex flex-col overflow-hidden ${fullPage ? 'min-h-screen' : 'max-w-2xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
         {/* Header */}
-        <div className={`px-6 pt-5 pb-4 border-b border-gray-100 bg-white ${fullPage ? 'sticky top-0 z-10 max-w-2xl w-full mx-auto' : ''}`}>
+        <div className={`px-6 pt-5 pb-4 border-b border-gray-100 bg-white ${fullPage ? 'sticky top-14 z-10 max-w-2xl w-full mx-auto' : ''}`}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Build Your Business Case</h2>
@@ -177,7 +177,7 @@ export default function ProspectIntake({
                 <select
                   value={country}
                   onChange={(e) => onCountryChange(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
                 >
                   {countries.map((c) => (
                     <option key={c.name} value={c.name}>{c.name}</option>
@@ -192,7 +192,7 @@ export default function ProspectIntake({
                   <select
                     value={usState}
                     onChange={(e) => onUSStateChange(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 focus:border-blue-300 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
                   >
                     <option value="">All states (national average)</option>
                     {usStates.map((s) => (
@@ -212,10 +212,9 @@ export default function ProspectIntake({
                       onClick={() => onHotelTypeChange(ht)}
                       className={`px-3 py-2.5 rounded-lg text-sm font-medium border transition-all ${
                         hotelType === ht
-                          ? 'text-white border-transparent'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          ? 'bg-mews-primary text-mews-night-black border-mews-primary'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                       }`}
-                      style={hotelType === ht ? { background: 'var(--mews-night-black)', borderColor: 'var(--mews-night-black)' } : {}}
                     >
                       {ht}
                     </button>
@@ -441,8 +440,7 @@ export default function ProspectIntake({
               {currentStep < totalSteps - 1 ? (
                 <button
                   onClick={goNext}
-                  className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold text-white rounded-lg transition-colors"
-                  style={{ backgroundColor: 'var(--mews-night-black)' }}
+                  className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-lg transition-colors bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover"
                 >
                   {currentStep === 0 ? 'Start Validation' : 'Next'}
                   <ArrowRight className="w-4 h-4" />
