@@ -41,7 +41,8 @@ export function deserializeState(json: unknown): PersistedState | null {
       guestExperience: { ...d.guestExperience, ...(stored.guestExperience as object ?? {}) },
       payment: { ...d.payment, ...(stored.payment as object ?? {}) },
       rms: { ...d.rms, ...(stored.rms as object ?? {}) },
-      enabledModules: (stored.enabledModules as EnabledModules | undefined) ?? d.ui.enabledModules,
+      housekeeping: { ...d.housekeeping, ...(stored.housekeeping as object ?? {}) },
+      enabledModules: { ...d.ui.enabledModules, ...(stored.enabledModules as EnabledModules | undefined ?? {}) },
       ...(stored.confidenceMap ? { confidenceMap: stored.confidenceMap as ConfidenceMap } : {}),
     };
   } catch (err) {
@@ -57,6 +58,7 @@ export function extractMetadata(state: PersistedState): PresentationMetadata {
     state.guestExperience,
     state.payment,
     state.rms,
+    state.housekeeping,
   );
   return {
     country: state.config.country,

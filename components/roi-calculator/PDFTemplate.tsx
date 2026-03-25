@@ -1,6 +1,6 @@
 'use client';
 
-import { TrendingUp, TrendingDown, Clock, Users, CreditCard, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, Users, CreditCard, BarChart3, BedDouble } from 'lucide-react';
 import { getTranslations } from '@/lib/roi-calculator/translations';
 import type { LanguageCode } from '@/lib/roi-calculator/types/translations';
 
@@ -83,6 +83,20 @@ interface PDFData {
       annualRevenueGain: number;
       annualHoursSaved: number;
       annualLaborCostSavings: number;
+      totalTime: number;
+      totalSavings: number;
+    };
+    housekeeping?: {
+      roomAssignmentHours: number;
+      roomAssignmentCost: number;
+      cleaningStatusHours: number;
+      cleaningStatusCost: number;
+      maintenanceCommHours: number;
+      maintenanceCommCost: number;
+      taskMgmtHours: number;
+      taskMgmtCost: number;
+      amenitiesCostSaved: number;
+      paperCostSaved: number;
       totalTime: number;
       totalSavings: number;
     };
@@ -288,6 +302,7 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
   const ge = data.sections.guestExperience;
   const pm = data.sections.payment;
   const rm = data.sections.rms;
+  const hk = data.sections.housekeeping;
   if (ge) {
     costSavings += ge.commissionSaved + ge.checkInSavings.annualTotalCostSavings + ge.roomAssignmentSavings.annualCostSaving;
     revenueUplift += ge.upsellRevenue;
@@ -300,12 +315,16 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
     costSavings += rm.annualLaborCostSavings;
     revenueUplift += rm.annualRevenueGain;
   }
+  if (hk) {
+    costSavings += hk.roomAssignmentCost + hk.cleaningStatusCost + hk.maintenanceCommCost + hk.taskMgmtCost + hk.amenitiesCostSaved + hk.paperCostSaved;
+  }
 
   /* ── Build contributions for waterfall ──────────────────────────────── */
   const contributions: { label: string; savings: number; color: string }[] = [];
   if (ge) contributions.push({ label: t.modules.guestExperience, savings: ge.totalSavings, color: 'var(--mews-indigo)' });
   if (pm) contributions.push({ label: t.modules.payment, savings: pm.totalSavings, color: 'var(--roi-pdf-emerald)' });
   if (rm) contributions.push({ label: t.modules.rms, savings: rm.totalSavings, color: 'var(--roi-pdf-violet)' });
+  if (hk) contributions.push({ label: t.modules.housekeeping, savings: hk.totalSavings, color: '#f59e0b' });
 
   return (
     <div style={{ width: SLIDE_WIDTH, overflow: 'hidden' }}>
@@ -502,7 +521,59 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
         </Slide>
       )}
 
-      {/* ═══════════ SLIDE 5: SUMMARY ═════════════════════════════════════ */}
+      {/* ═══════════ SLIDE 5: HOUSEKEEPING ════════════════════════════════ */}
+      {hk && (
+        <Slide>
+          <div style={{ padding: '40px 48px 0', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <div style={{ background: 'rgba(245,158,11,0.12)', borderRadius: 10, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BedDouble style={{ width: 22, height: 22, color: '#f59e0b' }} />
+            </div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>{t.modules.housekeeping}</h2>
+          </div>
+
+          <div style={{ padding: '0 48px', flex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <MetricCard label={t.labels.annualImpact} value={formatBig(hk.totalSavings, cs)} accent="#f59e0b" />
+              <MetricCard label={t.labels.timeSaved} value={`${hk.totalTime.toLocaleString()} ${t.labels.hrs}`} accent="#fff" sub={t.labels.perYear} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+              {hk.roomAssignmentHours > 0 && (
+                <LeverRow label={t.pdfLevers.hkRoomAssignmentAutomation} value={`${hk.roomAssignmentHours.toLocaleString()} ${t.labels.hrs}`} type="time" equivalent={`~${formatCurrency(hk.roomAssignmentCost)}`} typeLabels={typeLabels} />
+              )}
+              {hk.cleaningStatusHours > 0 && (
+                <LeverRow label={t.pdfLevers.hkCleaningStatusUpdates} value={`${hk.cleaningStatusHours.toLocaleString()} ${t.labels.hrs}`} type="time" equivalent={`~${formatCurrency(hk.cleaningStatusCost)}`} typeLabels={typeLabels} />
+              )}
+              {hk.maintenanceCommHours > 0 && (
+                <LeverRow label={t.pdfLevers.hkMaintenanceCommunication} value={`${hk.maintenanceCommHours.toLocaleString()} ${t.labels.hrs}`} type="time" equivalent={`~${formatCurrency(hk.maintenanceCommCost)}`} typeLabels={typeLabels} />
+              )}
+              {hk.taskMgmtHours > 0 && (
+                <LeverRow label={t.pdfLevers.hkTaskManagement} value={`${hk.taskMgmtHours.toLocaleString()} ${t.labels.hrs}`} type="time" equivalent={`~${formatCurrency(hk.taskMgmtCost)}`} typeLabels={typeLabels} />
+              )}
+              {hk.amenitiesCostSaved > 0 && (
+                <LeverRow label={t.pdfLevers.hkAmenitiesReduction} value={formatCurrency(hk.amenitiesCostSaved)} type="cost" typeLabels={typeLabels} />
+              )}
+              {hk.paperCostSaved > 0 && (
+                <LeverRow label={`🌿 ${t.pdfLevers.hkPaperElimination}`} value={formatCurrency(hk.paperCostSaved)} type="cost" typeLabels={typeLabels} />
+              )}
+            </div>
+
+            <div style={{ background: 'rgba(245,158,11,0.06)', borderRadius: 10, padding: '12px 16px', border: '1px solid rgba(245,158,11,0.15)', marginTop: 'auto' }}>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, margin: 0 }}>
+                {t.narratives.pdfHousekeepingNarrative({
+                  totalTime: hk.totalTime,
+                  totalSavings: hk.totalSavings,
+                  amenitiesCostSaved: hk.amenitiesCostSaved,
+                  formatCurrency,
+                })}
+              </p>
+            </div>
+          </div>
+          <SlideFooter />
+        </Slide>
+      )}
+
+      {/* ═══════════ SLIDE 6: SUMMARY ═════════════════════════════════════ */}
       <Slide>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 64px' }}>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: '0 0 8px' }}>{t.labels.impactSummary}</h2>

@@ -4,10 +4,12 @@ import type {
   GuestExperienceInputs,
   PaymentInputs,
   RMSInputs,
+  HousekeepingInputs,
   SharedVariables,
   GuestExperienceResults,
   PaymentResults,
   RMSResults,
+  HousekeepingResults,
 } from '@/lib/roi-calculator/types/calculator';
 
 const fmt = (n: number) => Math.round(n).toLocaleString();
@@ -206,4 +208,130 @@ export function getRMSLevers(
       ],
     },
   ];
+}
+
+// ── Housekeeping ──────────────────────────────────────────────────────
+
+const HK_DIGITAL_TIME = {
+  roomAssignment: 0.5,
+  cleaningUpdate: 0.05,
+  repairComm: 0.15,
+  taskComm: 0.15,
+};
+
+export function getHousekeepingLevers(
+  inputs: HousekeepingInputs,
+  shared: SharedVariables,
+  results: HousekeepingResults,
+  cs: string,
+): LeverDescriptor[] {
+  const occupiedRooms = shared.numberOfRooms * (shared.occupancyRate / 100);
+  const departures = occupiedRooms / Math.max(shared.avgLengthOfStay, 1);
+  const stayovers = occupiedRooms - departures;
+  const updatesPerDay = stayovers * 1 + departures * 2;
+  const repairsPerDay = occupiedRooms * 0.26;
+  const tasksPerDay = occupiedRooms * 1.45;
+  const occupiedRoomNights = shared.numberOfRooms * 365 * (shared.occupancyRate / 100);
+  const annualAmenitySpend = shared.numberOfRooms * 365 * (shared.occupancyRate / 100) * inputs.amenityCostPerRoomNight;
+
+  const levers: LeverDescriptor[] = [
+    // Lever 1: Room Assignment Automation
+    {
+      key: 'hkRoomAssignment',
+      label: 'Room Assignment Automation',
+      resultValue: results.roomAssignmentHours,
+      resultUnit: 'hours',
+      resultType: 'timeReclaimed',
+      monetaryEquivalent: results.roomAssignmentCost,
+      summary: `${inputs.hkStaffOnDuty} HK staff × (${inputs.roomAssignmentTimeManual}m − ${HK_DIGITAL_TIME.roomAssignment}m) / 60 × 365 = ${fmt(results.roomAssignmentHours)} hrs/yr`,
+      summaryParams: { staff: inputs.hkStaffOnDuty, manualTime: inputs.roomAssignmentTimeManual, digitalTime: HK_DIGITAL_TIME.roomAssignment, totalHours: fmt(results.roomAssignmentHours) },
+      sliders: [
+        { field: 'hkStaffOnDuty', slice: 'housekeeping', label: 'HK Staff on Duty', min: 1, max: 200, step: 1, color: 'orange' },
+        { field: 'roomAssignmentTimeManual', slice: 'housekeeping', label: 'Manual Assignment Time (min)', min: 0.5, max: 10, step: 0.5, color: 'yellow', formatValue: formatMinutes },
+      ],
+    },
+
+    // Lever 3: Maintenance Communication
+    {
+      key: 'maintenanceCommunication',
+      label: 'Maintenance Communication',
+      resultValue: results.maintenanceCommHours,
+      resultUnit: 'hours',
+      resultType: 'timeReclaimed',
+      monetaryEquivalent: results.maintenanceCommCost,
+      summary: `${fmt(repairsPerDay)} repairs/day × (1.0m − ${HK_DIGITAL_TIME.repairComm}m) / 60 × 365 = ${fmt(results.maintenanceCommHours)} hrs/yr`,
+      summaryParams: { repairsPerDay: fmt(repairsPerDay), totalHours: fmt(results.maintenanceCommHours) },
+      sliders: [
+        { field: 'numberOfRooms', slice: 'sharedVariables', label: 'Number of Rooms', min: 1, max: 1000, step: 1, color: 'purple', isShared: true },
+        { field: 'occupancyRate', slice: 'sharedVariables', label: 'Occupancy Rate', min: 10, max: 100, step: 1, unit: '%', color: 'purple', isShared: true },
+      ],
+    },
+
+    // Lever 4: Task Management Efficiency
+    {
+      key: 'taskManagement',
+      label: 'Task Management Efficiency',
+      resultValue: results.taskMgmtHours,
+      resultUnit: 'hours',
+      resultType: 'timeReclaimed',
+      monetaryEquivalent: results.taskMgmtCost,
+      summary: `${fmt(tasksPerDay)} tasks/day × (0.5m − ${HK_DIGITAL_TIME.taskComm}m) / 60 × 365 = ${fmt(results.taskMgmtHours)} hrs/yr`,
+      summaryParams: { tasksPerDay: fmt(tasksPerDay), totalHours: fmt(results.taskMgmtHours) },
+      sliders: [
+        { field: 'numberOfRooms', slice: 'sharedVariables', label: 'Number of Rooms', min: 1, max: 1000, step: 1, color: 'purple', isShared: true },
+        { field: 'occupancyRate', slice: 'sharedVariables', label: 'Occupancy Rate', min: 10, max: 100, step: 1, unit: '%', color: 'purple', isShared: true },
+      ],
+    },
+
+    // Lever 5: Amenities Cost Reduction
+    {
+      key: 'amenitiesReduction',
+      label: 'Amenities Cost Reduction',
+      resultValue: results.amenitiesCostSaved,
+      resultUnit: 'currency',
+      resultType: 'costSaving',
+      summary: `${shared.numberOfRooms} rooms × 365 × ${shared.occupancyRate}% occ × ${cs}${inputs.amenityCostPerRoomNight.toFixed(2)} × ${(inputs.amenityReductionPct * 100).toFixed(0)}% = ${cs}${fmt(results.amenitiesCostSaved)}/yr`,
+      summaryParams: { rooms: shared.numberOfRooms, occupancy: shared.occupancyRate, amenityCost: `${cs}${inputs.amenityCostPerRoomNight.toFixed(2)}`, reductionPct: (inputs.amenityReductionPct * 100).toFixed(0), total: `${cs}${fmt(results.amenitiesCostSaved)}` },
+      sliders: [
+        { field: 'amenityCostPerRoomNight', slice: 'housekeeping', label: 'Amenity Cost/Room/Night', min: 0.10, max: 25, step: 0.10, unit: cs, color: 'orange' },
+        { field: 'occupancyRate', slice: 'sharedVariables', label: 'Occupancy Rate', min: 10, max: 100, step: 1, unit: '%', color: 'purple', isShared: true },
+      ],
+    },
+
+    // Lever 6: Paper Elimination
+    {
+      key: 'paperElimination',
+      label: 'Paper Elimination 🌿',
+      resultValue: results.paperCostSaved,
+      resultUnit: 'currency',
+      resultType: 'costSaving',
+      summary: `${fmt(occupiedRoomNights)} room-nights × ${cs}0.005/sheet = ${cs}${fmt(results.paperCostSaved)}/yr`,
+      summaryParams: { roomNights: fmt(occupiedRoomNights), total: `${cs}${fmt(results.paperCostSaved)}`, sustainabilityBadge: 1 },
+      sliders: [
+        { field: 'numberOfRooms', slice: 'sharedVariables', label: 'Number of Rooms', min: 1, max: 1000, step: 1, color: 'purple', isShared: true },
+        { field: 'occupancyRate', slice: 'sharedVariables', label: 'Occupancy Rate', min: 10, max: 100, step: 1, unit: '%', color: 'purple', isShared: true },
+      ],
+    },
+  ];
+
+  // Insert lever 2 (Cleaning Status Updates) only if stayovers exist (skip for short-term rentals)
+  if (inputs.stayoverCleanTime > 0) {
+    levers.splice(1, 0, {
+      key: 'cleaningStatusUpdates',
+      label: 'Cleaning Status Updates',
+      resultValue: results.cleaningStatusHours,
+      resultUnit: 'hours',
+      resultType: 'timeReclaimed',
+      monetaryEquivalent: results.cleaningStatusCost,
+      summary: `${fmt(updatesPerDay)} updates/day × (0.5m − ${HK_DIGITAL_TIME.cleaningUpdate}m) / 60 × 365 = ${fmt(results.cleaningStatusHours)} hrs/yr`,
+      summaryParams: { updatesPerDay: fmt(updatesPerDay), totalHours: fmt(results.cleaningStatusHours) },
+      sliders: [
+        { field: 'numberOfRooms', slice: 'sharedVariables', label: 'Number of Rooms', min: 1, max: 1000, step: 1, color: 'purple', isShared: true },
+        { field: 'occupancyRate', slice: 'sharedVariables', label: 'Occupancy Rate', min: 10, max: 100, step: 1, unit: '%', color: 'purple', isShared: true },
+        { field: 'avgLengthOfStay', slice: 'sharedVariables', label: 'Avg Length of Stay', min: 1, max: 30, step: 0.1, unit: 'nights', color: 'purple', isShared: true },
+      ],
+    });
+  }
+
+  return levers;
 }
