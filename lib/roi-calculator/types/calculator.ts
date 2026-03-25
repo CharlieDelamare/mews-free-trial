@@ -12,12 +12,13 @@ export interface ConfigState {
   presentationLanguage: LanguageCode;
 }
 
-export type ModuleKey = 'guestExperience' | 'payment' | 'rms';
+export type ModuleKey = 'guestExperience' | 'payment' | 'rms' | 'housekeeping';
 
 export interface EnabledModules {
   guestExperience: boolean;
   payment: boolean;
   rms: boolean;
+  housekeeping: boolean;
 }
 
 export type PresetKey = 'full' | 'guest-experience' | 'payment' | 'rms' | 'operations' | 'custom';
@@ -87,6 +88,18 @@ export interface PaymentInputs {
   revenueShare: number;
 }
 
+export interface HousekeepingInputs {
+  hkStaffOnDuty: number;
+  hkStaffOnDutyIsManual: boolean;         // false = auto-calculated, true = user override
+  departureCleanTime: number;              // minutes
+  stayoverCleanTime: number;               // minutes
+  amenityCostPerRoomNight: number;         // local currency
+  amenityReductionPct: number;             // fraction e.g. 0.05 = 5% reduction (set by smart defaults, not user-editable)
+  roomAssignmentTimeManual: number;        // minutes per HK staff per day (set by smart defaults, not user-editable)
+  roomAssignmentMethod: 'manual' | 'partially_digital' | 'fully_digital';
+  usesHousekeepingSoftware: boolean;
+}
+
 export interface RMSInputs {
   hotelRevPAR: number;
   numberOfRooms: number;
@@ -122,6 +135,7 @@ export interface CalculatorState {
   guestExperience: GuestExperienceInputs;
   payment: PaymentInputs;
   rms: RMSInputs;
+  housekeeping: HousekeepingInputs;
 }
 
 // ── Derived / computed values ─────────────────────────────────────────
@@ -175,6 +189,21 @@ export interface RMSResults {
   totalSavings: number;
 }
 
+export interface HousekeepingResults {
+  roomAssignmentHours: number;
+  roomAssignmentCost: number;
+  cleaningStatusHours: number;
+  cleaningStatusCost: number;
+  maintenanceCommHours: number;
+  maintenanceCommCost: number;
+  taskMgmtHours: number;
+  taskMgmtCost: number;
+  amenitiesCostSaved: number;
+  paperCostSaved: number;
+  totalTime: number;
+  totalSavings: number;
+}
+
 export interface CostRevenueSplit {
   costSavings: number;
   revenueUplift: number;
@@ -203,6 +232,7 @@ export interface CalculatorResults {
   guestExperience: GuestExperienceResults;
   payment: PaymentResults;
   rms: RMSResults;
+  housekeeping: HousekeepingResults;
   totalTimeSaved: number;
   totalAnnualSavings: number;
 }
@@ -211,7 +241,7 @@ export interface CalculatorResults {
 
 export interface SliderConfig {
   field: string;
-  slice: 'sharedVariables' | 'guestExperience' | 'payment' | 'rms';
+  slice: 'sharedVariables' | 'guestExperience' | 'payment' | 'rms' | 'housekeeping';
   label: string;
   min: number;
   max: number;
@@ -244,6 +274,7 @@ export type CalculatorAction =
   | { type: 'SET_FIELD'; slice: 'guestExperience'; field: keyof GuestExperienceInputs; value: number }
   | { type: 'SET_FIELD'; slice: 'payment'; field: keyof PaymentInputs; value: number }
   | { type: 'SET_FIELD'; slice: 'rms'; field: keyof RMSInputs; value: RMSInputs[keyof RMSInputs] }
+  | { type: 'SET_FIELD'; slice: 'housekeeping'; field: keyof HousekeepingInputs; value: HousekeepingInputs[keyof HousekeepingInputs] }
   | { type: 'TOGGLE_EXPORT_SECTION'; sectionId: string }
   | { type: 'APPLY_DEFAULTS'; defaults: Omit<CalculatorState, 'config' | 'ui'> }
   | { type: 'SET_EXPORTING'; value: boolean }

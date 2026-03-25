@@ -3,9 +3,10 @@ import {
   calcGuestExperience,
   calcPayment,
   calcRMS,
+  calcHousekeeping,
   calcAll,
 } from '@/lib/roi-calculator/utils/calculations';
-import type { SharedVariables, GuestExperienceInputs, PaymentInputs, RMSInputs } from '@/lib/roi-calculator/types/calculator';
+import type { SharedVariables, GuestExperienceInputs, PaymentInputs, RMSInputs, HousekeepingInputs } from '@/lib/roi-calculator/types/calculator';
 
 const shared: SharedVariables = {
   numberOfRooms: 100,
@@ -100,12 +101,71 @@ describe('calcRMS', () => {
   });
 });
 
+// ── City Hotel Belgium — 200 rooms ────────────────────────────────────
+const sharedBelgium: SharedVariables = {
+  numberOfRooms: 200,
+  averageDailyRate: 120,
+  occupancyRate: 70,
+  avgLengthOfStay: 1.7,
+  reservationsPerMonth: Math.round((200 * 30 * 0.70) / 1.7),
+  monthlyRevenue: 200 * 120 * 30 * 0.70,
+  staffHourlyWage: 17,
+};
+
+const hk: HousekeepingInputs = {
+  hkStaffOnDuty: 8,
+  hkStaffOnDutyIsManual: false,
+  departureCleanTime: 30,
+  stayoverCleanTime: 20,
+  amenityCostPerRoomNight: 1.0,
+  amenityReductionPct: 0.05,
+  roomAssignmentTimeManual: 3.0,
+  roomAssignmentMethod: 'manual',
+  usesHousekeepingSoftware: false,
+};
+
+describe('calcHousekeeping', () => {
+  it('returns positive totalSavings and totalTime for a 200-room City Hotel', () => {
+    const result = calcHousekeeping(hk, sharedBelgium);
+    expect(result.totalSavings).toBeGreaterThan(0);
+    expect(result.totalTime).toBeGreaterThan(0);
+  });
+
+  it('produces ~1,500 hrs and ~€26k total impact for a City Hotel Belgium baseline', () => {
+    const result = calcHousekeeping(hk, sharedBelgium);
+    // Ballpark: totalTime ~1,400–2,000 hrs, totalSavings ~€20k–€32k
+    expect(result.totalTime).toBeGreaterThan(1000);
+    expect(result.totalTime).toBeLessThan(3000);
+    expect(result.totalSavings).toBeGreaterThan(15000);
+    expect(result.totalSavings).toBeLessThan(40000);
+  });
+
+  it('returns zero room assignment when method is fully_digital', () => {
+    const result = calcHousekeeping({ ...hk, roomAssignmentMethod: 'fully_digital' }, sharedBelgium);
+    expect(result.roomAssignmentHours).toBe(0);
+    expect(result.roomAssignmentCost).toBe(0);
+  });
+
+  it('reduces savings when usesHousekeepingSoftware is true', () => {
+    const withoutSoftware = calcHousekeeping(hk, sharedBelgium);
+    const withSoftware = calcHousekeeping({ ...hk, usesHousekeepingSoftware: true }, sharedBelgium);
+    expect(withSoftware.totalSavings).toBeLessThan(withoutSoftware.totalSavings);
+  });
+
+  it('skips cleaningStatusUpdates when stayoverCleanTime is 0 (STR)', () => {
+    const result = calcHousekeeping({ ...hk, stayoverCleanTime: 0 }, sharedBelgium);
+    expect(result.cleaningStatusHours).toBe(0);
+    expect(result.cleaningStatusCost).toBe(0);
+  });
+});
+
 describe('calcAll', () => {
-  it('sums totalAnnualSavings from all three modules', () => {
-    const result = calcAll(shared, gx, payment, rms);
+  it('sums totalAnnualSavings from all four modules', () => {
+    const result = calcAll(shared, gx, payment, rms, hk);
     const gxSavings = calcGuestExperience(gx, shared).totalSavings;
     const paymentSavings = calcPayment(payment, shared).totalSavings;
     const rmsSavings = calcRMS(rms, shared).totalSavings;
-    expect(result.totalAnnualSavings).toBe(gxSavings + paymentSavings + rmsSavings);
+    const hkSavings = calcHousekeeping(hk, shared).totalSavings;
+    expect(result.totalAnnualSavings).toBe(gxSavings + paymentSavings + rmsSavings + hkSavings);
   });
 });

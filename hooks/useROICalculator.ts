@@ -16,12 +16,14 @@ import {
   splitGuestExperience,
   splitPayment,
   splitRMS,
+  splitHousekeeping,
 } from '@/lib/roi-calculator/utils/calculations';
-import { countries, usStates, getSmartDefaults, COUNTRY_DEFAULT_LANGUAGE } from '@/lib/roi-calculator/utils/hotelDefaults';
+import { countries, usStates, getSmartDefaults, COUNTRY_DEFAULT_LANGUAGE, calculateHkStaff } from '@/lib/roi-calculator/utils/hotelDefaults';
 import {
   getGuestExperienceLevers,
   getPaymentLevers,
   getRMSLevers,
+  getHousekeepingLevers,
 } from '@/lib/roi-calculator/utils/leverDescriptors';
 
 // ── Default state ─────────────────────────────────────────────────────
@@ -33,20 +35,21 @@ export { defaultCalculatorState };
 // ── Module presets ────────────────────────────────────────────────────
 
 export const MODULE_PRESETS: Record<Exclude<PresetKey, 'custom'>, EnabledModules> = {
-  'full': { guestExperience: true, payment: true, rms: true },
-  'guest-experience': { guestExperience: true, payment: false, rms: false },
-  'payment': { guestExperience: false, payment: true, rms: false },
-  'rms': { guestExperience: false, payment: false, rms: true },
-  'operations': { guestExperience: true, payment: true, rms: false },
+  'full': { guestExperience: true, payment: true, rms: true, housekeeping: true },
+  'guest-experience': { guestExperience: true, payment: false, rms: false, housekeeping: false },
+  'payment': { guestExperience: false, payment: true, rms: false, housekeeping: false },
+  'rms': { guestExperience: false, payment: false, rms: true, housekeeping: false },
+  'operations': { guestExperience: true, payment: true, rms: false, housekeeping: true },
 };
 
 export const MODULE_META: Record<ModuleKey, { label: string; description: string; color: string; textColor: string }> = {
   guestExperience: { label: 'Guest Experience', description: 'Streamline check-in, assignments & upsells', color: '#F7E1F7', textColor: '#6d28d9' },
   payment: { label: 'Payment & Billing', description: 'Automate payments, reduce chargebacks & no-shows', color: '#D1F9D6', textColor: '#15803d' },
   rms: { label: 'RMS', description: 'Optimize rates & maximize RevPAR', color: '#E8FF5B', textColor: '#3f6212' },
+  housekeeping: { label: 'Housekeeping', description: 'Room assignment, cleaning updates, maintenance coordination', color: '#FEF3C7', textColor: '#b45309' },
 };
 
-export const MODULE_KEYS: ModuleKey[] = ['guestExperience', 'payment', 'rms'];
+export const MODULE_KEYS: ModuleKey[] = ['guestExperience', 'payment', 'rms', 'housekeeping'];
 
 // ── Detect which preset matches current enabledModules ────────────────
 
@@ -55,7 +58,8 @@ function detectPreset(enabled: EnabledModules): PresetKey {
     if (
       preset.guestExperience === enabled.guestExperience &&
       preset.payment === enabled.payment &&
-      preset.rms === enabled.rms
+      preset.rms === enabled.rms &&
+      preset.housekeeping === enabled.housekeeping
     ) {
       return key;
     }
@@ -75,6 +79,10 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
         const DRIVER_FIELDS = ['numberOfRooms', 'averageDailyRate', 'occupancyRate', 'avgLengthOfStay'];
         if (DRIVER_FIELDS.includes(action.field as string)) {
           const sv = updated as typeof state.sharedVariables;
+          const hk = state.housekeeping;
+          const recomputedHkStaff = !hk.hkStaffOnDutyIsManual
+            ? calculateHkStaff(sv.numberOfRooms, sv.occupancyRate, sv.avgLengthOfStay, hk.departureCleanTime, hk.stayoverCleanTime, 6.0)
+            : hk.hkStaffOnDuty;
           return {
             ...state,
             sharedVariables: {
@@ -86,8 +94,29 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
               ...state.rms,
               hotelRevPAR: Math.round(sv.averageDailyRate * sv.occupancyRate / 100),
             },
+            housekeeping: { ...hk, hkStaffOnDuty: recomputedHkStaff },
           };
         }
+      }
+
+      // When HK clean times change: recompute hkStaffOnDuty if not manually overridden
+      if (action.slice === 'housekeeping' && (action.field === 'departureCleanTime' || action.field === 'stayoverCleanTime')) {
+        const hk = updated as typeof state.housekeeping;
+        if (!hk.hkStaffOnDutyIsManual) {
+          const sv = state.sharedVariables;
+          return {
+            ...state,
+            housekeeping: {
+              ...hk,
+              hkStaffOnDuty: calculateHkStaff(sv.numberOfRooms, sv.occupancyRate, sv.avgLengthOfStay, hk.departureCleanTime, hk.stayoverCleanTime, 6.0),
+            },
+          };
+        }
+      }
+
+      // When user manually sets hkStaffOnDuty: lock it
+      if (action.slice === 'housekeeping' && action.field === 'hkStaffOnDuty') {
+        return { ...state, housekeeping: { ...(updated as typeof state.housekeeping), hkStaffOnDutyIsManual: true } };
       }
 
       // When hasExistingRMS changes: auto-disable RMS module and cap uplift at 2%
@@ -135,6 +164,7 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
         guestExperience: action.defaults.guestExperience,
         payment: action.defaults.payment,
         rms: action.defaults.rms,
+        housekeeping: action.defaults.housekeeping,
       };
     case 'SET_EXPORTING':
       return { ...state, ui: { ...state.ui, isExporting: action.value } };
@@ -384,6 +414,17 @@ export function useROICalculator(savedState?: PersistedState) {
             hasExistingRMS: state.rms.hasExistingRMS,
             estimatedRevenueUplift: state.rms.hasExistingRMS ? 2 : defaults.estimatedRevenueUplift,
           },
+          housekeeping: {
+            hkStaffOnDuty: defaults.hkStaffOnDuty,
+            hkStaffOnDutyIsManual: false,
+            departureCleanTime: defaults.hkDepartureCleanTime,
+            stayoverCleanTime: defaults.hkStayoverCleanTime,
+            amenityCostPerRoomNight: defaults.hkAmenityCostPerRoomNight,
+            amenityReductionPct: defaults.hkAmenityReductionPct,
+            roomAssignmentTimeManual: defaults.hkRoomAssignmentTimeManual,
+            roomAssignmentMethod: 'manual' as const,
+            usesHousekeepingSoftware: false,
+          },
         },
       });
     }
@@ -396,8 +437,8 @@ export function useROICalculator(savedState?: PersistedState) {
 
   // Derive all calculated values via useMemo
   const results: CalculatorResults = useMemo(
-    () => calcAll(state.sharedVariables, state.guestExperience, state.payment, state.rms),
-    [state.sharedVariables, state.guestExperience, state.payment, state.rms],
+    () => calcAll(state.sharedVariables, state.guestExperience, state.payment, state.rms, state.housekeeping),
+    [state.sharedVariables, state.guestExperience, state.payment, state.rms, state.housekeeping],
   );
 
   // Filtered results based on enabled modules
@@ -454,6 +495,21 @@ export function useROICalculator(savedState?: PersistedState) {
         textColor: MODULE_META.rms.textColor,
       });
     }
+    if (enabledModules.housekeeping) {
+      const split = splitHousekeeping(results.housekeeping);
+      totalTime += results.housekeeping.totalTime;
+      totalSavings += results.housekeeping.totalSavings;
+      costSavings += split.costSavings;
+      revenueUplift += split.revenueUplift;
+      contributions.push({
+        key: 'housekeeping' as const,
+        label: MODULE_META.housekeeping.label,
+        savings: results.housekeeping.totalSavings,
+        time: results.housekeeping.totalTime,
+        costRevenue: split,
+        color: MODULE_META.housekeeping.color,
+      });
+    }
 
     return { totalTime, totalSavings, costSavings, revenueUplift, contributions };
   }, [results, state.ui.enabledModules]);
@@ -463,7 +519,8 @@ export function useROICalculator(savedState?: PersistedState) {
     guestExperience: getGuestExperienceLevers(state.guestExperience, state.sharedVariables, results.guestExperience, state.config.currencySymbol),
     payment: getPaymentLevers(state.payment, state.sharedVariables, results.payment, state.config.currencySymbol),
     rms: getRMSLevers(state.rms, state.sharedVariables, results.rms, state.config.currencySymbol),
-  }), [state.guestExperience, state.payment, state.rms, state.sharedVariables, results, state.config.currencySymbol]);
+    housekeeping: getHousekeepingLevers(state.housekeeping, state.sharedVariables, results.housekeeping, state.config.currencySymbol),
+  }), [state.guestExperience, state.payment, state.rms, state.housekeeping, state.sharedVariables, results, state.config.currencySymbol]);
 
   // Enabled module keys (ordered)
   const enabledModuleKeys: ModuleKey[] = useMemo(

@@ -105,6 +105,58 @@ export const usStates: USStateConfig[] = [
   { name: 'Wyoming', code: 'WY' },
 ];
 
+// ── Housekeeping amenity cost multiplier by country ───────────────────
+export const AMENITY_COST_MULTIPLIER: Record<string, number> = {
+  // Tier 1 — High cost
+  Switzerland: 1.6, Denmark: 1.6, Norway: 1.6, Sweden: 1.6,
+  // Tier 2 — Above average
+  Japan: 1.3, Singapore: 1.3, 'United Arab Emirates': 1.3,
+  Ireland: 1.3, Luxembourg: 1.3, Finland: 1.3,
+  // Tier 3 — Slightly above
+  'United Kingdom': 1.1, France: 1.1, Germany: 1.1,
+  Netherlands: 1.1, Austria: 1.1, Belgium: 1.1, Italy: 1.1,
+  // Tier 4 — Base
+  Spain: 1.0, Portugal: 1.0, 'United States': 1.0, Canada: 1.0,
+  Australia: 1.0, Czechia: 1.0, Greece: 1.0, Slovenia: 1.0,
+  Cyprus: 1.0, Malta: 1.0,
+  // Tier 5 — Below average
+  Poland: 0.7, Hungary: 0.7, Croatia: 0.7, Slovakia: 0.7,
+  Estonia: 0.7, Latvia: 0.7, Lithuania: 0.7,
+  // Tier 6 — Low cost
+  Romania: 0.5, Bulgaria: 0.5,
+};
+
+// ── Housekeeping defaults by hotel type ───────────────────────────────
+const HK_HOTEL_DEFAULTS: Record<string, {
+  deptClean: number; stayClean: number; amenityBase: number;
+  amenityReduction: number; assignTimeManual: number; shiftHours: number;
+}> = {
+  'Boutique Hotel':     { deptClean: 35, stayClean: 20, amenityBase: 3.00, amenityReduction: 0.07, assignTimeManual: 2.5, shiftHours: 6.0 },
+  'City Hotel':         { deptClean: 30, stayClean: 20, amenityBase: 1.00, amenityReduction: 0.05, assignTimeManual: 3.0, shiftHours: 6.0 },
+  'Conference Hotel':   { deptClean: 35, stayClean: 20, amenityBase: 1.00, amenityReduction: 0.05, assignTimeManual: 3.0, shiftHours: 6.0 },
+  'Serviced Apartment': { deptClean: 50, stayClean: 25, amenityBase: 0.50, amenityReduction: 0.03, assignTimeManual: 2.5, shiftHours: 6.0 },
+  'Short-Term Rental':  { deptClean: 60, stayClean: 0,  amenityBase: 0.30, amenityReduction: 0.02, assignTimeManual: 2.0, shiftHours: 5.5 },
+};
+
+/**
+ * Calculate the number of HK staff on duty based on property characteristics.
+ * Returns ceiling to ensure enough coverage.
+ */
+export function calculateHkStaff(
+  rooms: number,
+  occupancyPct: number,   // 0-100
+  avgLengthOfStay: number,
+  departureCleanTime: number,  // minutes
+  stayoverCleanTime: number,   // minutes
+  effectiveShiftHours: number,
+): number {
+  const occupiedRooms = rooms * (occupancyPct / 100);
+  const departuresPerDay = occupiedRooms / Math.max(avgLengthOfStay, 1);
+  const stayoversPerDay = occupiedRooms - departuresPerDay;
+  const totalCleanMinutes = (departuresPerDay * departureCleanTime) + (stayoversPerDay * stayoverCleanTime);
+  return Math.max(1, Math.ceil(totalCleanMinutes / (effectiveShiftHours * 60)));
+}
+
 export const COUNTRY_DEFAULT_LANGUAGE: Record<string, LanguageCode> = {
   'Austria': 'de',
   'Belgium': 'fr',
@@ -170,6 +222,14 @@ interface HotelDefaults {
   avgTimeToUpdateRate: number;
   currentDirectBookingPercent: number;
   estimatedRevenueUplift: number;
+  // Housekeeping
+  hkDepartureCleanTime: number;
+  hkStayoverCleanTime: number;
+  hkAmenityCostPerRoomNight: number;
+  hkAmenityReductionPct: number;
+  hkRoomAssignmentTimeManual: number;
+  hkEffectiveShiftHours: number;
+  hkStaffOnDuty: number;
 }
 
 export function getSmartDefaults(country: string, hotelType: string, usState?: string): HotelDefaults {
@@ -334,6 +394,15 @@ export function getSmartDefaults(country: string, hotelType: string, usState?: s
   const upliftRange = UPLIFT_RANGES[hotelType]?.withoutRM ?? [9, 12];
   const estimatedRevenueUplift = (upliftRange[0] + upliftRange[1]) / 2;
 
+  // ── Housekeeping defaults ─────────────────────────────────────────────
+  const hkDefs = HK_HOTEL_DEFAULTS[hotelType] ?? HK_HOTEL_DEFAULTS['City Hotel'];
+  const amenityCostMultiplier = AMENITY_COST_MULTIPLIER[country] ?? 1.0;
+  const hkAmenityCostPerRoomNight = hkDefs.amenityBase * amenityCostMultiplier;
+  const hkStaffOnDuty = calculateHkStaff(
+    numberOfRooms, occupancyPct, avgLengthOfStay,
+    hkDefs.deptClean, hkDefs.stayClean, hkDefs.shiftHours,
+  );
+
   return {
     occupancyRate: Math.round(occupancyPct),
     avgLengthOfStay,
@@ -374,6 +443,14 @@ export function getSmartDefaults(country: string, hotelType: string, usState?: s
     numberOfChannels: hotelType === 'Conference Hotel' ? 6 : 4,
     avgTimeToUpdateRate: 5,
     estimatedRevenueUplift,
+    // Housekeeping
+    hkDepartureCleanTime: hkDefs.deptClean,
+    hkStayoverCleanTime: hkDefs.stayClean,
+    hkAmenityCostPerRoomNight,
+    hkAmenityReductionPct: hkDefs.amenityReduction,
+    hkRoomAssignmentTimeManual: hkDefs.assignTimeManual,
+    hkEffectiveShiftHours: hkDefs.shiftHours,
+    hkStaffOnDuty,
   };
 }
 

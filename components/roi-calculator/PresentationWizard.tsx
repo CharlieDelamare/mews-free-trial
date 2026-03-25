@@ -21,6 +21,7 @@ export default function PresentationWizard() {
     guestExperience: true,
     payment: true,
     rms: true,
+    housekeeping: true,
   });
   const [nameError, setNameError] = useState('');
   const [modulesError, setModulesError] = useState('');
@@ -165,6 +166,11 @@ export default function PresentationWizard() {
                       key: 'rms' as const,
                       label: 'RMS',
                       description: 'Rate management, channel optimisation',
+                    },
+                    {
+                      key: 'housekeeping' as const,
+                      label: 'Housekeeping',
+                      description: 'Room assignment, cleaning updates, maintenance coordination',
                     },
                   ] satisfies { key: keyof EnabledModules; label: string; description: string }[] // description kept for future use
                 ).map(({ key, label }) => {

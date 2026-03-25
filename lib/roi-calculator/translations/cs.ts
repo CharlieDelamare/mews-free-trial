@@ -28,6 +28,7 @@ const cs: TranslationDictionary = {
     guestExperience: 'Zážitek hostů',
     payment: 'Platby a fakturace',
     rms: 'Revenue management',
+    housekeeping: 'Housekeeping',
   },
 
   levers: {
@@ -42,6 +43,12 @@ const cs: TranslationDictionary = {
     multiCurrency: 'Více měn',
     revenueUplift: 'Nárůst příjmů',
     rateAutomation: 'Automatizace sazeb',
+    hkRoomAssignment: 'Room Assignment Automation',
+    cleaningStatusUpdates: 'Cleaning Status Updates',
+    maintenanceCommunication: 'Maintenance Communication',
+    taskManagement: 'Task Management',
+    amenitiesReduction: 'Amenities Reduction',
+    paperElimination: 'Paper Elimination',
   },
 
   pdfLevers: {
@@ -56,6 +63,12 @@ const cs: TranslationDictionary = {
     multiCurrencyRevenue: 'Příjmy z více měn',
     dynamicPricingUplift: 'Nárůst příjmů z dynamického cenotvorby',
     rateUpdateAutomation: 'Automatizace aktualizace sazeb',
+    hkRoomAssignmentAutomation: 'Room Assignment Automation',
+    hkCleaningStatusUpdates: 'Cleaning Status Updates',
+    hkMaintenanceCommunication: 'Maintenance Communication',
+    hkTaskManagement: 'Task Management Efficiency',
+    hkAmenitiesReduction: 'Amenities Cost Reduction',
+    hkPaperElimination: 'Paper Elimination',
   },
 
   leverResultType: {
@@ -170,6 +183,35 @@ const cs: TranslationDictionary = {
         : ' Získáváte optimalizaci příjmů na podnikové úrovni bez potřeby dedikovaného revenue manažera — umělá inteligence řídí cenotvorbu nepřetržitě.';
       return text;
     },
+
+    housekeepingNarrative: ({ active, val }) => {
+      const parts: string[] = [];
+      parts.push('Mews Housekeeping streamlines every aspect of room operations — from assignment to cleaning updates to maintenance coordination.');
+      if (active('hkRoomAssignment')) {
+        parts.push(`Automated room assignment eliminates the daily briefing bottleneck, saving ${val('hkRoomAssignment')} in housekeeping labor each year.`);
+      }
+      if (active('cleaningStatusUpdates')) {
+        parts.push('Real-time cleaning status updates replace phone calls and paper checklists, keeping the whole team in sync instantly.');
+      }
+      if (active('maintenanceCommunication')) {
+        parts.push('Digital maintenance reporting means repairs are logged and dispatched in seconds, not minutes.');
+      }
+      if (active('amenitiesReduction')) {
+        parts.push(`Smart amenity management reduces unnecessary replenishment, saving ${val('amenitiesReduction')} in supply costs.`);
+      }
+      if (active('paperElimination')) {
+        parts.push('Going fully digital eliminates paper-based processes — better for your team and better for the planet.');
+      }
+      return parts.join(' ');
+    },
+
+    pdfHousekeepingNarrative: ({ totalTime, totalSavings, amenitiesCostSaved, formatCurrency }) => {
+      let text = `Mews Housekeeping streamlines room assignment, cleaning status updates, and maintenance coordination — returning ${totalTime.toLocaleString()} staff hours annually and saving ${formatCurrency(totalSavings)} in total operational costs.`;
+      if (amenitiesCostSaved > 0) {
+        text += ` Smart amenity management alone reduces replenishment costs by ${formatCurrency(amenitiesCostSaved)} per year, while digital-first processes eliminate paper waste across every shift.`;
+      }
+      return text;
+    },
   },
 
   slideFooter: 'Mews ROI Report',
@@ -186,6 +228,12 @@ const cs: TranslationDictionary = {
     multiCurrency: (p) => `${p.cs}${p.monthlyRev}/měs x 12 x ${p.foreignPercent}% zahraniční x ${p.adoption}% adopce x ${p.share}% podíl = ${p.total}`,
     revenueUplift: (p) => `${p.cs}${p.revpar} RevPAR x ${p.upliftPercent}% nárůst = ${p.cs}${p.revparUplift}/pokoj/noc x ${p.rooms} pokojů x 365 dní = ${p.total}`,
     rateAutomation: (p) => `${p.updatesPerWeek} aktualizací/týden x 52 týdnů x ${p.ratePlans} plánů x ${p.channels} kanálů x ${p.updateTime} min / 60 = ${p.totalHours} hod/rok`,
+    hkRoomAssignment: (p) => `${p.staff} HK staff × (${p.manualTime}m − ${p.digitalTime}m) / 60 × 365 = ${p.totalHours} hrs/yr`,
+    cleaningStatusUpdates: (p) => `${p.updatesPerDay} updates/day × (0.5m − 0.05m) / 60 × 365 = ${p.totalHours} hrs/yr`,
+    maintenanceCommunication: (p) => `${p.repairsPerDay} repairs/day × (1.0m − 0.15m) / 60 × 365 = ${p.totalHours} hrs/yr`,
+    taskManagement: (p) => `${p.tasksPerDay} tasks/day × (0.5m − 0.15m) / 60 × 365 = ${p.totalHours} hrs/yr`,
+    amenitiesReduction: (p) => `${p.rooms} rooms × 365 × ${p.occupancy}% occ × ${p.amenityCost} × ${p.reductionPct}% = ${p.total}/yr`,
+    paperElimination: (p) => `${p.roomNights} room-nights × €0.005/sheet = ${p.total}/yr`,
   },
 };
 
