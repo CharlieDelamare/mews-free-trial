@@ -26,6 +26,7 @@ import type {
   GuestExperienceInputs,
   PaymentInputs,
   RMSInputs,
+  HousekeepingInputs,
   ModuleKey,
 } from '@/lib/roi-calculator/types/calculator';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
@@ -46,7 +47,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     propertyContextString,
   } = useROICalculator(initialState);
 
-  const { config, ui, sharedVariables, guestExperience, payment, rms } = state;
+  const { config, ui, sharedVariables, guestExperience, payment, rms, housekeeping } = state;
   const { currencySymbol } = config;
   const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
   const [isIntakeOpen, setIsIntakeOpen] = useState(false);
@@ -117,7 +118,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
   // don't trigger unnecessary PATCH requests. Confidence map is included because
   // confirmed/adjusted/unknown statuses are meaningful and must be persisted.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, confidenceState.map, presentationId]);
+  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, state.housekeeping, confidenceState.map, presentationId]);
 
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
@@ -214,12 +215,20 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     [dispatch],
   );
 
+  const handleHousekeepingChange = useCallback(
+    <K extends keyof HousekeepingInputs>(field: K, value: HousekeepingInputs[K]) => {
+      dispatch({ type: 'SET_FIELD', slice: 'housekeeping', field, value });
+    },
+    [dispatch],
+  );
+
   // Export — modal UI always in English; PDF uses presentationLanguage
   const enT = getTranslations('en');
   const exportableSections = [
     { id: 'guest-experience', label: enT.modules.guestExperience },
     { id: 'payment', label: enT.modules.payment },
     { id: 'rms', label: enT.modules.rms },
+    { id: 'housekeeping', label: enT.modules.housekeeping },
   ];
 
   const handleExportPDF = async () => {
@@ -234,6 +243,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
       if (ui.selectedSections.includes('guest-experience')) { filteredTime += results.guestExperience.totalTime; filteredSavings += results.guestExperience.totalSavings; }
       if (ui.selectedSections.includes('payment')) { filteredTime += results.payment.totalTime; filteredSavings += results.payment.totalSavings; }
       if (ui.selectedSections.includes('rms')) { filteredTime += results.rms.totalTime; filteredSavings += results.rms.totalSavings; }
+      if (ui.selectedSections.includes('housekeeping')) { filteredTime += results.housekeeping.totalTime; filteredSavings += results.housekeeping.totalSavings; }
 
       const pdfData = {
         title: config.title,
@@ -300,6 +310,22 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
               annualLaborCostSavings: results.rms.annualLaborCostSavings,
               totalTime: results.rms.totalTime,
               totalSavings: results.rms.totalSavings,
+            },
+          }),
+          ...(ui.selectedSections.includes('housekeeping') && {
+            housekeeping: {
+              roomAssignmentHours: results.housekeeping.roomAssignmentHours,
+              roomAssignmentCost: results.housekeeping.roomAssignmentCost,
+              cleaningStatusHours: results.housekeeping.cleaningStatusHours,
+              cleaningStatusCost: results.housekeeping.cleaningStatusCost,
+              maintenanceCommHours: results.housekeeping.maintenanceCommHours,
+              maintenanceCommCost: results.housekeeping.maintenanceCommCost,
+              taskMgmtHours: results.housekeeping.taskMgmtHours,
+              taskMgmtCost: results.housekeeping.taskMgmtCost,
+              amenitiesCostSaved: results.housekeeping.amenitiesCostSaved,
+              paperCostSaved: results.housekeeping.paperCostSaved,
+              totalTime: results.housekeeping.totalTime,
+              totalSavings: results.housekeeping.totalSavings,
             },
           }),
         },

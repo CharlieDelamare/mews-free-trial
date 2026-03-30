@@ -441,6 +441,70 @@ export function getPriorityInputs(
       },
   );
 
+  // ── Group 5: Housekeeping ────────────────────────────────────────
+  inputs.push(
+    {
+      key: 'housekeeping.departureCleanTime',
+      slice: 'housekeeping',
+      field: 'departureCleanTime',
+      label: 'Departure Room Clean Time',
+      question: 'How many minutes does it take to clean a room after a guest departs?',
+      benchmarkLabel: `${hotelType === 'Short-Term Rental' ? '60' : hotelType === 'Serviced Apartment' ? '50' : hotelType === 'Boutique Hotel' ? '35' : '30'} min typical for ${hotelType}s`,
+      unit: 'min',
+      min: 15,
+      max: 120,
+      step: 5,
+      group: 'housekeeping',
+      importance: 'high',
+      skipLabel: 'Use industry average',
+      benchmarkSourceInfo: `Departure clean time for ${hotelType} properties based on AHLA and Mews housekeeping research.`,
+      mewsLabel: 'Same (quality unchanged)',
+    },
+    {
+      key: 'housekeeping.stayoverCleanTime',
+      slice: 'housekeeping',
+      field: 'stayoverCleanTime',
+      label: 'Stayover Room Clean Time',
+      question: 'How many minutes does a stayover service take per room?',
+      benchmarkLabel: hotelType === 'Short-Term Rental' ? 'N/A for short-term rentals' : '20 min typical average',
+      unit: 'min',
+      min: 0,
+      max: 60,
+      step: 5,
+      group: 'housekeeping',
+      importance: 'medium',
+      skipLabel: 'Use industry average',
+      benchmarkSourceInfo: `Stayover service time for ${hotelType} properties based on AHLA and Mews housekeeping research.`,
+      mewsLabel: 'Same (quality unchanged)',
+    },
+    {
+      key: 'housekeeping.amenityCostPerRoomNight',
+      slice: 'housekeeping',
+      field: 'amenityCostPerRoomNight',
+      label: 'Amenity Cost per Room Night',
+      question: 'How much do you spend on amenities (toiletries, minibar restocking, etc.) per occupied room night?',
+      benchmarkLabel: `${hotelType === 'Boutique Hotel' ? '€3.00' : hotelType === 'Serviced Apartment' ? '€0.50' : '€1.00'} typical for ${hotelType}s`,
+      unit: currencySymbol,
+      min: 0.10,
+      max: 25,
+      step: 0.10,
+      group: 'housekeeping',
+      importance: 'medium',
+      skipLabel: 'Use industry average',
+      benchmarkSourceInfo: `Amenity cost per room night for ${hotelType} properties based on AHLA operational cost benchmarks and Mews research.`,
+      mewsMapping: {
+        slice: 'housekeeping',
+        field: 'amenityReductionPct',
+        label: 'Reduction with Mews',
+        unit: '%',
+        min: 0,
+        max: 20,
+        step: 1,
+        displayMode: 'additive',
+      },
+    },
+  );
+
   // Filter by enabled modules if provided
   if (enabledModules) {
     return inputs.filter((input) => {
@@ -458,6 +522,10 @@ export function getPriorityInputs(
       }
       // Include rms only if rms is enabled
       if (input.group === 'rms' && !enabledModules.rms) {
+        return false;
+      }
+      // Include housekeeping only if housekeeping is enabled
+      if (input.group === 'housekeeping' && !enabledModules.housekeeping) {
         return false;
       }
       return true;
@@ -493,5 +561,10 @@ export const INPUT_GROUPS = {
     label: 'Revenue Management',
     description: 'Rate plans, channels, and pricing frequency',
     icon: 'BarChart3',
+  },
+  housekeeping: {
+    label: 'Housekeeping',
+    description: 'Room cleaning times and amenity costs',
+    icon: 'BedDouble',
   },
 } as const;

@@ -60,6 +60,7 @@ export interface TranslationDictionary {
     guestExperience: string;
     payment: string;
     rms: string;
+    housekeeping: string;
   };
 
   /** Short lever labels for cinematic slides */
@@ -75,6 +76,13 @@ export interface TranslationDictionary {
     multiCurrency: string;
     revenueUplift: string;
     rateAutomation: string;
+    // Housekeeping levers
+    hkRoomAssignment: string;
+    cleaningStatusUpdates: string;
+    maintenanceCommunication: string;
+    taskManagement: string;
+    amenitiesReduction: string;
+    paperElimination: string;
   };
 
   /** Longer lever labels for PDF slides */
@@ -90,6 +98,13 @@ export interface TranslationDictionary {
     multiCurrencyRevenue: string;
     dynamicPricingUplift: string;
     rateUpdateAutomation: string;
+    // Housekeeping PDF levers
+    hkRoomAssignmentAutomation: string;
+    hkCleaningStatusUpdates: string;
+    hkMaintenanceCommunication: string;
+    hkTaskManagement: string;
+    hkAmenitiesReduction: string;
+    hkPaperElimination: string;
   };
 
   /** Lever result type badge labels */
@@ -169,6 +184,20 @@ export interface TranslationDictionary {
       hasExistingRMS: boolean;
       formatCurrency: (v: number) => string;
     }) => string;
+
+    /** Housekeeping narrative (cinematic) */
+    housekeepingNarrative: (p: {
+      active: (key: string) => boolean;
+      val: (key: string) => string;
+    }) => string;
+
+    /** PDF-specific housekeeping narrative */
+    pdfHousekeepingNarrative: (p: {
+      totalTime: number;
+      totalSavings: number;
+      amenitiesCostSaved: number;
+      formatCurrency: (v: number) => string;
+    }) => string;
   };
 
   /** Slide footer text */
@@ -187,5 +216,12 @@ export interface TranslationDictionary {
     multiCurrency: (p: Record<string, string | number>) => string;
     revenueUplift: (p: Record<string, string | number>) => string;
     rateAutomation: (p: Record<string, string | number>) => string;
+    // Housekeeping formulas
+    hkRoomAssignment: (p: Record<string, string | number>) => string;
+    cleaningStatusUpdates: (p: Record<string, string | number>) => string;
+    maintenanceCommunication: (p: Record<string, string | number>) => string;
+    taskManagement: (p: Record<string, string | number>) => string;
+    amenitiesReduction: (p: Record<string, string | number>) => string;
+    paperElimination: (p: Record<string, string | number>) => string;
   };
 }

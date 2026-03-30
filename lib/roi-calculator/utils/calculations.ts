@@ -2,10 +2,12 @@ import type {
   GuestExperienceInputs,
   PaymentInputs,
   RMSInputs,
+  HousekeepingInputs,
   SharedVariables,
   GuestExperienceResults,
   PaymentResults,
   RMSResults,
+  HousekeepingResults,
   CalculatorResults,
   CostRevenueSplit,
 } from '@/lib/roi-calculator/types/calculator';
@@ -144,6 +146,112 @@ export function splitRMS(r: RMSResults): CostRevenueSplit {
   return { costSavings, revenueUplift, timeSavingsEquivalent };
 }
 
+// ── Housekeeping ──────────────────────────────────────────────────────
+
+const HK_CONSTANTS = {
+  roomAssignmentTimeDigital: 0.5,    // minutes per HK staff member
+  cleaningUpdateTimeManual: 0.5,     // minutes per update
+  cleaningUpdateTimeDigital: 0.05,   // 3 seconds
+  repairCommTimeManual: 1.0,         // minutes per repair
+  repairCommTimeDigital: 0.15,       // 9 seconds
+  taskCommTimeManual: 0.5,           // minutes per task
+  taskCommTimeDigital: 0.15,         // 9 seconds
+  repairsPerOccupiedRoom: 0.26,      // per occupied room per day
+  tasksPerOccupiedRoom: 1.45,        // per occupied room per day
+  paperSheetsPerOccupiedRoom: 1,     // per occupied room per day
+  paperCostPerSheet: 0.005,          // EUR base
+  hkWageMultiplier: 0.85,            // HK staff earn ~85% of average staff wage
+};
+
+const ALREADY_DIGITAL_MULTIPLIERS = {
+  roomAssignment: 0.30,
+  cleaningStatusUpdates: 0.50,
+  maintenanceCommunication: 0.50,
+  taskManagement: 0.60,
+  amenitiesReduction: 1.0,
+  paperElimination: 1.0,
+};
+
+export function calcHousekeeping(h: HousekeepingInputs, shared: SharedVariables): HousekeepingResults {
+  const occupiedRooms = shared.numberOfRooms * (shared.occupancyRate / 100);
+  const hkWage = shared.staffHourlyWage * HK_CONSTANTS.hkWageMultiplier;
+  const software = h.usesHousekeepingSoftware;
+
+  // Lever 1: Room Assignment Automation
+  // Condition: skip if fully_digital, halve if partially_digital
+  const methodMultiplier = h.roomAssignmentMethod === 'fully_digital' ? 0
+    : h.roomAssignmentMethod === 'partially_digital' ? 0.5 : 1.0;
+  const raTimeDelta = h.roomAssignmentTimeManual - HK_CONSTANTS.roomAssignmentTimeDigital;
+  const rawRoomAssignmentHours = h.hkStaffOnDuty * raTimeDelta * 365 / 60 * methodMultiplier;
+  const roomAssignmentHours = Math.round(rawRoomAssignmentHours * (software ? ALREADY_DIGITAL_MULTIPLIERS.roomAssignment : 1));
+  const roomAssignmentCost = Math.round(roomAssignmentHours * hkWage);
+
+  // Lever 2: Cleaning Status Updates
+  // Skip for short-term rentals (stayoverCleanTime === 0)
+  let cleaningStatusHours = 0;
+  let cleaningStatusCost = 0;
+  if (h.stayoverCleanTime > 0) {
+    const departures = occupiedRooms / Math.max(shared.avgLengthOfStay, 1);
+    const stayovers = occupiedRooms - departures;
+    const updatesPerDay = stayovers * 1 + departures * 2;
+    const csTimeDelta = HK_CONSTANTS.cleaningUpdateTimeManual - HK_CONSTANTS.cleaningUpdateTimeDigital;
+    const rawHours = updatesPerDay * csTimeDelta * 365 / 60;
+    cleaningStatusHours = Math.round(rawHours * (software ? ALREADY_DIGITAL_MULTIPLIERS.cleaningStatusUpdates : 1));
+    cleaningStatusCost = Math.round(cleaningStatusHours * hkWage);
+  }
+
+  // Lever 3: Maintenance Communication
+  const repairsPerDay = occupiedRooms * HK_CONSTANTS.repairsPerOccupiedRoom;
+  const mcTimeDelta = HK_CONSTANTS.repairCommTimeManual - HK_CONSTANTS.repairCommTimeDigital;
+  const rawMcHours = repairsPerDay * mcTimeDelta * 365 / 60;
+  const maintenanceCommHours = Math.round(rawMcHours * (software ? ALREADY_DIGITAL_MULTIPLIERS.maintenanceCommunication : 1));
+  const maintenanceCommCost = Math.round(maintenanceCommHours * hkWage);
+
+  // Lever 4: Task Management Efficiency
+  const tasksPerDay = occupiedRooms * HK_CONSTANTS.tasksPerOccupiedRoom;
+  const tmTimeDelta = HK_CONSTANTS.taskCommTimeManual - HK_CONSTANTS.taskCommTimeDigital;
+  const rawTmHours = tasksPerDay * tmTimeDelta * 365 / 60;
+  const taskMgmtHours = Math.round(rawTmHours * (software ? ALREADY_DIGITAL_MULTIPLIERS.taskManagement : 1));
+  const taskMgmtCost = Math.round(taskMgmtHours * hkWage);
+
+  // Lever 5: Amenities Cost Reduction
+  const annualAmenitySpend = shared.numberOfRooms * 365 * (shared.occupancyRate / 100) * h.amenityCostPerRoomNight;
+  const amenitiesCostSaved = Math.round(annualAmenitySpend * h.amenityReductionPct * ALREADY_DIGITAL_MULTIPLIERS.amenitiesReduction);
+
+  // Lever 6: Paper Elimination
+  const occupiedRoomNights = shared.numberOfRooms * 365 * (shared.occupancyRate / 100);
+  const paperCostSaved = Math.round(
+    occupiedRoomNights * HK_CONSTANTS.paperSheetsPerOccupiedRoom * HK_CONSTANTS.paperCostPerSheet
+    * ALREADY_DIGITAL_MULTIPLIERS.paperElimination
+  );
+
+  const totalTime = roomAssignmentHours + cleaningStatusHours + maintenanceCommHours + taskMgmtHours;
+  const totalSavings = roomAssignmentCost + cleaningStatusCost + maintenanceCommCost + taskMgmtCost + amenitiesCostSaved + paperCostSaved;
+
+  return {
+    roomAssignmentHours,
+    roomAssignmentCost,
+    cleaningStatusHours,
+    cleaningStatusCost,
+    maintenanceCommHours,
+    maintenanceCommCost,
+    taskMgmtHours,
+    taskMgmtCost,
+    amenitiesCostSaved,
+    paperCostSaved,
+    totalTime,
+    totalSavings,
+  };
+}
+
+// ── Cost vs Revenue Split ─────────────────────────────────────────────
+
+export function splitHousekeeping(r: HousekeepingResults): CostRevenueSplit {
+  const timeSavingsEquivalent = r.roomAssignmentCost + r.cleaningStatusCost + r.maintenanceCommCost + r.taskMgmtCost;
+  const costSavings = timeSavingsEquivalent + r.amenitiesCostSaved + r.paperCostSaved;
+  return { costSavings, revenueUplift: 0, timeSavingsEquivalent };
+}
+
 // ── Aggregate ─────────────────────────────────────────────────────────
 
 export function calcAll(
@@ -151,16 +259,19 @@ export function calcAll(
   guestExperience: GuestExperienceInputs,
   payment: PaymentInputs,
   rms: RMSInputs,
+  housekeeping: HousekeepingInputs,
 ): CalculatorResults {
   const ge = calcGuestExperience(guestExperience, sharedVariables);
   const pm = calcPayment(payment, sharedVariables);
   const rm = calcRMS(rms, sharedVariables);
+  const hk = calcHousekeeping(housekeeping, sharedVariables);
 
   return {
     guestExperience: ge,
     payment: pm,
     rms: rm,
-    totalTimeSaved: ge.totalTime + pm.totalTime + rm.totalTime,
-    totalAnnualSavings: ge.totalSavings + pm.totalSavings + rm.totalSavings,
+    housekeeping: hk,
+    totalTimeSaved: ge.totalTime + pm.totalTime + rm.totalTime + hk.totalTime,
+    totalAnnualSavings: ge.totalSavings + pm.totalSavings + rm.totalSavings + hk.totalSavings,
   };
 }
