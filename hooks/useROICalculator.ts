@@ -508,6 +508,7 @@ export function useROICalculator(savedState?: PersistedState) {
         time: results.housekeeping.totalTime,
         costRevenue: split,
         color: MODULE_META.housekeeping.color,
+        textColor: MODULE_META.housekeeping.textColor,
       });
     }
 
