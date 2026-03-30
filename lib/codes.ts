@@ -43,7 +43,7 @@ export const countries: Record<string, CountryConfig> = {
   "Bolivia": { LE: "BO", Currency: "USD", Environment: "Gross" },
   "Brazil": { LE: "BR-TAX-EXEMPT", Currency: "BRL", Environment: "Gross" },
   "Cambodia": { LE: "KH", Currency: "USD", Environment: "Gross" },
-  "Canada": { LE: "CA-BC", Currency: "CAD", Environment: "Net" },
+  "Canada": { LE: "CA-BC-2026", Currency: "CAD", Environment: "Net" },
   "Chile": { LE: "CL", Currency: "USD", Environment: "Gross" },
   "Colombia": { LE: "CO", Currency: "USD", Environment: "Gross" },
   "Costa Rica": { LE: "CR", Currency: "USD", Environment: "Gross" },
