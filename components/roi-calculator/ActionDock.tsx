@@ -1,15 +1,15 @@
 'use client';
 
-import { Presentation, FileDown, Compass, Languages, Info } from 'lucide-react';
+import { Presentation, FileDown, Compass, Languages, Info, Check, Loader2 } from 'lucide-react';
 import type { LanguageCode } from '@/lib/roi-calculator/types/translations';
 import { SUPPORTED_LANGUAGES } from '@/lib/roi-calculator/types/translations';
-
 interface ActionDockProps {
   onPresentationMode: () => void;
   onExport: () => void;
   onDiscovery: () => void;
   presentationLanguage: LanguageCode;
   onLanguageChange: (lang: LanguageCode) => void;
+  saveStatus?: 'idle' | 'saving' | 'saved';
 }
 
 export default function ActionDock({
@@ -18,6 +18,7 @@ export default function ActionDock({
   onDiscovery,
   presentationLanguage,
   onLanguageChange,
+  saveStatus,
 }: ActionDockProps) {
   return (
     <div
@@ -70,6 +71,17 @@ export default function ActionDock({
             Presentation Mode
           </button>
         </div>
+
+        {/* Centre: save status */}
+        {saveStatus && saveStatus !== 'idle' && (
+          <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400">
+            {saveStatus === 'saving' ? (
+              <><Loader2 className="w-3 h-3 animate-spin" />Saving…</>
+            ) : (
+              <><Check className="w-3 h-3 text-green-500" />Saved</>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           {/* Discovery button hidden for now — kept for future reuse */}
