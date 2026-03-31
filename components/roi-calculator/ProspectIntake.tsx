@@ -12,14 +12,12 @@ import {
   BarChart3,
   CheckCircle2,
   X,
-  ChevronDown,
 } from 'lucide-react';
 import SmartField from '@/components/roi-calculator/ui/SmartField';
 import type { PriorityInput } from '@/lib/roi-calculator/types/confidence';
 import type { ConfidenceStatus, IntakeMode, ConfidenceScore } from '@/lib/roi-calculator/types/confidence';
 import { CONFIDENCE_LABELS } from '@/lib/roi-calculator/utils/confidenceScoring';
 import { INPUT_GROUPS } from '@/lib/roi-calculator/utils/priorityInputs';
-import { countries, hotelTypes, usStates } from '@/lib/roi-calculator/utils/hotelDefaults';
 
 const GROUP_ICONS: Record<string, React.ReactNode> = {
   property: <Building2 className="w-5 h-5" />,
@@ -42,13 +40,6 @@ interface ProspectIntakeProps {
   onConfirmField: (key: string) => void;
   onRevertFieldToBenchmark: (key: string) => void;
   score: ConfidenceScore;
-  // Property config
-  country: string;
-  usState: string;
-  hotelType: string;
-  onCountryChange: (v: string) => void;
-  onUSStateChange: (v: string) => void;
-  onHotelTypeChange: (v: string) => void;
   currencySymbol: string;
   // RMS existing system
   hasExistingRMS: boolean;
@@ -72,12 +63,6 @@ export default function ProspectIntake({
   onConfirmField,
   onRevertFieldToBenchmark,
   score,
-  country,
-  usState,
-  hotelType,
-  onCountryChange,
-  onUSStateChange,
-  onHotelTypeChange,
   currencySymbol,
   hasExistingRMS,
   onHasExistingRMSChange,
@@ -97,8 +82,8 @@ export default function ProspectIntake({
 
   const groupKeys = useMemo(() => Object.keys(groups), [groups]);
 
-  // Steps: 0 = property config, 1..N = one per input group, N+1 = review
-  const totalSteps = groupKeys.length + 2; // config + groups + review
+  // Steps: 0..N-1 = one per input group, N = review
+  const totalSteps = groupKeys.length + 1; // groups + review
   const [currentStep, setCurrentStep] = useState(0);
 
   const goNext = useCallback(() => {
@@ -115,7 +100,7 @@ export default function ProspectIntake({
   };
 
   // Count confirmed/adjusted in current group
-  const currentGroupKey = currentStep >= 1 && currentStep <= groupKeys.length ? groupKeys[currentStep - 1] : null;
+  const currentGroupKey = currentStep < groupKeys.length ? groupKeys[currentStep] : null;
   const currentGroupInputs = currentGroupKey ? groups[currentGroupKey] : [];
 
   const stepProgress = ((currentStep + 1) / totalSteps) * 100;
@@ -123,9 +108,9 @@ export default function ProspectIntake({
   if (!isOpen) return null;
 
   const panel = (
-    <div className={`w-full bg-white flex flex-col overflow-hidden ${fullPage ? 'min-h-screen' : 'max-w-2xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
+    <div className={`w-full bg-mews-linen flex flex-col overflow-hidden ${fullPage ? 'min-h-screen' : 'max-w-2xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
         {/* Header */}
-        <div className={`px-6 pt-5 pb-4 border-b border-gray-100 bg-white ${fullPage ? 'sticky top-14 z-10 max-w-2xl w-full mx-auto' : ''}`}>
+        <div className={`px-6 pt-5 pb-4 border-b border-gray-100 bg-mews-linen ${fullPage ? 'sticky top-14 z-10 max-w-2xl w-full mx-auto' : ''}`}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Build Your Business Case</h2>
@@ -160,86 +145,8 @@ export default function ProspectIntake({
 
         {/* Content */}
         <div className={`flex-1 px-6 py-5 ${fullPage ? 'max-w-2xl w-full mx-auto pb-24' : 'overflow-y-auto'}`}>
-          {/* Step 0: Property Configuration */}
-          {currentStep === 0 && (
-            <div className="space-y-5">
-              <div>
-                <h3 className="text-base font-semibold text-gray-800 mb-1">
-                  Let&apos;s start with your property
-                </h3>
-                <p className="text-sm text-gray-500">
-                  This helps us use the right industry benchmarks as starting points.
-                </p>
-              </div>
-
-              {/* Country */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Country</label>
-                <div className="relative">
-                  <select
-                    value={country}
-                    onChange={(e) => onCountryChange(e.target.value)}
-                    className="w-full appearance-none pl-3 pr-8 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
-                  >
-                    {countries.map((c) => (
-                      <option key={c.name} value={c.name}>{c.name}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                </div>
-              </div>
-
-              {/* U.S. State — only shown when United States is selected */}
-              {country === 'United States' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
-                  <div className="relative">
-                    <select
-                      value={usState}
-                      onChange={(e) => onUSStateChange(e.target.value)}
-                      className="w-full appearance-none pl-3 pr-8 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
-                    >
-                      <option value="">All states (national average)</option>
-                      {usStates.map((s) => (
-                        <option key={s.code} value={s.name}>{s.name}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
-              )}
-
-              {/* Hotel Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Property Type</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {hotelTypes.map((ht) => (
-                    <button
-                      key={ht}
-                      onClick={() => onHotelTypeChange(ht)}
-                      className={`px-3 py-2.5 rounded-lg text-sm font-medium border transition-all ${
-                        hotelType === ht
-                          ? 'bg-mews-primary text-mews-night-black border-mews-primary'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-                      }`}
-                    >
-                      {ht}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quick context about what happens next */}
-              <div className="bg-blue-50/60 border border-blue-100 rounded-lg px-4 py-3">
-                <p className="text-sm text-blue-800">
-                  We&apos;ll walk through <strong>{priorityInputs.length} key inputs</strong> that drive your ROI with the prospect. Each starts with the <strong>{hotelType}</strong> benchmark for <strong>{usState ? `${usState}, ${country}` : country}</strong> — confirm or adjust together as you go.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Steps 1..N: Input groups (only in validated mode) */}
-          {currentStep >= 1 && currentStep <= groupKeys.length && currentGroupKey && (
+          {/* Steps 0..N-1: Input groups */}
+          {currentStep < groupKeys.length && currentGroupKey && (
             <div className="space-y-5">
               <div className="flex items-center gap-3 mb-1">
                 <div className="p-2 rounded-lg bg-gray-100 text-gray-600">
@@ -432,7 +339,7 @@ export default function ProspectIntake({
         </div>
 
         {/* Footer navigation */}
-        <div className={`border-t border-gray-100 bg-white ${fullPage ? 'fixed bottom-0 left-0 right-0 z-20' : 'bg-gray-50/50'}`}>
+        <div className={`border-t border-gray-100 bg-mews-linen ${fullPage ? 'fixed bottom-0 left-0 right-0 z-20' : 'bg-gray-50/50'}`}>
           <div className={`flex items-center justify-between px-6 py-4 ${fullPage ? 'max-w-2xl mx-auto' : ''}`}>
             <button
               onClick={currentStep === 0 ? onClose : goPrev}
@@ -449,7 +356,7 @@ export default function ProspectIntake({
                   onClick={goNext}
                   className="flex items-center gap-1.5 px-5 py-2 text-sm font-semibold rounded-lg transition-colors bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover"
                 >
-                  {currentStep === 0 ? 'Start Validation' : 'Next'}
+                  Next
                   <ArrowRight className="w-4 h-4" />
                 </button>
               ) : (

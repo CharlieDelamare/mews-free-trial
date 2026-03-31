@@ -618,12 +618,6 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         onConfirmField={confirmField}
         onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
-        country={config.country}
-        usState={config.usState}
-        hotelType={config.hotelType}
-        onCountryChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: v })}
-        onUSStateChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: v })}
-        onHotelTypeChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: v })}
         currencySymbol={currencySymbol}
         hasExistingRMS={rms.hasExistingRMS}
         onHasExistingRMSChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'rms', field: 'hasExistingRMS', value: v })}
