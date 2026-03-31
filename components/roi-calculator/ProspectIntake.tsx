@@ -12,6 +12,7 @@ import {
   BarChart3,
   CheckCircle2,
   X,
+  ChevronDown,
 } from 'lucide-react';
 import SmartField from '@/components/roi-calculator/ui/SmartField';
 import type { PriorityInput } from '@/lib/roi-calculator/types/confidence';
@@ -174,31 +175,37 @@ export default function ProspectIntake({
               {/* Country */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Country</label>
-                <select
-                  value={country}
-                  onChange={(e) => onCountryChange(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
-                >
-                  {countries.map((c) => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={country}
+                    onChange={(e) => onCountryChange(e.target.value)}
+                    className="w-full appearance-none pl-3 pr-8 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
+                  >
+                    {countries.map((c) => (
+                      <option key={c.name} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                </div>
               </div>
 
               {/* U.S. State — only shown when United States is selected */}
               {country === 'United States' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">State</label>
-                  <select
-                    value={usState}
-                    onChange={(e) => onUSStateChange(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
-                  >
-                    <option value="">All states (national average)</option>
-                    {usStates.map((s) => (
-                      <option key={s.code} value={s.name}>{s.name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={usState}
+                      onChange={(e) => onUSStateChange(e.target.value)}
+                      className="w-full appearance-none pl-3 pr-8 py-2.5 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all"
+                    >
+                      <option value="">All states (national average)</option>
+                      {usStates.map((s) => (
+                        <option key={s.code} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  </div>
                 </div>
               )}
 

@@ -13,6 +13,7 @@ import DataComparisonSection from '@/components/roi-calculator/DataComparisonSec
 import DiscoverySection from '@/components/roi-calculator/sections/DiscoverySection';
 import ExportModal from '@/components/roi-calculator/ui/ExportModal';
 import PDFTemplate from '@/components/roi-calculator/PDFTemplate';
+import { ChevronDown } from 'lucide-react';
 import { countries, hotelTypes, usStates, getSmartDefaults, getBenchmarkForField } from '@/lib/roi-calculator/utils/hotelDefaults';
 import { getTranslations } from '@/lib/roi-calculator/translations';
 import { useROICalculator } from '@/hooks/useROICalculator';
@@ -414,36 +415,45 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
 
           {/* Country, State & Hotel Type selectors */}
           <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
-            <select
-              value={config.country}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
-            >
-              {countries.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-            {config.country === 'United States' && (
+            <div className="relative">
               <select
-                value={config.usState}
-                onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: e.target.value })}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
+                value={config.country}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: e.target.value })}
+                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
               >
-                <option value="">All states (national avg)</option>
-                {usStates.map((s) => (
-                  <option key={s.code} value={s.name}>{s.name}</option>
+                {countries.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
                 ))}
               </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
+            {config.country === 'United States' && (
+              <div className="relative">
+                <select
+                  value={config.usState}
+                  onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: e.target.value })}
+                  className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
+                >
+                  <option value="">All states (national avg)</option>
+                  {usStates.map((s) => (
+                    <option key={s.code} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
             )}
-            <select
-              value={config.hotelType}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
-            >
-              {hotelTypes.map((ht) => (
-                <option key={ht} value={ht}>{ht}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={config.hotelType}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: e.target.value })}
+                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
+              >
+                {hotelTypes.map((ht) => (
+                  <option key={ht} value={ht}>{ht}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
           </div>
 
           {/* Hero Number */}
