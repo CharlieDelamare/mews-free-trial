@@ -49,8 +49,9 @@ export default function CollapsibleSection({
 
   return (
     <div
-      className="bg-white rounded-2xl overflow-hidden transition-all duration-200"
+      className="rounded-2xl overflow-hidden transition-all duration-200"
       style={{
+        background: 'var(--mews-linen)',
         boxShadow: isExpanded
           ? '0 4px 20px color-mix(in srgb, var(--mews-black) 7%, transparent), 0 12px 40px color-mix(in srgb, var(--mews-charcoal) 8%, transparent)'
           : '0 1px 4px color-mix(in srgb, var(--mews-black) 5%, transparent), 0 4px 16px color-mix(in srgb, var(--mews-charcoal) 5%, transparent)',
