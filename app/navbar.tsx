@@ -33,6 +33,9 @@ const sandboxLinks = [
       </svg>
     ),
   },
+];
+
+const operationLinks = [
   {
     href: '/add-bi',
     label: 'Add BI',
@@ -42,9 +45,6 @@ const sandboxLinks = [
       </svg>
     ),
   },
-];
-
-const operationLinks = [
   {
     href: '/reset',
     label: 'Reset',
