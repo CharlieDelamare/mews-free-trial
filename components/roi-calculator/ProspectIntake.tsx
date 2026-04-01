@@ -122,9 +122,9 @@ export default function ProspectIntake({
   if (!isOpen) return null;
 
   const panel = (
-    <div className={`w-full bg-white flex flex-col overflow-hidden ${fullPage ? 'min-h-screen' : 'max-w-2xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
+    <div className={`w-full bg-white flex flex-col overflow-hidden ${fullPage ? 'h-[calc(100vh-3.5rem)]' : 'max-w-2xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
         {/* Header */}
-        <div className={`px-6 pt-5 pb-4 border-b border-gray-100 bg-white ${fullPage ? 'sticky top-14 z-10 max-w-2xl w-full mx-auto' : ''}`}>
+        <div className={`px-6 pt-5 pb-5 border-b border-gray-200 bg-white flex-none ${fullPage ? 'max-w-2xl w-full mx-auto' : ''}`}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Build Your Business Case</h2>
@@ -158,7 +158,7 @@ export default function ProspectIntake({
         </div>
 
         {/* Content */}
-        <div className={`flex-1 px-6 py-5 ${fullPage ? 'max-w-2xl w-full mx-auto pb-24' : 'overflow-y-auto'}`}>
+        <div className={`flex-1 px-6 py-5 overflow-y-auto ${fullPage ? 'max-w-2xl w-full mx-auto' : ''}`}>
           {/* Step 0: Property Configuration */}
           {currentStep === 0 && (
             <div className="space-y-5">
@@ -425,7 +425,7 @@ export default function ProspectIntake({
         </div>
 
         {/* Footer navigation */}
-        <div className={`border-t border-gray-100 bg-white ${fullPage ? 'fixed bottom-0 left-0 right-0 z-20' : 'bg-gray-50/50'}`}>
+        <div className={`flex-none border-t border-gray-100 bg-white ${fullPage ? '' : 'bg-gray-50/50'}`}>
           <div className={`flex items-center justify-between px-6 py-4 ${fullPage ? 'max-w-2xl mx-auto' : ''}`}>
             <button
               onClick={currentStep === 0 ? onClose : goPrev}
