@@ -11,7 +11,7 @@ interface Step3RoomsProps {
   onChange: (update: { categories?: ResourceCategory[]; resources?: Resource[]; features?: ResourceFeature[] }) => void;
 }
 
-function applyRenames<T extends Record<string, unknown>>(
+function applyRenames<T extends object>(
   oldRows: { name?: string }[],
   newRows: { name?: string }[],
   dependents: T[],

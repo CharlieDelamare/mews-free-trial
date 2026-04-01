@@ -28,7 +28,7 @@ interface Step4ServicesProps {
   }>) => void;
 }
 
-function applyRenames<T extends Record<string, unknown>>(
+function applyRenames<T extends object>(
   oldRows: { name?: string }[],
   newRows: { name?: string }[],
   dependents: T[],
