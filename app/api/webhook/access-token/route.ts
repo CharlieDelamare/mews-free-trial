@@ -280,6 +280,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ── Onboarding session linking ────────────────────────────────────────────
+    // If this is the "Mews Onboarding Integration", link to the most recent exported session
+    // for this enterprise that hasn't been linked yet.
+    const integrationName = createdPayload.Data.Integration?.Name ?? '';
+    if (integrationName === 'Mews Onboarding Integration') {
+      try {
+        const unlinkedSession = await prisma.onboardingSession.findFirst({
+          where: { status: 'exported', enterpriseId: null },
+          orderBy: { updatedAt: 'desc' },
+        });
+        if (unlinkedSession) {
+          await prisma.onboardingSession.update({
+            where: { id: unlinkedSession.id },
+            data: {
+              enterpriseId: createdPayload.Data.Enterprise.Id,
+              accessTokenId: newToken.id,
+            },
+          });
+          console.log('[WEBHOOK] Linked onboarding session:', unlinkedSession.id, 'to enterprise:', createdPayload.Data.Enterprise.Id);
+        }
+      } catch (linkError) {
+        console.error('[WEBHOOK] Failed to link onboarding session (non-blocking):', (linkError as Error).message);
+      }
+    }
+
     // Find and update the corresponding EnvironmentLog
     // Match by property name (PRIMARY method) since Enterprise.Name in webhook equals our propertyName
     const enterpriseName = payload.Data?.Enterprise?.Name;

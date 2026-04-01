@@ -217,6 +217,24 @@ model IbeSession {
   @@index([createdAt])
 }
 
+model OnboardingSession {
+  id            String    @id @default(cuid())
+  propertyName  String?
+  status        String    @default("draft") // 'draft' | 'exported' | 'pushed'
+  currentStep   Int       @default(0)
+  createdBy     String?
+  enterpriseId  String?
+  accessTokenId Int?
+  excelData     Json?
+  answers       Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+  @@index([enterpriseId])
+  @@index([createdAt])
+}
+
 model RoiPresentation {
   id                  String   @id @default(uuid())
   name                String
