@@ -405,11 +405,6 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
               placeholder="Enter presentation title…"
               className="w-full max-w-xl text-center text-2xl font-bold text-gray-800 bg-transparent outline-none placeholder:text-gray-300 placeholder:font-normal"
             />
-            {presentationId && saveStatus !== 'idle' && (
-              <span className="text-xs text-[--mews-night-black]/40 mt-1">
-                {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
-              </span>
-            )}
           </div>
 
           {/* Country, State & Hotel Type selectors */}
@@ -557,6 +552,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         onDiscovery={() => setIsDiscoveryOpen(true)}
         presentationLanguage={config.presentationLanguage}
         onLanguageChange={(lang) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'presentationLanguage', value: lang })}
+        saveStatus={presentationId ? saveStatus : undefined}
       />
 
       {/* Modals */}
@@ -608,12 +604,6 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         onConfirmField={confirmField}
         onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
-        country={config.country}
-        usState={config.usState}
-        hotelType={config.hotelType}
-        onCountryChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: v })}
-        onUSStateChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: v })}
-        onHotelTypeChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: v })}
         currencySymbol={currencySymbol}
         hasExistingRMS={rms.hasExistingRMS}
         onHasExistingRMSChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'rms', field: 'hasExistingRMS', value: v })}
