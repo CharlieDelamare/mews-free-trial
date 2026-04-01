@@ -8,6 +8,7 @@ interface Environment {
   enterpriseId: string;
   enterpriseName: string;
   propertyName?: string;
+  loginUrl?: string;
   type: 'trial' | 'manual';
   status?: string;
   customerEmail?: string;
@@ -47,6 +48,7 @@ export async function GET() {
         enterpriseId: token.enterpriseId,
         enterpriseName: token.enterpriseName,
         propertyName: log?.propertyName ?? undefined,
+        loginUrl: log?.loginUrl ?? undefined,
         type: log ? 'trial' : 'manual',
         status: log?.status ?? undefined,
         customerEmail: log?.customerEmail ?? undefined,
