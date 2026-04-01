@@ -16,7 +16,7 @@ interface Environment {
 }
 
 const BI_ADD_ON_URL = (enterpriseId: string) =>
-  `https://app.mews-demo.com/Commander/${enterpriseId}/EnterpriseIntegration/Marketplace?OwnerId=${enterpriseId}&ApplicationId=4a3b8e4c-4245-4274-9142-b21b0115f375`;
+  `https://app.mews-demo.com/Commander/00000000-0000-0000-0000-000000000000/EnterpriseIntegration/Marketplace?OwnerId=${enterpriseId}&ApplicationId=4a3b8e4c-4245-4274-9142-b21b0115f375`;
 
 const BI_CONNECTOR_URL = (enterpriseId: string) =>
   `https://app.mews-demo.com/Commander/${enterpriseId}/EnterpriseIntegration/Marketplace?OwnerId=${enterpriseId}&CategoryId=subscriptions&ApplicationId=MewsBiIntegration`;
@@ -100,9 +100,9 @@ export default function AddBiPage() {
                 1
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-mews-night-black mb-1">Open Demo &amp; become admin</h3>
+                <h3 className="text-sm font-semibold text-mews-night-black mb-1">Log in to the sandbox</h3>
                 <p className="text-sm text-neutral-500 mb-3">
-                  Log in and make yourself a property admin for this sandbox
+                  Log in with the global admin account (<strong>admin@mews.li</strong>), found in 1Password
                 </p>
                 <a
                   href={env.loginUrl ?? 'https://app.mews-demo.com'}
