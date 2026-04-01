@@ -243,13 +243,16 @@ export default function PropertyEditPopover({
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               <Building2 className="w-3 h-3 inline mr-1" />Type
             </span>
-            <select
-              value={hotelType}
-              onChange={(e) => setHotelType(e.target.value)}
-              className="px-2 py-1.5 text-sm font-semibold text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none transition-colors cursor-pointer"
-            >
-              {hotelTypes.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <div className="relative">
+              <select
+                value={hotelType}
+                onChange={(e) => setHotelType(e.target.value)}
+                className="appearance-none pl-2 pr-7 py-1.5 text-sm font-semibold text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none transition-colors cursor-pointer"
+              >
+                {hotelTypes.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            </div>
           </div>
         </div>
 
