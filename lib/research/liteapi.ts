@@ -1,11 +1,9 @@
 import { fetchWithTimeout } from '@/lib/fetch-timeout';
-import { inferSpaceType, inferBoardType, inferProductCategory } from './inference';
+import { inferSpaceType } from './inference';
 import type {
   HotelCandidate,
   HotelResearchData,
   RoomType,
-  RatePlan,
-  Product,
 } from '@/types/research';
 
 const LITEAPI_BASE = 'https://api.liteapi.travel/v3.0';
@@ -17,92 +15,75 @@ function getApiKey(): string {
   return key;
 }
 
-function buildAddress(addr: {
-  line1?: string;
-  city?: string;
-  postalCode?: string;
-} = {}): string {
-  return [addr.line1, addr.city, addr.postalCode].filter(Boolean).join(', ');
+/** Build a display address from flat string fields. */
+function buildAddress(address?: string | null, city?: string | null, zip?: string | null): string {
+  return [address, city, zip].filter(Boolean).join(', ');
 }
 
 export function normaliseLiteAPISearchResults(raw: {
   data: Array<{
     id: string;
     name: string;
-    address?: { line1?: string; city?: string; postalCode?: string };
-    starRating?: number | null;
+    address?: string | null;
+    city?: string | null;
+    zip?: string | null;
+    stars?: number | null;
     country?: string | null;
   }>;
 }): HotelCandidate[] {
   return (raw.data ?? []).map(h => ({
     hotelId: h.id,
     name: h.name,
-    address: buildAddress(h.address),
-    starRating: h.starRating ?? null,
-    country: h.country ?? null,
+    address: buildAddress(h.address, h.city, h.zip),
+    starRating: h.stars ?? null,
+    country: h.country ? h.country.toUpperCase() : null,
     source: 'liteapi' as const,
   }));
 }
 
 export function normaliseLiteAPIHotel(raw: {
   data: {
-    id: string;
     name: string;
-    hotelDescription?: string | null;
-    address?: { line1?: string; city?: string; postalCode?: string };
+    address?: string | null;
+    city?: string | null;
+    zip?: string | null;
     starRating?: number | null;
-    roomTypes?: Array<{
-      name: string;
+    rooms?: Array<{
+      roomName: string;
       description?: string | null;
       maxOccupancy?: number | null;
-      bedType?: string | null;
-      roomSize?: string | null;
-      amenities?: string[];
+      bedTypes?: Array<{ bedType: string }>;
+      roomSizeSquare?: number | null;
+      roomAmenities?: Array<{ name: string }>;
     }>;
-    ratePlans?: Array<{
-      name: string;
-      boardBasis?: string | null;
-      cancellationPolicy?: string | null;
-      isRefundable?: boolean | null;
-    }>;
-    facilities?: string[];
-    addons?: string[];
+    facilities?: Array<{ name: string }>;
   };
 }): HotelResearchData {
   const d = raw.data;
 
-  const roomTypes: RoomType[] = (d.roomTypes ?? []).map(rt => ({
-    name: rt.name,
-    description: rt.description ?? null,
-    maxOccupancy: rt.maxOccupancy ?? null,
-    bedType: rt.bedType ?? null,
-    sizeSqm: rt.roomSize ? parseFloat(rt.roomSize) || null : null,
-    amenities: rt.amenities ?? [],
-    spaceType: inferSpaceType(rt.name),
+  const roomTypes: RoomType[] = (d.rooms ?? []).map(r => ({
+    name: r.roomName,
+    description: r.description ?? null,
+    maxOccupancy: r.maxOccupancy ?? null,
+    bedType: r.bedTypes?.[0]?.bedType ?? null,
+    sizeSqm: r.roomSizeSquare ?? null,
+    amenities: (r.roomAmenities ?? []).map(a => a.name),
+    spaceType: inferSpaceType(r.roomName),
   }));
 
-  const ratePlans: RatePlan[] = (d.ratePlans ?? []).map(rp => ({
-    name: rp.name,
-    boardType: inferBoardType(rp.boardBasis ?? rp.name),
-    cancellationPolicy: rp.cancellationPolicy ?? null,
-    isRefundable: rp.isRefundable ?? null,
-  }));
-
-  const products: Product[] = (d.addons ?? []).map(name => ({
-    name,
-    category: inferProductCategory(name),
-  }));
-
-  const generalFacilities: string[] = d.facilities ?? [];
+  // LiteAPI /data/hotel exposes a single `facilities` list of hotel amenities
+  // (Pool, Spa, Restaurant, etc.) — these are not individually bookable add-ons.
+  // All facilities go to generalFacilities; products stays empty.
+  const generalFacilities: string[] = (d.facilities ?? []).map(f => f.name);
 
   return {
     hotelName: d.name,
-    address: buildAddress(d.address),
+    address: buildAddress(d.address, d.city, d.zip),
     starRating: d.starRating ?? null,
     source: 'liteapi',
     roomTypes,
-    ratePlans,
-    products,
+    ratePlans: [],
+    products: [],
     generalFacilities,
   };
 }

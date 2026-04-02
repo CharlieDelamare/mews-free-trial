@@ -4,83 +4,73 @@ import {
   normaliseLiteAPIHotel,
 } from './liteapi';
 
+// Matches real LiteAPI /v3.0/data/hotels response shape
 const MOCK_SEARCH_RESPONSE = {
   data: [
     {
       id: 'lp12345',
       name: 'The Savoy',
-      address: {
-        line1: 'Strand',
-        city: 'London',
-        country: 'GB',
-        postalCode: 'WC2R 0EZ',
-      },
-      starRating: 5,
-      country: 'GB',
+      address: 'Strand',
+      city: 'London',
+      zip: 'WC2R 0EZ',
+      stars: 5,
+      country: 'gb',
     },
     {
       id: 'lp99999',
       name: 'Savoy Hotel Manchester',
-      address: {
-        line1: '1 Deansgate',
-        city: 'Manchester',
-        country: 'GB',
-        postalCode: 'M1 1AA',
-      },
-      starRating: 4,
-      country: 'GB',
+      address: '1 Deansgate',
+      city: 'Manchester',
+      zip: 'M1 1AA',
+      stars: 4,
+      country: 'gb',
     },
   ],
 };
 
+// Matches real LiteAPI /v3.0/data/hotel response shape
 const MOCK_HOTEL_RESPONSE = {
   data: {
     id: 'lp12345',
     name: 'The Savoy',
-    hotelDescription: 'Iconic luxury hotel on the Strand.',
-    address: {
-      line1: 'Strand',
-      city: 'London',
-      country: 'GB',
-      postalCode: 'WC2R 0EZ',
-    },
+    address: 'Strand',
+    city: 'London',
+    zip: 'WC2R 0EZ',
     starRating: 5,
-    roomTypes: [
+    rooms: [
       {
-        roomTypeId: 'rt-001',
-        name: 'Deluxe Room',
+        roomName: 'Deluxe Room',
         description: 'Elegant room with river views.',
         maxOccupancy: 2,
-        bedType: 'King',
-        roomSize: '35',
-        amenities: ['WiFi', 'Minibar', 'Air Conditioning'],
+        bedTypes: [{ bedType: 'King', quantity: 1, bedSize: '181-210 cm', id: 1 }],
+        roomSizeSquare: 35,
+        roomAmenities: [
+          { amenitiesId: 1, name: 'WiFi', sort: 0 },
+          { amenitiesId: 2, name: 'Minibar', sort: 0 },
+          { amenitiesId: 3, name: 'Air Conditioning', sort: 0 },
+        ],
       },
       {
-        roomTypeId: 'rt-002',
-        name: 'Thames Suite',
+        roomName: 'Thames Suite',
         description: null,
         maxOccupancy: 3,
-        bedType: 'King',
-        roomSize: null,
-        amenities: ['WiFi', 'Butler Service'],
+        bedTypes: [{ bedType: 'King', quantity: 1, bedSize: '181-210 cm', id: 2 }],
+        roomSizeSquare: null,
+        roomAmenities: [
+          { amenitiesId: 1, name: 'WiFi', sort: 0 },
+          { amenitiesId: 4, name: 'Butler Service', sort: 0 },
+        ],
       },
     ],
-    ratePlans: [
-      {
-        name: 'Best Available Rate',
-        boardBasis: 'Room Only',
-        cancellationPolicy: 'Free cancellation up to 24h before check-in.',
-        isRefundable: true,
-      },
-      {
-        name: 'Bed and Breakfast',
-        boardBasis: null,
-        cancellationPolicy: 'Non-refundable.',
-        isRefundable: false,
-      },
+    facilities: [
+      { facilityId: 1, name: 'Pool' },
+      { facilityId: 2, name: 'Spa' },
+      { facilityId: 3, name: 'Restaurant' },
+      { facilityId: 4, name: 'Bar' },
+      { facilityId: 5, name: 'Gym' },
+      { facilityId: 6, name: 'Parking' },
+      { facilityId: 7, name: 'Airport transfer' },
     ],
-    facilities: ['Pool', 'Spa', 'Restaurant', 'Bar', 'Gym'],
-    addons: ['Airport Transfer', 'Late Checkout', 'Parking'],
   },
 };
 
@@ -98,9 +88,19 @@ describe('normaliseLiteAPISearchResults', () => {
     });
   });
 
+  test('uppercases country code', () => {
+    const result = normaliseLiteAPISearchResults(MOCK_SEARCH_RESPONSE);
+    expect(result[0].country).toBe('GB');
+  });
+
+  test('uses stars field (not starRating) for search results', () => {
+    const result = normaliseLiteAPISearchResults(MOCK_SEARCH_RESPONSE);
+    expect(result[0].starRating).toBe(5);
+  });
+
   test('handles missing address fields gracefully', () => {
     const sparse = {
-      data: [{ id: 'lp1', name: 'Hotel', address: {}, starRating: null, country: null }],
+      data: [{ id: 'lp1', name: 'Hotel', stars: null, country: null }],
     };
     const result = normaliseLiteAPISearchResults(sparse);
     expect(result[0].address).toBe('');
@@ -113,7 +113,7 @@ describe('normaliseLiteAPISearchResults', () => {
 });
 
 describe('normaliseLiteAPIHotel', () => {
-  test('maps room types with inferred spaceType', () => {
+  test('maps rooms to roomTypes with inferred spaceType', () => {
     const result = normaliseLiteAPIHotel(MOCK_HOTEL_RESPONSE);
     expect(result.roomTypes).toHaveLength(2);
     expect(result.roomTypes[0]).toEqual({
@@ -128,21 +128,27 @@ describe('normaliseLiteAPIHotel', () => {
     expect(result.roomTypes[1].spaceType).toBe('Suite');
   });
 
-  test('maps rate plans with inferred boardType', () => {
+  test('extracts first bedType from bedTypes array', () => {
     const result = normaliseLiteAPIHotel(MOCK_HOTEL_RESPONSE);
-    expect(result.ratePlans).toHaveLength(2);
-    expect(result.ratePlans[0].boardType).toBe('RO');
-    expect(result.ratePlans[1].boardType).toBe('BB');
-    expect(result.ratePlans[0].isRefundable).toBe(true);
-    expect(result.ratePlans[1].isRefundable).toBe(false);
+    expect(result.roomTypes[0].bedType).toBe('King');
   });
 
-  test('splits facilities into products and generalFacilities', () => {
+  test('handles null roomSizeSquare gracefully', () => {
     const result = normaliseLiteAPIHotel(MOCK_HOTEL_RESPONSE);
-    expect(result.products.map(p => p.name)).toContain('Airport Transfer');
-    expect(result.products.map(p => p.name)).toContain('Parking');
+    expect(result.roomTypes[1].sizeSqm).toBeNull();
+  });
+
+  test('puts all facilities into generalFacilities (LiteAPI has no separate add-ons list)', () => {
+    const result = normaliseLiteAPIHotel(MOCK_HOTEL_RESPONSE);
     expect(result.generalFacilities).toContain('Pool');
     expect(result.generalFacilities).toContain('Restaurant');
+    expect(result.generalFacilities).toContain('Parking');
+    expect(result.products).toEqual([]);
+  });
+
+  test('ratePlans is empty (LiteAPI content endpoint has no rate plan data)', () => {
+    const result = normaliseLiteAPIHotel(MOCK_HOTEL_RESPONSE);
+    expect(result.ratePlans).toEqual([]);
   });
 
   test('sets source to liteapi', () => {
@@ -150,8 +156,8 @@ describe('normaliseLiteAPIHotel', () => {
     expect(result.source).toBe('liteapi');
   });
 
-  test('handles null roomSize gracefully', () => {
+  test('builds address from flat string fields', () => {
     const result = normaliseLiteAPIHotel(MOCK_HOTEL_RESPONSE);
-    expect(result.roomTypes[1].sizeSqm).toBeNull();
+    expect(result.address).toBe('Strand, London, WC2R 0EZ');
   });
 });
