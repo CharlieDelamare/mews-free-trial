@@ -1,10 +1,9 @@
 import { fetchWithTimeout } from '@/lib/fetch-timeout';
-import { inferSpaceType, inferProductCategory } from './inference';
+import { inferSpaceType } from './inference';
 import type {
   HotelCandidate,
   HotelResearchData,
   RoomType,
-  Product,
 } from '@/types/research';
 
 const SERPAPI_BASE = 'https://serpapi.com/search';
@@ -62,17 +61,11 @@ export function normaliseSerpApiHotel(
     spaceType: inferSpaceType(r.name),
   }));
 
-  const productNames = (raw.amenities ?? []).filter(
-    a => inferProductCategory(a) !== 'Other' || /parking/i.test(a)
-  );
-  const facilityNames = (raw.amenities ?? []).filter(
-    a => !productNames.includes(a)
-  );
-
-  const products: Product[] = productNames.map(name => ({
-    name,
-    category: inferProductCategory(name),
-  }));
+  // SerpApi amenities represent hotel features (Pool, Restaurant, Gym), not
+  // individually bookable add-ons. Unlike LiteAPI (which exposes separate
+  // `facilities` and `addons` arrays), SerpApi has a single `amenities` list.
+  // All items go to generalFacilities; products stays empty.
+  const generalFacilities: string[] = raw.amenities ?? [];
 
   return {
     hotelName: raw.name,
@@ -81,8 +74,8 @@ export function normaliseSerpApiHotel(
     source: 'serpapi',
     roomTypes,
     ratePlans: [],
-    products,
-    generalFacilities: facilityNames,
+    products: [],
+    generalFacilities,
   };
 }
 

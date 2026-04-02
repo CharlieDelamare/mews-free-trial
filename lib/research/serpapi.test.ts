@@ -74,11 +74,12 @@ describe('normaliseSerpApiHotel', () => {
     expect(result.roomTypes[1].spaceType).toBe('Suite');
   });
 
-  test('splits amenities into products and generalFacilities', () => {
+  test('puts all amenities into generalFacilities (SerpApi has no separate addons list)', () => {
     const result = normaliseSerpApiHotel(MOCK_PROPERTY_RESPONSE, 'tok_abc123');
     expect(result.generalFacilities).toContain('Pool');
     expect(result.generalFacilities).toContain('Restaurant');
-    expect(result.products.map(p => p.name)).toContain('Parking');
+    expect(result.generalFacilities).toContain('Spa');
+    expect(result.products).toEqual([]);
   });
 
   test('sets source to serpapi', () => {
