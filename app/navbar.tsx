@@ -125,11 +125,18 @@ export function Navbar() {
         : 'text-neutral-600 hover:text-mews-night-black hover:bg-neutral-100'
     }`;
 
+  const BetaBadge = () => (
+    <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded bg-mews-primary/20 text-mews-night-black leading-none">
+      beta
+    </span>
+  );
+
   const renderLinks = (links: typeof sandboxLinks) =>
     links.map(({ href, label, icon }) => (
       <Link key={href} href={href} onClick={close} className={linkClasses(href)}>
         {icon}
         {label}
+        {(href === '/control-centre') && <BetaBadge />}
       </Link>
     ));
 
@@ -216,18 +223,16 @@ export function Navbar() {
             <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1 text-neutral-400">Tools</p>
             <div className="space-y-1">
               <Link key="/roi-calculator" href="/roi-calculator" onClick={close} className={linkClasses('/roi-calculator')}>
-                <span className="flex items-center gap-2">
-                  <Calculator className="h-4 w-4" />
-                  ROI Calculator
-                </span>
+                <Calculator className="h-4 w-4" />
+                ROI Calculator
+                <BetaBadge />
               </Link>
               <Link key="/research" href="/research" onClick={close} className={linkClasses('/research')}>
-                <span className="flex items-center gap-2">
-                  <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
-                  </svg>
-                  Research
-                </span>
+                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
+                </svg>
+                Research
+                <BetaBadge />
               </Link>
             </div>
           </div>
