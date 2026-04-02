@@ -327,11 +327,13 @@ export default function ResearchPage() {
                         </div>
                         <div className="flex flex-wrap gap-3 text-xs text-neutral-500 mb-3">
                           {room.maxOccupancy && <span>Max {room.maxOccupancy} guests</span>}
-                          {room.bedType && <span>{room.bedType} bed</span>}
+                          {room.bedType && <span>{room.bedType}</span>}
                           {room.sizeSqm && <span>{room.sizeSqm} m²</span>}
                         </div>
                         {room.description && (
-                          <p className="text-sm text-neutral-600 mb-3">{room.description}</p>
+                          <p className="text-sm text-neutral-600 mb-3">
+                            {room.description.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, ' ').trim()}
+                          </p>
                         )}
                         {room.amenities.length > 0 && (
                           <div className="flex flex-wrap gap-1.5">
