@@ -534,6 +534,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
             onValueChange={setSliceValue}
             onConfirmField={confirmField}
             score={score}
+            enabledModules={ui.enabledModules}
           />
 
         </div>
@@ -558,7 +559,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
       {/* ─── Zone 3: Action Dock ─── */}
       <ActionDock
         onPresentationMode={() => dispatch({ type: 'ENTER_CINEMATIC' })}
-        onExport={() => dispatch({ type: 'SET_FIELD', slice: 'ui', field: 'isExportModalOpen', value: true })}
+        onExport={() => dispatch({ type: 'OPEN_EXPORT' })}
         onDiscovery={() => setIsDiscoveryOpen(true)}
         presentationLanguage={config.presentationLanguage}
         onLanguageChange={(lang) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'presentationLanguage', value: lang })}
@@ -617,6 +618,9 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         currencySymbol={currencySymbol}
         hasExistingRMS={rms.hasExistingRMS}
         onHasExistingRMSChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'rms', field: 'hasExistingRMS', value: v })}
+        hasExistingHousekeepingApp={housekeeping.hasExistingHousekeepingApp}
+        onHasExistingHousekeepingAppChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'housekeeping', field: 'hasExistingHousekeepingApp', value: v })}
+        enabledModules={ui.enabledModules}
         onComplete={handleIntakeComplete}
       />
     </>
