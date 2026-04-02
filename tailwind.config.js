@@ -23,7 +23,7 @@ module.exports = {
         },
         /* Direct Mews palette access */
         mews: {
-          'night-black': 'var(--mews-night-black)',
+          'night-black': 'rgb(var(--mews-night-black-rgb) / <alpha-value>)',
           'deep-blue': 'var(--mews-deep-blue)',
           'linen': 'var(--mews-linen)',
           'light-indigo': 'var(--mews-light-indigo)',

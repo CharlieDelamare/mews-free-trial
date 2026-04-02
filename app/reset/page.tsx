@@ -209,7 +209,7 @@ export default function ResetSandboxPage() {
 
       {/* Manual Add Environment Modal */}
       {showManualAdd && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
+        <div className="fixed inset-0 bg-mews-night-black/70 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold text-mews-night-black mb-1">
               Add existing environment

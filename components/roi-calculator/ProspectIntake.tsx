@@ -566,7 +566,7 @@ export default function ProspectIntake({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-mews-night-black/60 backdrop-blur-sm" onClick={onClose} />
       {panel}
     </div>
   );
