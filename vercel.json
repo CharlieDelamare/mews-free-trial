@@ -1,5 +1,11 @@
 {
   "buildCommand": "prisma migrate resolve --rolled-back 20260131135815_init && prisma migrate deploy && next build",
+  "crons": [
+    {
+      "path": "/api/cleanup-stale-sandboxes",
+      "schedule": "0 8 * * 1"
+    }
+  ],
   "functions": {
     "app/api/webhook/access-token/route.ts": {
       "maxDuration": 800
