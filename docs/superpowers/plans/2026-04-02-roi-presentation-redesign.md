@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Redesign the cinematic presentation mode with brand colours + narrative-only module slides, add Fullscreen API support, and add an executive summary PDF export option.
+**Goal:** Improve the cinematic presentation mode (brand colours, fullscreen, bigger title hero), add a housekeeping narrative fix, and add an executive summary PDF export option. Module slides keep the full per-lever calculation breakdown — the numbers are the point.
 
-**Architecture:** Extract `getModuleNarrative` into a shared utility (`narratives.ts`) that also exports an HTML variant for the new `ExecSummaryPDFTemplate`. `CinematicSlide` and `CinematicOverlay` get visual overhauls. `ExportModal` gains a type toggle; `ROIStage` dispatches to either the existing presentation export or a new `handleExportExecSummary`.
+**Architecture:** Extract `getModuleNarrative` into a shared utility (`narratives.ts`) — this fixes the missing housekeeping case and exports an HTML variant used by `ExecSummaryPDFTemplate`. `CinematicSlide` gets title slide and summary colour fixes only; module slides are unchanged. `CinematicOverlay` gets Fullscreen API + width fix. `ExportModal` gains a type toggle; `ROIStage` dispatches to either the existing presentation export or a new `handleExportExecSummary`.
 
 **Tech Stack:** Next.js 14, TypeScript, Tailwind CSS, html2canvas + jsPDF (already used), Lucide React, Vitest
 
@@ -15,7 +15,7 @@
 | File | Action | Responsibility |
 |------|--------|----------------|
 | `lib/roi-calculator/utils/narratives.ts` | **Create** | Plain-text and HTML narrative generators for all 4 modules |
-| `components/roi-calculator/CinematicSlide.tsx` | **Modify** | Title slide redesign, module slide → narrative-only, summary colour fixes |
+| `components/roi-calculator/CinematicSlide.tsx` | **Modify** | Title slide redesign, summary colour fixes; import `getModuleNarrative` from utility (fixes housekeeping) |
 | `components/roi-calculator/CinematicOverlay.tsx` | **Modify** | Fullscreen API, remove max-w-3xl cap, active dot colour |
 | `components/roi-calculator/ExecSummaryPDFTemplate.tsx` | **Create** | Off-screen A4 portrait PDF template |
 | `components/roi-calculator/ui/ExportModal.tsx` | **Modify** | Add presentation/summary toggle, update `onExport` prop signature |
@@ -271,7 +271,7 @@ git commit -m "feat(roi-calc): extract getModuleNarrative utility + HTML variant
 
 ## Task 2: Update CinematicSlide.tsx
 
-Three changes: (1) title slide redesign with brand KPI colours and Unicode icon pills, (2) module slide → narrative-only (remove lever grid), (3) summary slide brand colour tokens. Import `getModuleNarrative` from the new utility instead of defining it locally.
+Two changes: (1) title slide redesign with brand KPI colours and Unicode icon pills, (2) summary slide brand colour tokens. Module slides are **unchanged** — the per-lever calculation breakdown stays exactly as-is. The only module slide touch is swapping the local `getModuleNarrative` definition for the utility import (which fixes the missing housekeeping case).
 
 **Files:**
 - Modify: `components/roi-calculator/CinematicSlide.tsx`
@@ -409,53 +409,17 @@ Replace the title slide block:
   }
 ```
 
-- [ ] **Step 2: Replace the module slide JSX**
+- [ ] **Step 2: Wire module slide to use the utility import (fixes housekeeping narrative)**
 
-Replace the entire `if (props.type === 'module')` block (currently lines 139–207 in the original). The new version removes all lever cards and uses a left-aligned narrative layout:
+The module slide JSX is **not changed**. The only edit is deleting the local `getModuleNarrative` function (lines 46–69 in the original file) since it is now provided by the utility import added in Step 1. No other changes to the module slide block.
 
+Confirm the module slide block still calls:
 ```tsx
-  if (props.type === 'module') {
-    const { t } = props;
-    const narrative = getModuleNarrative(props.moduleKey, props.levers, props.currencySymbol, t);
-    return (
-      <div className="flex flex-col justify-center min-h-[60vh] px-16 animate-fade-in w-full">
-        {/* Module chip */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: props.color }} />
-          <span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            {props.label}
-          </span>
-        </div>
-
-        {/* Hero number — intentionally capped at 7rem (smaller than title slide's 8rem)
-            because it shares vertical space with the narrative paragraph */}
-        <div
-          className="font-extrabold tracking-tight leading-none text-white"
-          style={{ fontSize: 'clamp(4rem, 10vw, 7rem)' }}
-        >
-          {formatBig(props.totalSavings, props.currencySymbol)}
-        </div>
-
-        {/* Annual impact label */}
-        <p
-          className="mt-3 text-xs font-semibold uppercase tracking-widest"
-          style={{ color: 'rgba(255,255,255,0.25)' }}
-        >
-          {t.labels.annualImpact}
-        </p>
-
-        {/* Narrative paragraph */}
-        {narrative && (
-          <p
-            className="mt-6 max-w-2xl"
-            style={{ fontSize: '1rem', lineHeight: '1.75', color: 'rgba(255,255,255,0.5)' }}
-          >
-            {narrative}
-          </p>
-        )}
-      </div>
-    );
-  }
+const narrative = getModuleNarrative(props.moduleKey, props.levers, props.currencySymbol, t);
+```
+…and still renders the full lever card grid below the narrative paragraph. If anything got accidentally removed, restore it from git:
+```bash
+git diff components/roi-calculator/CinematicSlide.tsx
 ```
 
 - [ ] **Step 3: Apply brand colour fixes to the summary slide**
@@ -502,7 +466,7 @@ Expected: exits 0 with no TypeScript errors.
 
 ```bash
 git add components/roi-calculator/CinematicSlide.tsx
-git commit -m "feat(roi-calc): redesign cinematic slides — brand colours, narrative-only module slides"
+git commit -m "feat(roi-calc): redesign cinematic title slide — brand colours, fix housekeeping narrative, summary colour tokens"
 ```
 
 ---
@@ -1269,7 +1233,7 @@ Open the ROI Calculator in the browser.
 3. **Navigation dot**: active dot should be pink (`--mews-primary-pink`), not indigo.
 4. **Fullscreen button**: click ⛶ (Maximize2 icon) — browser enters fullscreen. Icon changes to Minimize2. Click again — exits fullscreen.
 5. **Escape key in fullscreen**: enter fullscreen, press Escape — browser exits fullscreen, then Escape fires again and the overlay closes. Verify overlay is closed and no stale fullscreen state.
-6. **Module slide**: navigate to a module slide. Confirm no lever cards. Hero number is left-aligned, big. Narrative paragraph shows below. Confirm narrative is populated (not empty) for all 4 modules including Housekeeping.
+6. **Module slide**: navigate to a module slide. Confirm the per-lever calculation cards are still visible (grid is unchanged). Confirm the narrative paragraph above the cards is populated for all 4 modules — including Housekeeping (previously empty due to missing case).
 7. **Summary slide**: confirm cost savings is green (`--mews-light-green`), revenue uplift is pink (`--mews-primary-pink`), hours reclaimed is orange (`--mews-orange`).
 8. **Content width**: slides should use the full overlay width, not be capped.
 
