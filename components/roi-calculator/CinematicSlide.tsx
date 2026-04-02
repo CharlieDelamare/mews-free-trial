@@ -1,6 +1,7 @@
 'use client';
 
 import { TrendingDown, TrendingUp, Clock } from 'lucide-react';
+import { getModuleNarrative } from '@/lib/roi-calculator/utils/narratives';
 import type { LeverDescriptor, ModuleKey, FilteredResults } from '@/lib/roi-calculator/types/calculator';
 import type { TranslationDictionary } from '@/lib/roi-calculator/types/translations';
 
@@ -43,93 +44,112 @@ function formatBig(value: number, cs: string): string {
   return `${cs}${Math.round(value).toLocaleString()}`;
 }
 
-function getModuleNarrative(moduleKey: ModuleKey, levers: LeverDescriptor[], cs: string, t: TranslationDictionary): string {
-  const active = (key: string) => levers.some((l) => l.key === key && l.resultValue > 0);
-  const val = (key: string) => {
-    const l = levers.find((lv) => lv.key === key);
-    if (!l || l.resultValue <= 0) return '';
-    const abs = Math.abs(l.resultValue);
-    if (abs >= 1_000_000) return `${cs}${(l.resultValue / 1_000_000).toFixed(1)}M`;
-    return `${cs}${Math.round(l.resultValue).toLocaleString()}`;
-  };
-
-  if (moduleKey === 'guestExperience') {
-    return t.narratives.guestExperienceNarrative({ active, val });
-  }
-
-  if (moduleKey === 'payment') {
-    return t.narratives.paymentNarrative({ active, val });
-  }
-
-  if (moduleKey === 'rms') {
-    return t.narratives.rmsNarrative({ active, val });
-  }
-
-  return '';
-}
-
 export default function CinematicSlide(props: CinematicSlideProps) {
   if (props.type === 'title') {
     const { t } = props;
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-8 animate-fade-in">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-16 animate-fade-in w-full">
+        {/* Eyebrow / property context */}
+        <p
+          className="text-xs font-medium uppercase tracking-widest mb-3"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+        >
+          {props.propertyContext}
+        </p>
+
+        {/* Hotel name */}
         {props.title && (
-          <h1 className="text-2xl font-bold text-white mb-3 tracking-tight">{props.title}</h1>
+          <h1 className="text-xl font-semibold text-white mb-6 tracking-tight">{props.title}</h1>
         )}
-        <p className="text-gray-400 text-sm font-medium tracking-wide mb-8">{props.propertyContext}</p>
+
+        {/* Hero number */}
         <div
-          className="font-bold tracking-tight leading-none text-white"
-          style={{ fontSize: 'clamp(3.5rem, 10vw, 6rem)' }}
+          className="font-extrabold tracking-tight leading-none text-white"
+          style={{ fontSize: 'clamp(5rem, 12vw, 8rem)' }}
         >
           {formatBig(props.totalSavings, props.currencySymbol)}
         </div>
-        <p className="text-gray-400 text-lg font-medium mt-4 uppercase tracking-widest">
+
+        {/* Subtext */}
+        <p
+          className="mt-4 text-xs font-semibold uppercase tracking-widest"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+        >
           {t.labels.totalAnnualImpact}
         </p>
-        <p className="text-gray-500 text-sm max-w-lg mt-3 leading-relaxed">
-          {t.narratives.titleSlideNarrative({
-            costSavings: formatBig(props.costSavings, props.currencySymbol),
-            revenueUplift: formatBig(props.revenueUplift, props.currencySymbol),
-            totalTime: Math.round(props.totalTime).toLocaleString(),
-          })}
-        </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-10 mt-12">
+        {/* Divider */}
+        <div
+          className="my-8 w-24"
+          style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }}
+        />
+
+        {/* KPI row */}
+        <div className="flex gap-12 justify-center">
+          {/* Cost savings */}
           <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-3">
-              <TrendingDown className="w-5 h-5 text-emerald-400" />
-              <div>
-                <span className="text-xl font-bold text-white tabular-nums">{formatBig(props.costSavings, props.currencySymbol)}</span>
-                <span className="text-sm text-gray-500 ml-2">{t.labels.costSavings}</span>
-              </div>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-base"
+              style={{ background: 'color-mix(in srgb, var(--mews-light-green) 12%, transparent)' }}
+            >
+              ↓
             </div>
-            <p className="text-[11px] text-gray-600 max-w-[180px] leading-snug">
-              {t.subtexts.costSavingsSubtext}
-            </p>
+            <span
+              className="text-2xl font-extrabold tracking-tight tabular-nums"
+              style={{ color: 'var(--mews-light-green)' }}
+            >
+              {formatBig(props.costSavings, props.currencySymbol)}
+            </span>
+            <span
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'rgba(255,255,255,0.3)' }}
+            >
+              {t.labels.costSavings}
+            </span>
           </div>
+
+          {/* Revenue uplift */}
           <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-              <div>
-                <span className="text-xl font-bold text-white tabular-nums">{formatBig(props.revenueUplift, props.currencySymbol)}</span>
-                <span className="text-sm text-gray-500 ml-2">{t.labels.revenueUplift}</span>
-              </div>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-base"
+              style={{ background: 'color-mix(in srgb, var(--mews-primary-pink) 12%, transparent)' }}
+            >
+              ↑
             </div>
-            <p className="text-[11px] text-gray-600 max-w-[180px] leading-snug">
-              {t.subtexts.revenueUpliftSubtext}
-            </p>
+            <span
+              className="text-2xl font-extrabold tracking-tight tabular-nums"
+              style={{ color: 'var(--mews-primary-pink)' }}
+            >
+              {formatBig(props.revenueUplift, props.currencySymbol)}
+            </span>
+            <span
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'rgba(255,255,255,0.3)' }}
+            >
+              {t.labels.revenueUplift}
+            </span>
           </div>
+
+          {/* Hours reclaimed */}
           <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-violet-400" />
-              <div>
-                <span className="text-xl font-bold text-white tabular-nums">{Math.round(props.totalTime).toLocaleString()}</span>
-                <span className="text-sm text-gray-500 ml-2">{t.labels.hoursReclaimed}</span>
-              </div>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-base"
+              style={{ background: 'color-mix(in srgb, var(--mews-orange) 12%, transparent)' }}
+            >
+              ◷
             </div>
-            <p className="text-[11px] text-gray-600 max-w-[180px] leading-snug">
-              {t.subtexts.hoursReclaimedSubtext}
-            </p>
+            <span
+              className="text-2xl font-extrabold tracking-tight tabular-nums"
+              style={{ color: 'var(--mews-orange)' }}
+            >
+              {Math.round(props.totalTime).toLocaleString()}
+            </span>
+            <span
+              className="text-[10px] uppercase tracking-widest"
+              style={{ color: 'rgba(255,255,255,0.3)' }}
+            >
+              {t.labels.hoursReclaimed}
+            </span>
           </div>
         </div>
       </div>
@@ -224,18 +244,18 @@ export default function CinematicSlide(props: CinematicSlideProps) {
 
           <div className="flex flex-col items-center gap-4 mt-6">
             <div className="flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-emerald-400" />
-              <span className="text-base font-bold text-emerald-400 tabular-nums">{formatBig(props.filteredResults.costSavings, props.currencySymbol)}</span>
+              <TrendingDown className="w-4 h-4" style={{ color: 'var(--mews-light-green)' }} />
+              <span className="text-base font-bold tabular-nums" style={{ color: 'var(--mews-light-green)' }}>{formatBig(props.filteredResults.costSavings, props.currencySymbol)}</span>
               <span className="text-xs text-gray-500">{t.labels.costSavings}</span>
             </div>
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-400" />
-              <span className="text-base font-bold text-blue-400 tabular-nums">{formatBig(props.filteredResults.revenueUplift, props.currencySymbol)}</span>
+              <TrendingUp className="w-4 h-4" style={{ color: 'var(--mews-primary-pink)' }} />
+              <span className="text-base font-bold tabular-nums" style={{ color: 'var(--mews-primary-pink)' }}>{formatBig(props.filteredResults.revenueUplift, props.currencySymbol)}</span>
               <span className="text-xs text-gray-500">{t.labels.revenueUplift}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-violet-400" />
-              <span className="text-base font-bold text-violet-400 tabular-nums">{Math.round(props.filteredResults.totalTime).toLocaleString()}</span>
+              <Clock className="w-4 h-4" style={{ color: 'var(--mews-orange)' }} />
+              <span className="text-base font-bold tabular-nums" style={{ color: 'var(--mews-orange)' }}>{Math.round(props.filteredResults.totalTime).toLocaleString()}</span>
               <span className="text-xs text-gray-500">{t.labels.hoursReclaimed}</span>
             </div>
           </div>
@@ -283,7 +303,7 @@ export default function CinematicSlide(props: CinematicSlideProps) {
                             minWidth: '70px',
                           }}
                         >
-                          <span className="text-[11px] font-semibold text-violet-300 whitespace-nowrap flex items-center gap-1">
+                          <span className="text-[11px] font-semibold whitespace-nowrap flex items-center gap-1" style={{ color: 'var(--mews-orange)' }}>
                             <Clock className="w-3 h-3" />
                             {Math.round(c.time).toLocaleString()} {t.labels.hrs}
                           </span>
@@ -308,7 +328,7 @@ export default function CinematicSlide(props: CinematicSlideProps) {
                       </p>
                     )}
                     {timeLevers.length > 0 && (
-                      <p className="text-violet-400/60">
+                      <p style={{ color: 'var(--mews-orange)' }}>
                         {timeLevers.map((l, i) => {
                           const leverLabel = t.levers[l.key as keyof typeof t.levers] || l.label;
                           return (
