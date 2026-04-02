@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { useEffect, useCallback, useState } from 'react';
+import { X, ChevronLeft, ChevronRight, Play, Pause, Maximize2, Minimize2 } from 'lucide-react';
 import CinematicSlide from '@/components/roi-calculator/CinematicSlide';
 import { MODULE_META, MODULE_KEYS } from '@/hooks/useROICalculator';
 import { getTranslations } from '@/lib/roi-calculator/translations';
@@ -38,13 +38,36 @@ export default function CinematicOverlay({
   // Total slides: title + N modules + summary
   const totalSlides = enabledModuleKeys.length + 2;
 
+  const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
   const next = useCallback(() => dispatch({ type: 'CINEMATIC_NEXT' }), [dispatch]);
   const prev = useCallback(() => dispatch({ type: 'CINEMATIC_PREV' }), [dispatch]);
-  const exit = useCallback(() => dispatch({ type: 'EXIT_CINEMATIC' }), [dispatch]);
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, []);
+  const exit = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    dispatch({ type: 'EXIT_CINEMATIC' });
+  }, [dispatch]);
 
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // When in fullscreen, the browser may fire fullscreenchange before this
+      // keydown handler runs. exit() guards with document.fullscreenElement, so
+      // the exitFullscreen call is safely a no-op if the browser already exited.
       if (e.key === 'Escape') exit();
       else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
       else if (e.key === 'ArrowLeft') prev();
@@ -133,6 +156,17 @@ export default function CinematicOverlay({
             )}
           </button>
           <button
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4 text-gray-400" />
+            ) : (
+              <Maximize2 className="w-4 h-4 text-gray-400" />
+            )}
+          </button>
+          <button
             onClick={exit}
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
           >
@@ -142,7 +176,7 @@ export default function CinematicOverlay({
       </div>
 
       {/* Slide content */}
-      <div className="flex-1 flex items-center justify-center max-w-3xl mx-auto w-full">
+      <div className="flex-1 flex items-center justify-center mx-auto w-full">
         {renderSlide()}
       </div>
 
@@ -174,7 +208,7 @@ export default function CinematicOverlay({
                 width: i === slideIndex ? '24px' : '8px',
                 height: '8px',
                 borderRadius: '4px',
-                background: i === slideIndex ? 'var(--mews-indigo)' : 'color-mix(in srgb, var(--mews-white) 20%, transparent)',
+                background: i === slideIndex ? 'var(--mews-primary-pink)' : 'color-mix(in srgb, var(--mews-white) 20%, transparent)',
               }}
             />
           ))}
