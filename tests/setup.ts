@@ -16,4 +16,6 @@ beforeAll(() => {
   process.env.SLACK_WEBHOOK_URL = 'https://hooks.slack.com/triggers/test';
   process.env.mews_free_trial_PRISMA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
   process.env.mews_free_trial_POSTGRES_URL = 'postgresql://test:test@localhost:5432/test';
+  process.env.LITEAPI_API_KEY = 'test-liteapi-key';
+  process.env.SERPAPI_API_KEY = 'test-serpapi-key';
 });
