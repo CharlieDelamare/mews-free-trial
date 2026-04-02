@@ -137,18 +137,44 @@ export default function ResearchPage() {
 
             <div>
               <label htmlFor="countryCode" className="block text-sm font-medium text-neutral-700 mb-1">
-                Country Code <span className="text-neutral-400 font-normal">(optional)</span>
+                Country <span className="text-neutral-400 font-normal">(optional — enables richer data via LiteAPI)</span>
               </label>
-              <input
+              <select
                 id="countryCode"
-                type="text"
-                placeholder="e.g. GB"
-                maxLength={2}
                 value={form.countryCode}
-                onChange={e => setForm(f => ({ ...f, countryCode: e.target.value.toUpperCase() }))}
-                className="w-32 px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary uppercase"
-              />
-              <p className="text-xs text-neutral-500 mt-1">2-letter ISO code — helps narrow results (e.g. GB, US, FR)</p>
+                onChange={e => setForm(f => ({ ...f, countryCode: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary bg-white"
+              >
+                <option value="">— Any country (uses Google Hotels fallback) —</option>
+                <option value="GB">🇬🇧 United Kingdom</option>
+                <option value="US">🇺🇸 United States</option>
+                <option value="DE">🇩🇪 Germany</option>
+                <option value="FR">🇫🇷 France</option>
+                <option value="ES">🇪🇸 Spain</option>
+                <option value="IT">🇮🇹 Italy</option>
+                <option value="NL">🇳🇱 Netherlands</option>
+                <option value="BE">🇧🇪 Belgium</option>
+                <option value="PT">🇵🇹 Portugal</option>
+                <option value="CH">🇨🇭 Switzerland</option>
+                <option value="AT">🇦🇹 Austria</option>
+                <option value="CZ">🇨🇿 Czech Republic</option>
+                <option value="PL">🇵🇱 Poland</option>
+                <option value="SE">🇸🇪 Sweden</option>
+                <option value="NO">🇳🇴 Norway</option>
+                <option value="DK">🇩🇰 Denmark</option>
+                <option value="FI">🇫🇮 Finland</option>
+                <option value="IE">🇮🇪 Ireland</option>
+                <option value="AU">🇦🇺 Australia</option>
+                <option value="NZ">🇳🇿 New Zealand</option>
+                <option value="CA">🇨🇦 Canada</option>
+                <option value="AE">🇦🇪 UAE</option>
+                <option value="SG">🇸🇬 Singapore</option>
+                <option value="JP">🇯🇵 Japan</option>
+                <option value="TH">🇹🇭 Thailand</option>
+                <option value="ZA">🇿🇦 South Africa</option>
+                <option value="MX">🇲🇽 Mexico</option>
+                <option value="BR">🇧🇷 Brazil</option>
+              </select>
             </div>
 
             <button
