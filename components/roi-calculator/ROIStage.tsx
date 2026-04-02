@@ -13,6 +13,7 @@ import DataComparisonSection from '@/components/roi-calculator/DataComparisonSec
 import DiscoverySection from '@/components/roi-calculator/sections/DiscoverySection';
 import ExportModal from '@/components/roi-calculator/ui/ExportModal';
 import PDFTemplate from '@/components/roi-calculator/PDFTemplate';
+import ExecSummaryPDFTemplate from '@/components/roi-calculator/ExecSummaryPDFTemplate';
 import { ChevronDown } from 'lucide-react';
 import { countries, hotelTypes, usStates, getSmartDefaults, getBenchmarkForField } from '@/lib/roi-calculator/utils/hotelDefaults';
 import { getTranslations } from '@/lib/roi-calculator/translations';
@@ -371,6 +372,68 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     }
   };
 
+  const handleExportExecSummary = async () => {
+    dispatch({ type: 'SET_EXPORTING', value: true });
+    try {
+      // SSR-safe dynamic imports — same pattern as handleExportPDF
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const t = getTranslations(config.presentationLanguage);
+      const date = new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+
+      // Render the template off-screen at exactly 794px (A4 portrait at 96dpi)
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.width = '794px';
+      document.body.appendChild(tempContainer);
+
+      const root = createRoot(tempContainer);
+      root.render(
+        <ExecSummaryPDFTemplate
+          title={config.title}
+          propertyContext={propertyContextString}
+          date={date}
+          totalSavings={filteredResults.totalSavings}
+          costSavings={filteredResults.costSavings}
+          revenueUplift={filteredResults.revenueUplift}
+          totalTime={filteredResults.totalTime}
+          currencySymbol={currencySymbol}
+          enabledModuleKeys={enabledModuleKeys}
+          leverDescriptors={leverDescriptors}
+          t={t}
+        />,
+      );
+      // Allow React to commit and fonts/layout to settle
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // scale:2 gives a 1588px canvas scaled back to 794px — crisp on high-DPI displays
+      const canvas = await html2canvas(tempContainer.firstElementChild as HTMLElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: 1123,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [794, 1123], hotfixes: ['px_scaling'] });
+      pdf.addImage(imgData, 'JPEG', 0, 0, 794, 1123);
+      pdf.save(`Mews-ROI-Summary-${new Date().toISOString().split('T')[0]}.pdf`);
+
+      root.unmount();
+      document.body.removeChild(tempContainer);
+      dispatch({ type: 'CLOSE_EXPORT' });
+    } catch (error) {
+      console.error('Error generating exec summary:', error);
+      alert('There was an error generating the PDF. Please try again.');
+    } finally {
+      dispatch({ type: 'SET_EXPORTING', value: false });
+    }
+  };
+
   return (
     <>
       {/* ─── Presentation Mode Overlay ─── */}
@@ -572,7 +635,13 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         sections={exportableSections}
         selectedSections={ui.selectedSections}
         onToggleSection={(id) => dispatch({ type: 'TOGGLE_EXPORT_SECTION', sectionId: id })}
-        onExport={handleExportPDF}
+        onExport={(type) => {
+          if (type === 'presentation') {
+            handleExportPDF();
+          } else {
+            handleExportExecSummary();
+          }
+        }}
         isExporting={ui.isExporting}
         presentationLanguage={config.presentationLanguage}
       />
