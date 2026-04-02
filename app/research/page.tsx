@@ -137,15 +137,16 @@ export default function ResearchPage() {
 
             <div>
               <label htmlFor="countryCode" className="block text-sm font-medium text-neutral-700 mb-1">
-                Country <span className="text-neutral-400 font-normal">(optional — enables richer data via LiteAPI)</span>
+                Country <span className="text-red-500">*</span>
               </label>
               <select
                 id="countryCode"
+                required
                 value={form.countryCode}
                 onChange={e => setForm(f => ({ ...f, countryCode: e.target.value }))}
                 className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary bg-white"
               >
-                <option value="">— Any country (uses Google Hotels fallback) —</option>
+                <option value="" disabled>Select a country…</option>
                 <option value="GB">🇬🇧 United Kingdom</option>
                 <option value="US">🇺🇸 United States</option>
                 <option value="DE">🇩🇪 Germany</option>
