@@ -239,9 +239,166 @@ export default function ResearchPage() {
           </div>
         )}
 
-        {/* ── RESULTS: placeholder until Task 9 ── */}
+        {/* ── RESULTS: Tabbed view ── */}
         {phase === 'results' && hotel && (
-          <p className="text-center text-neutral-400 text-sm py-12">Results view — implemented in Task 9</p>
+          <div>
+            {/* Header */}
+            <div className="flex items-start justify-between mb-6 gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-bold text-mews-night-black">{hotel.hotelName}</h2>
+                  <StarRating rating={hotel.starRating} />
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500">
+                    via {hotel.source === 'liteapi' ? 'LiteAPI' : 'SerpApi'}
+                  </span>
+                </div>
+                {hotel.address && (
+                  <p className="text-sm text-neutral-500">{hotel.address}</p>
+                )}
+              </div>
+              <button
+                onClick={resetToIdle}
+                className="text-sm text-mews-primary hover:underline shrink-0"
+              >
+                ← Search again
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 mb-6 border-b border-neutral-200">
+              {(['rooms', 'rates', 'products'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 -mb-px ${
+                    activeTab === tab
+                      ? 'text-mews-night-black border-mews-primary bg-mews-primary/10'
+                      : 'text-neutral-500 border-transparent hover:text-mews-night-black hover:border-neutral-300'
+                  }`}
+                >
+                  {tab === 'rooms' && `Room Types (${hotel.roomTypes.length})`}
+                  {tab === 'rates' && `Rate Plans (${hotel.ratePlans.length})`}
+                  {tab === 'products' && `Products (${hotel.products.length + hotel.generalFacilities.length})`}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Room Types Tab ── */}
+            {activeTab === 'rooms' && (
+              <div>
+                {hotel.roomTypes.length === 0 ? (
+                  <p className="text-neutral-400 text-sm text-center py-12">No room type data available from this source.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {hotel.roomTypes.map((room, i) => (
+                      <div key={i} className="bg-white rounded-xl border border-neutral-100 shadow-sm p-5">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="font-semibold text-mews-night-black">{room.name}</h3>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-mews-primary/10 text-mews-night-black shrink-0">
+                            {room.spaceType}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs text-neutral-500 mb-3">
+                          {room.maxOccupancy && <span>Max {room.maxOccupancy} guests</span>}
+                          {room.bedType && <span>{room.bedType} bed</span>}
+                          {room.sizeSqm && <span>{room.sizeSqm} m²</span>}
+                        </div>
+                        {room.description && (
+                          <p className="text-sm text-neutral-600 mb-3">{room.description}</p>
+                        )}
+                        {room.amenities.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {room.amenities.map((a, j) => (
+                              <span key={j} className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded-full">
+                                {a}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Rate Plans Tab ── */}
+            {activeTab === 'rates' && (
+              <div>
+                {hotel.ratePlans.length === 0 ? (
+                  <p className="text-neutral-400 text-sm text-center py-12">No rate plan data available from this source.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {hotel.ratePlans.map((rate, i) => (
+                      <div key={i} className="bg-white rounded-xl border border-neutral-100 shadow-sm p-5">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="font-semibold text-mews-night-black">{rate.name}</h3>
+                          <div className="flex gap-2 shrink-0">
+                            {rate.boardType && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-mews-yellow text-mews-night-black font-semibold">
+                                {rate.boardType}
+                              </span>
+                            )}
+                            {rate.isRefundable !== null && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                rate.isRefundable
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}>
+                                {rate.isRefundable ? 'Refundable' : 'Non-refundable'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {rate.cancellationPolicy && (
+                          <p className="text-sm text-neutral-600">{rate.cancellationPolicy}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Products Tab ── */}
+            {activeTab === 'products' && (
+              <div className="space-y-6">
+                {hotel.products.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-700 mb-3">Individually Bookable Products</h3>
+                    <div className="bg-white rounded-xl border border-neutral-100 shadow-sm divide-y divide-neutral-50">
+                      {hotel.products.map((p, i) => (
+                        <div key={i} className="flex items-center justify-between px-5 py-3">
+                          <span className="text-sm text-mews-night-black">{p.name}</span>
+                          <span className="text-xs px-2 py-0.5 bg-neutral-100 text-neutral-500 rounded-full">
+                            {p.category}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {hotel.generalFacilities.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-neutral-700 mb-1">General Hotel Facilities</h3>
+                    <p className="text-xs text-neutral-400 mb-3">These are hotel amenities — not mapped to individual Mews products</p>
+                    <div className="flex flex-wrap gap-2">
+                      {hotel.generalFacilities.map((f, i) => (
+                        <span key={i} className="text-xs px-3 py-1 bg-white border border-neutral-200 text-neutral-600 rounded-full">
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {hotel.products.length === 0 && hotel.generalFacilities.length === 0 && (
+                  <p className="text-neutral-400 text-sm text-center py-12">No product or facility data available from this source.</p>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
       </div>
