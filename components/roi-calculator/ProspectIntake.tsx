@@ -96,7 +96,9 @@ export default function ProspectIntake({
 
   const handleComplete = () => {
     onComplete();
-    onClose();
+    // Don't call onClose() — the parent handles the transition via
+    // its loading overlay and router.push(). Calling onClose() would
+    // flash the user back to the initial wizard step.
   };
 
   // Count confirmed/adjusted in current group
@@ -108,9 +110,9 @@ export default function ProspectIntake({
   if (!isOpen) return null;
 
   const panel = (
-    <div className={`w-full bg-mews-linen flex flex-col overflow-hidden ${fullPage ? 'h-[calc(100vh-3.5rem)]' : 'max-w-2xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
+    <div className={`w-full bg-mews-linen flex flex-col overflow-hidden ${fullPage ? 'h-[calc(100vh-3.5rem)]' : 'max-w-4xl max-h-[90vh] mx-4 relative rounded-2xl shadow-2xl'}`}>
         {/* Header */}
-        <div className={`px-6 pt-5 pb-5 border-b border-gray-200 bg-mews-linen flex-none ${fullPage ? 'max-w-2xl w-full mx-auto' : ''}`}>
+        <div className={`px-6 pt-5 pb-5 border-b border-gray-200 bg-mews-linen flex-none ${fullPage ? 'max-w-4xl w-full mx-auto' : ''}`}>
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Build Your Business Case</h2>
@@ -144,7 +146,7 @@ export default function ProspectIntake({
         </div>
 
         {/* Content */}
-        <div className={`flex-1 px-6 py-5 overflow-y-auto ${fullPage ? 'max-w-2xl w-full mx-auto' : ''}`}>
+        <div className={`flex-1 px-6 py-5 overflow-y-auto ${fullPage ? 'max-w-4xl w-full mx-auto' : ''}`}>
           {/* Steps 0..N-1: Input groups */}
           {currentStep < groupKeys.length && currentGroupKey && (
             <div className="space-y-5">
@@ -202,7 +204,7 @@ export default function ProspectIntake({
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {currentGroupInputs.map((input) => (
                   <SmartField
                     key={input.key}
@@ -290,7 +292,7 @@ export default function ProspectIntake({
                     <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                       {INPUT_GROUPS[gk as keyof typeof INPUT_GROUPS]?.label}
                     </h4>
-                    <div className="space-y-1.5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                       {groups[gk].map((input) => (
                         <SmartField
                           key={input.key}
@@ -340,7 +342,7 @@ export default function ProspectIntake({
 
         {/* Footer navigation */}
         <div className={`flex-none border-t border-gray-100 bg-mews-linen ${fullPage ? '' : 'bg-gray-50/50'}`}>
-          <div className={`flex items-center justify-between px-6 py-4 ${fullPage ? 'max-w-2xl mx-auto' : ''}`}>
+          <div className={`flex items-center justify-between px-6 py-4 ${fullPage ? 'max-w-4xl mx-auto' : ''}`}>
             <button
               onClick={currentStep === 0 ? onClose : goPrev}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
