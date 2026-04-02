@@ -126,7 +126,7 @@ export function Navbar() {
     }`;
 
   const BetaBadge = () => (
-    <span className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded bg-mews-primary/20 text-mews-night-black leading-none">
+    <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-mews-primary text-mews-night-black leading-none tracking-wide uppercase">
       beta
     </span>
   );
