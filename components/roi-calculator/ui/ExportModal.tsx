@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, FileDown } from 'lucide-react';
 import { getTranslations } from '@/lib/roi-calculator/translations';
 import type { LanguageCode } from '@/lib/roi-calculator/types/translations';
@@ -32,6 +32,11 @@ export default function ExportModal({
   presentationLanguage,
 }: ExportModalProps) {
   const [exportType, setExportType] = useState<'presentation' | 'summary'>('presentation');
+
+  // Reset to default when the modal closes so it always opens fresh
+  useEffect(() => {
+    if (!isOpen) setExportType('presentation');
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -80,16 +85,19 @@ export default function ExportModal({
         <div className="p-5 space-y-4">
           {/* Export type segmented control */}
           <div
+            role="group"
+            aria-label="Export type"
             className="flex rounded-xl overflow-hidden"
             style={{ border: '1px solid color-mix(in srgb, var(--mews-charcoal) 10%, transparent)' }}
           >
             <button
               onClick={() => setExportType('presentation')}
               disabled={isExporting}
+              aria-pressed={isPresentationMode}
               className="flex-1 py-2 text-sm font-semibold transition-all duration-150"
               style={{
                 background: isPresentationMode ? 'var(--mews-night-black)' : 'transparent',
-                color: isPresentationMode ? '#fff' : 'var(--roi-gray-700)',
+                color: isPresentationMode ? 'var(--mews-white)' : 'var(--roi-gray-700)',
               }}
             >
               Full Presentation
@@ -97,10 +105,11 @@ export default function ExportModal({
             <button
               onClick={() => setExportType('summary')}
               disabled={isExporting}
+              aria-pressed={!isPresentationMode}
               className="flex-1 py-2 text-sm font-semibold transition-all duration-150"
               style={{
                 background: !isPresentationMode ? 'var(--mews-night-black)' : 'transparent',
-                color: !isPresentationMode ? '#fff' : 'var(--roi-gray-700)',
+                color: !isPresentationMode ? 'var(--mews-white)' : 'var(--roi-gray-700)',
               }}
             >
               Executive Summary
