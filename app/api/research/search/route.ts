@@ -8,9 +8,9 @@ export async function GET(request: NextRequest) {
   const city = searchParams.get('city')?.trim();
   const countryCode = searchParams.get('countryCode')?.trim() || undefined;
 
-  if (!name || !city) {
+  if (!name) {
     return NextResponse.json(
-      { success: false, error: 'name and city are required' },
+      { success: false, error: 'name is required' },
       { status: 400 }
     );
   }

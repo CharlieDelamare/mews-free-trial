@@ -72,6 +72,37 @@ export function normaliseSerpApiHotel(
     address: raw.address ?? '',
     starRating: extractStarRating(raw.hotel_class ?? null),
     source: 'serpapi',
+
+    description: null,
+    importantInfo: null,
+    mainPhoto: null,
+    images: [],
+
+    checkinTime: null,
+    checkoutTime: null,
+    checkinInstructions: [],
+
+    hotelType: null,
+    chain: null,
+    airportCode: null,
+
+    phone: null,
+    email: null,
+
+    parking: null,
+    childAllowed: null,
+    petsAllowed: null,
+    policies: [],
+
+    reviewRating: null,
+    reviewCount: null,
+    sentimentPros: [],
+    sentimentCons: [],
+    sentimentCategories: [],
+
+    latitude: null,
+    longitude: null,
+
     roomTypes,
     ratePlans: [],
     products: [],

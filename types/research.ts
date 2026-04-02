@@ -36,11 +36,69 @@ export interface Product {
   category: ProductCategory;
 }
 
+export interface HotelImage {
+  url: string;
+  urlHd: string | null;
+  caption: string | null;
+  isDefault: boolean;
+}
+
+export interface HotelPolicy {
+  type: string;
+  name: string;
+  description: string;
+}
+
+export interface SentimentCategory {
+  name: string;
+  rating: number;
+  description: string;
+}
+
 export interface HotelResearchData {
   hotelName: string;
   address: string;
   starRating: number | null;
   source: ResearchSource;
+
+  // Rich content
+  description: string | null;
+  importantInfo: string | null;
+  mainPhoto: string | null;
+  images: HotelImage[];
+
+  // Timing
+  checkinTime: string | null;
+  checkoutTime: string | null;
+  checkinInstructions: string[];
+
+  // Identity
+  hotelType: string | null;
+  chain: string | null;
+  airportCode: string | null;
+
+  // Contact
+  phone: string | null;
+  email: string | null;
+
+  // Guest policies
+  parking: boolean | null;
+  childAllowed: boolean | null;
+  petsAllowed: boolean | null;
+  policies: HotelPolicy[];
+
+  // Reviews & sentiment
+  reviewRating: number | null;
+  reviewCount: number | null;
+  sentimentPros: string[];
+  sentimentCons: string[];
+  sentimentCategories: SentimentCategory[];
+
+  // Location
+  latitude: number | null;
+  longitude: number | null;
+
+  // Inventory
   roomTypes: RoomType[];
   ratePlans: RatePlan[];
   products: Product[];
