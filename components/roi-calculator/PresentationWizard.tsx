@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import ProspectIntake from '@/components/roi-calculator/ProspectIntake';
 import { useROICalculator } from '@/hooks/useROICalculator';
 import { useConfidence } from '@/hooks/useConfidence';
@@ -10,7 +10,7 @@ import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
 import { serializeState } from '@/lib/roi-calculator/utils/persistence';
 import { countries, hotelTypes, usStates } from '@/lib/roi-calculator/utils/hotelDefaults';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
-import type { SharedVariables, EnabledModules } from '@/lib/roi-calculator/types/calculator';
+import type { SharedVariables } from '@/lib/roi-calculator/types/calculator';
 
 export default function PresentationWizard() {
   const router = useRouter();
@@ -18,36 +18,27 @@ export default function PresentationWizard() {
   const [name, setName] = useState('');
   const [salesforceAccountId, setSalesforceAccountId] = useState('');
   const [createdBy, setCreatedBy] = useState('');
-  const [selectedModules, setSelectedModules] = useState<EnabledModules>({
-    guestExperience: true,
-    payment: true,
-    rms: true,
-    housekeeping: true,
-  });
   const [country, setCountry] = useState('');
   const [usState, setUsState] = useState('');
   const [hotelType, setHotelType] = useState('');
   const [nameError, setNameError] = useState('');
   const [countryError, setCountryError] = useState('');
   const [hotelTypeError, setHotelTypeError] = useState('');
-  const [modulesError, setModulesError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { state, dispatch } = useROICalculator();
-  const { config, ui } = state;
+  const { config } = state;
   const { currencySymbol } = config;
 
+  // Use state.ui.enabledModules — updated automatically by the reducer when
+  // hasExistingRMS / hasExistingHousekeepingApp change in the intake wizard
   const priorityInputs = useMemo(
-    () => getPriorityInputs(currencySymbol, config.country, config.hotelType, selectedModules),
-    [currencySymbol, config.country, config.hotelType, selectedModules],
+    () => getPriorityInputs(currencySymbol, config.country, config.hotelType, state.ui.enabledModules),
+    [currencySymbol, config.country, config.hotelType, state.ui.enabledModules],
   );
 
-  // Exclude RMS inputs from confidence scoring when the prospect already has an RMS
-  const scoreInputs = useMemo(
-    () => state.rms.hasExistingRMS ? priorityInputs.filter((i) => i.group !== 'rms') : priorityInputs,
-    [priorityInputs, state.rms.hasExistingRMS],
-  );
+  const scoreInputs = useMemo(() => priorityInputs, [priorityInputs]);
 
   const {
     confidenceDispatch,
@@ -84,12 +75,6 @@ export default function PresentationWizard() {
     } else {
       setHotelTypeError('');
     }
-    if (!selectedModules.guestExperience && !selectedModules.payment && !selectedModules.rms) {
-      setModulesError('Please select at least one Mews product');
-      hasError = true;
-    } else {
-      setModulesError('');
-    }
     if (hasError) return;
     dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: country });
     dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: usState });
@@ -104,7 +89,8 @@ export default function PresentationWizard() {
       const stateToSave = {
         ...state,
         config: { ...state.config, title: name.trim() },
-        ui: { ...state.ui, enabledModules: selectedModules },
+        // enabledModules is already up-to-date in state.ui — the reducer
+        // auto-disables rms/housekeeping when the intake wizard yes/no answers are set
       };
       const res = await fetch('/api/roi-presentations', {
         method: 'POST',
@@ -235,69 +221,6 @@ export default function PresentationWizard() {
               {hotelTypeError && <p className="mt-1.5 text-sm text-red-500">{hotelTypeError}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Which Mews products will they be using?
-              </label>
-              <div className="grid grid-cols-1 gap-2 mt-2">
-                {(
-                  [
-                    {
-                      key: 'guestExperience' as const,
-                      label: 'Guest Experience',
-                      description: 'Check-in automation, direct bookings, upsells',
-                    },
-                    {
-                      key: 'payment' as const,
-                      label: 'Payments & Billing',
-                      description: 'Chargebacks, reconciliation, no-shows',
-                    },
-                    {
-                      key: 'rms' as const,
-                      label: 'RMS',
-                      description: 'Rate management, channel optimisation',
-                    },
-                    {
-                      key: 'housekeeping' as const,
-                      label: 'Housekeeping',
-                      description: 'Room assignment, cleaning updates, maintenance coordination',
-                    },
-                  ] satisfies { key: keyof EnabledModules; label: string; description: string }[] // description kept for future use
-                ).map(({ key, label }) => {
-                  const isSelected = selectedModules[key];
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setSelectedModules((prev) => ({ ...prev, [key]: !prev[key] }));
-                        if (modulesError) setModulesError('');
-                      }}
-                      className={[
-                        'w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors',
-                        isSelected
-                          ? 'bg-mews-primary text-mews-night-black border-mews-primary'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400',
-                      ].join(' ')}
-                    >
-                      <span
-                        className={[
-                          'flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-colors',
-                          isSelected ? 'bg-mews-night-black border-mews-night-black' : 'border-gray-300',
-                        ].join(' ')}
-                      >
-                        {isSelected && <Check className="w-3 h-3 text-white" />}
-                      </span>
-                      <span className="text-sm font-medium">{label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {modulesError && (
-                <p className="mt-1.5 text-sm text-red-500">{modulesError}</p>
-              )}
-            </div>
-
             <button
               type="submit"
               disabled={isSubmitting}
@@ -360,6 +283,10 @@ export default function PresentationWizard() {
         hasExistingRMS={state.rms.hasExistingRMS}
         onHasExistingRMSChange={(value) =>
           dispatch({ type: 'SET_FIELD', slice: 'rms', field: 'hasExistingRMS', value })
+        }
+        hasExistingHousekeepingApp={state.housekeeping.hasExistingHousekeepingApp}
+        onHasExistingHousekeepingAppChange={(value) =>
+          dispatch({ type: 'SET_FIELD', slice: 'housekeeping', field: 'hasExistingHousekeepingApp', value })
         }
       />
     </>

@@ -119,7 +119,7 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
         return { ...state, housekeeping: { ...(updated as typeof state.housekeeping), hkStaffOnDutyIsManual: true } };
       }
 
-      // When hasExistingRMS changes: auto-disable RMS module and cap uplift at 2%
+      // When hasExistingRMS changes: auto-disable/re-enable RMS module and cap uplift at 2%
       if (action.slice === 'rms' && action.field === 'hasExistingRMS') {
         const hasExisting = action.value as boolean;
         const rmsUpdated = {
@@ -127,25 +127,45 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
           hasExistingRMS: hasExisting,
           estimatedRevenueUplift: hasExisting ? 2 : state.rms.estimatedRevenueUplift,
         };
-        if (hasExisting) {
-          const newEnabled = { ...state.ui.enabledModules, rms: false };
-          return {
-            ...state,
-            rms: rmsUpdated,
-            ui: {
-              ...state.ui,
-              enabledModules: newEnabled,
-              activePreset: detectPreset(newEnabled),
-              activeDetailModule:
-                state.ui.activeDetailModule === 'rms' ? null : state.ui.activeDetailModule,
-              expandedLever:
-                state.ui.expandedLever?.module === 'rms' ? null : state.ui.expandedLever,
-              editingLever:
-                state.ui.editingLever?.module === 'rms' ? null : state.ui.editingLever,
-            },
-          };
-        }
-        return { ...state, rms: rmsUpdated };
+        const newEnabled = { ...state.ui.enabledModules, rms: !hasExisting };
+        return {
+          ...state,
+          rms: rmsUpdated,
+          ui: {
+            ...state.ui,
+            enabledModules: newEnabled,
+            activePreset: detectPreset(newEnabled),
+            activeDetailModule:
+              hasExisting && state.ui.activeDetailModule === 'rms' ? null : state.ui.activeDetailModule,
+            expandedLever:
+              hasExisting && state.ui.expandedLever?.module === 'rms' ? null : state.ui.expandedLever,
+            editingLever:
+              hasExisting && state.ui.editingLever?.module === 'rms' ? null : state.ui.editingLever,
+          },
+        };
+      }
+
+      // When hasExistingHousekeepingApp changes: auto-disable/re-enable housekeeping module
+      // true = already uses HK app → module disabled (mirrors RMS logic)
+      // false = no HK app → module enabled
+      if (action.slice === 'housekeeping' && action.field === 'hasExistingHousekeepingApp') {
+        const hasApp = action.value as boolean;
+        const newEnabled = { ...state.ui.enabledModules, housekeeping: !hasApp };
+        return {
+          ...state,
+          housekeeping: { ...state.housekeeping, hasExistingHousekeepingApp: hasApp },
+          ui: {
+            ...state.ui,
+            enabledModules: newEnabled,
+            activePreset: detectPreset(newEnabled),
+            activeDetailModule:
+              hasApp && state.ui.activeDetailModule === 'housekeeping' ? null : state.ui.activeDetailModule,
+            expandedLever:
+              hasApp && state.ui.expandedLever?.module === 'housekeeping' ? null : state.ui.expandedLever,
+            editingLever:
+              hasApp && state.ui.editingLever?.module === 'housekeeping' ? null : state.ui.editingLever,
+          },
+        };
       }
 
       return { ...state, [action.slice]: updated };
@@ -166,6 +186,16 @@ function reducer(state: CalculatorState, action: CalculatorAction): CalculatorSt
         rms: action.defaults.rms,
         housekeeping: action.defaults.housekeeping,
       };
+    case 'OPEN_EXPORT': {
+      // Pre-select sections matching currently enabled modules
+      const em = state.ui.enabledModules;
+      const preSelected: string[] = [];
+      if (em.guestExperience) preSelected.push('guest-experience');
+      if (em.payment) preSelected.push('payment');
+      if (em.rms) preSelected.push('rms');
+      if (em.housekeeping) preSelected.push('housekeeping');
+      return { ...state, ui: { ...state.ui, isExportModalOpen: true, selectedSections: preSelected } };
+    }
     case 'SET_EXPORTING':
       return { ...state, ui: { ...state.ui, isExporting: action.value } };
     case 'CLOSE_EXPORT':
@@ -424,6 +454,7 @@ export function useROICalculator(savedState?: PersistedState) {
             roomAssignmentTimeManual: defaults.hkRoomAssignmentTimeManual,
             roomAssignmentMethod: 'manual' as const,
             usesHousekeepingSoftware: false,
+            hasExistingHousekeepingApp: state.housekeeping.hasExistingHousekeepingApp,
           },
         },
       });

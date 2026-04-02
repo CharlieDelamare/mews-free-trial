@@ -103,5 +103,6 @@ export const defaultCalculatorState: CalculatorState = {
     roomAssignmentTimeManual: 3.0,
     roomAssignmentMethod: 'manual',
     usesHousekeepingSoftware: false,
+    hasExistingHousekeepingApp: false,    // default: no HK app → module enabled
   },
 };

@@ -98,6 +98,7 @@ export interface HousekeepingInputs {
   roomAssignmentTimeManual: number;        // minutes per HK staff per day (set by smart defaults, not user-editable)
   roomAssignmentMethod: 'manual' | 'partially_digital' | 'fully_digital';
   usesHousekeepingSoftware: boolean;
+  hasExistingHousekeepingApp: boolean;    // true = already uses HK app → module disabled; false = no HK app → module enabled (default)
 }
 
 export interface RMSInputs {
@@ -277,6 +278,7 @@ export type CalculatorAction =
   | { type: 'SET_FIELD'; slice: 'housekeeping'; field: keyof HousekeepingInputs; value: HousekeepingInputs[keyof HousekeepingInputs] }
   | { type: 'TOGGLE_EXPORT_SECTION'; sectionId: string }
   | { type: 'APPLY_DEFAULTS'; defaults: Omit<CalculatorState, 'config' | 'ui'> }
+  | { type: 'OPEN_EXPORT' }
   | { type: 'SET_EXPORTING'; value: boolean }
   | { type: 'CLOSE_EXPORT' }
   | { type: 'TOGGLE_MODULE'; module: ModuleKey }

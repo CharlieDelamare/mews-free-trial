@@ -14,9 +14,11 @@ import {
   Edit3,
   Zap,
   BarChart3,
+  BedDouble,
 } from 'lucide-react';
 import type { PriorityInput } from '@/lib/roi-calculator/types/confidence';
 import type { ConfidenceStatus, ConfidenceScore } from '@/lib/roi-calculator/types/confidence';
+import type { EnabledModules } from '@/lib/roi-calculator/types/calculator';
 
 interface DataComparisonSectionProps {
   priorityInputs: PriorityInput[];
@@ -27,17 +29,19 @@ interface DataComparisonSectionProps {
   onValueChange: (slice: string, field: string, value: number) => void;
   onConfirmField: (key: string) => void;
   score: ConfidenceScore;
+  enabledModules: EnabledModules;
 }
 
 const GROUP_META: Record<string, { label: string; icon: typeof Building2; color: string }> = {
-  property:   { label: 'Property Basics',     icon: Building2,  color: 'var(--mews-night-black)' },
-  operations: { label: 'Operations',          icon: Clock,      color: 'var(--mews-night-black)' },
-  payments:   { label: 'Payments & Billing',  icon: CreditCard, color: 'var(--mews-night-black)' },
-  revenue:    { label: 'Revenue',             icon: TrendingUp, color: 'var(--mews-night-black)' },
-  rms:        { label: 'Revenue Management',  icon: BarChart3,  color: 'var(--mews-night-black)' },
+  property:     { label: 'Property Basics',     icon: Building2,  color: 'var(--mews-night-black)' },
+  operations:   { label: 'Operations',          icon: Clock,      color: 'var(--mews-night-black)' },
+  payments:     { label: 'Payments & Billing',  icon: CreditCard, color: 'var(--mews-night-black)' },
+  revenue:      { label: 'Revenue',             icon: TrendingUp, color: 'var(--mews-night-black)' },
+  rms:          { label: 'Revenue Management',  icon: BarChart3,  color: 'var(--mews-night-black)' },
+  housekeeping: { label: 'Housekeeping',        icon: BedDouble,  color: 'var(--mews-night-black)' },
 };
 
-const GROUP_ORDER = ['property', 'operations', 'payments', 'revenue', 'rms'];
+const BASE_GROUP_ORDER = ['property', 'operations', 'payments', 'revenue'];
 
 function formatFieldValue(value: number, unit?: string, currencySymbol?: string): string {
   if (unit === '%') return `${value}%`;
@@ -49,6 +53,7 @@ function formatFieldValue(value: number, unit?: string, currencySymbol?: string)
   if (unit === 'plans') return `${value} plans`;
   if (unit === 'channels') return `${value} channels`;
   if (unit === '/week') return `${value}/week`;
+  if (unit === 'staff') return `${value} staff`;
   if (unit === currencySymbol) {
     return `${currencySymbol}${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   }
@@ -107,6 +112,7 @@ export default function DataComparisonSection({
   onValueChange,
   onConfirmField,
   score,
+  enabledModules,
 }: DataComparisonSectionProps) {
   // Track which groups are expanded; start all collapsed
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -114,6 +120,14 @@ export default function DataComparisonSection({
   const [editValue, setEditValue] = useState<string>('');
   const [editingMewsField, setEditingMewsField] = useState<string | null>(null);
   const [editMewsValue, setEditMewsValue] = useState<string>('');
+
+  // Build the ordered group list, appending rms/housekeeping only when enabled
+  const groupOrder = useMemo(() => {
+    const order = [...BASE_GROUP_ORDER];
+    if (enabledModules.rms) order.push('rms');
+    if (enabledModules.housekeeping) order.push('housekeeping');
+    return order;
+  }, [enabledModules.rms, enabledModules.housekeeping]);
 
   const groupedInputs = useMemo(() => {
     const groups: Record<string, PriorityInput[]> = {};
@@ -171,7 +185,7 @@ export default function DataComparisonSection({
         </span>
       </div>
 
-      {GROUP_ORDER.map((groupKey) => {
+      {groupOrder.map((groupKey) => {
         const inputs = groupedInputs[groupKey];
         if (!inputs) return null;
 
