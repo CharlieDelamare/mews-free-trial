@@ -36,6 +36,12 @@ export default function PresentationWizard() {
     [currencySymbol, config.country, config.hotelType, selectedModules],
   );
 
+  // Exclude RMS inputs from confidence scoring when the prospect already has an RMS
+  const scoreInputs = useMemo(
+    () => state.rms.hasExistingRMS ? priorityInputs.filter((i) => i.group !== 'rms') : priorityInputs,
+    [priorityInputs, state.rms.hasExistingRMS],
+  );
+
   const {
     confidenceDispatch,
     score,
@@ -43,7 +49,7 @@ export default function PresentationWizard() {
     getBenchmarkValue,
     confirmField,
     revertToBenchmark,
-  } = useConfidence(priorityInputs);
+  } = useConfidence(scoreInputs);
 
   const handleRevertFieldToBenchmark = useCallback(
     (key: string) => revertToBenchmark(key),

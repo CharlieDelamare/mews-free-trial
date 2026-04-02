@@ -123,7 +123,7 @@ export const CONFIDENCE_LABELS: Record<ConfidenceScore['level'], {
   bgColor: string;
 }> = {
   'directional': {
-    label: 'Directional Estimate',
+    label: 'ROI Calculation Confidence',
     description: 'Based primarily on industry benchmarks. Validate key inputs to increase accuracy.',
     color: 'var(--mews-coral)',
     bgColor: 'rgba(255, 90, 101, 0.1)',

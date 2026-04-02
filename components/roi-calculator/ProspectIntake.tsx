@@ -281,35 +281,37 @@ export default function ProspectIntake({
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-100/60 border border-purple-200">
                       <BarChart3 className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-purple-800">
-                        RMS module disabled — the prospect already has automated rate management. You can re-enable it later with a reduced ~2% incremental uplift.
+                        RMS module disabled — the prospect is already using an RMS today.
                       </p>
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="space-y-4">
-                {currentGroupInputs.map((input) => (
-                  <SmartField
-                    key={input.key}
-                    label={input.label}
-                    question={input.question}
-                    value={getValue(input.slice, input.field)}
-                    benchmarkValue={getBenchmarkValue(input.key) ?? getValue(input.slice, input.field)}
-                    benchmarkLabel={input.benchmarkLabel}
-                    status={getFieldStatus(input.key)}
-                    unit={input.unit}
-                    min={input.min}
-                    max={input.max}
-                    step={input.step}
-                    onChange={(v) => onValueChange(input.slice, input.field, v)}
-                    onConfirm={() => onConfirmField(input.key)}
-                    onRevertToBenchmark={() => onRevertFieldToBenchmark(input.key)}
-                    showQuestion={intakeMode === 'validated'}
-                    benchmarkSourceInfo={input.benchmarkSourceInfo}
-                  />
-                ))}
-              </div>
+              {!(currentGroupKey === 'rms' && hasExistingRMS) && (
+                <div className="space-y-4">
+                  {currentGroupInputs.map((input) => (
+                    <SmartField
+                      key={input.key}
+                      label={input.label}
+                      question={input.question}
+                      value={getValue(input.slice, input.field)}
+                      benchmarkValue={getBenchmarkValue(input.key) ?? getValue(input.slice, input.field)}
+                      benchmarkLabel={input.benchmarkLabel}
+                      status={getFieldStatus(input.key)}
+                      unit={input.unit}
+                      min={input.min}
+                      max={input.max}
+                      step={input.step}
+                      onChange={(v) => onValueChange(input.slice, input.field, v)}
+                      onConfirm={() => onConfirmField(input.key)}
+                      onRevertToBenchmark={() => onRevertFieldToBenchmark(input.key)}
+                      showQuestion={intakeMode === 'validated'}
+                      benchmarkSourceInfo={input.benchmarkSourceInfo}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -371,34 +373,51 @@ export default function ProspectIntake({
 
               {/* All inputs in compact form */}
               <div className="space-y-4">
-                {groupKeys.map((gk) => (
-                  <div key={gk}>
-                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      {INPUT_GROUPS[gk as keyof typeof INPUT_GROUPS]?.label}
-                    </h4>
-                    <div className="space-y-1.5">
-                      {groups[gk].map((input) => (
-                        <SmartField
-                          key={input.key}
-                          label={input.label}
-                          value={getValue(input.slice, input.field)}
-                          benchmarkValue={getBenchmarkValue(input.key) ?? getValue(input.slice, input.field)}
-                          benchmarkLabel={input.benchmarkLabel}
-                          status={getFieldStatus(input.key)}
-                          unit={input.unit}
-                          min={input.min}
-                          max={input.max}
-                          step={input.step}
-                          onChange={(v) => onValueChange(input.slice, input.field, v)}
-                          onConfirm={() => onConfirmField(input.key)}
-                          onRevertToBenchmark={() => onRevertFieldToBenchmark(input.key)}
-                          benchmarkSourceInfo={input.benchmarkSourceInfo}
-                          compact
-                        />
-                      ))}
+                {groupKeys.map((gk) => {
+                  if (gk === 'rms' && hasExistingRMS) {
+                    return (
+                      <div key={gk}>
+                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                          {INPUT_GROUPS[gk as keyof typeof INPUT_GROUPS]?.label}
+                        </h4>
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50/60 border border-purple-200">
+                          <BarChart3 className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-xs text-purple-800">
+                            RMS module excluded — the prospect is already using an RMS today.
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={gk}>
+                      <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                        {INPUT_GROUPS[gk as keyof typeof INPUT_GROUPS]?.label}
+                      </h4>
+                      <div className="space-y-1.5">
+                        {groups[gk].map((input) => (
+                          <SmartField
+                            key={input.key}
+                            label={input.label}
+                            value={getValue(input.slice, input.field)}
+                            benchmarkValue={getBenchmarkValue(input.key) ?? getValue(input.slice, input.field)}
+                            benchmarkLabel={input.benchmarkLabel}
+                            status={getFieldStatus(input.key)}
+                            unit={input.unit}
+                            min={input.min}
+                            max={input.max}
+                            step={input.step}
+                            onChange={(v) => onValueChange(input.slice, input.field, v)}
+                            onConfirm={() => onConfirmField(input.key)}
+                            onRevertToBenchmark={() => onRevertFieldToBenchmark(input.key)}
+                            benchmarkSourceInfo={input.benchmarkSourceInfo}
+                            compact
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Unvalidated callout */}
