@@ -110,6 +110,14 @@ export function normaliseSerpApiHotel(
   };
 }
 
+/** Returns YYYY-MM-DD for a date offset by the given months and days from today. */
+function futureDateStr(monthsFromNow: number, extraDays = 0): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + monthsFromNow);
+  d.setDate(d.getDate() + extraDays);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function searchSerpApi(
   name: string,
   city: string
@@ -120,6 +128,8 @@ export async function searchSerpApi(
   const params = new URLSearchParams({
     engine: 'google_hotels',
     q: `${name} ${city}`,
+    check_in_date: futureDateStr(6),
+    check_out_date: futureDateStr(6, 1),
     api_key: apiKey,
   });
 
@@ -130,7 +140,8 @@ export async function searchSerpApi(
   );
 
   if (!response.ok) {
-    throw new Error(`SerpApi search failed: ${response.status} ${response.statusText}`);
+    const body = await response.text().catch(() => '');
+    throw new Error(`SerpApi search failed: ${response.status} ${response.statusText}${body ? ` — ${body}` : ''}`);
   }
 
   const json = await response.json();
@@ -146,6 +157,8 @@ export async function fetchSerpApiHotel(
   const params = new URLSearchParams({
     engine: 'google_hotels',
     property_token: propertyToken,
+    check_in_date: futureDateStr(6),
+    check_out_date: futureDateStr(6, 1),
     api_key: apiKey,
   });
 
@@ -156,7 +169,8 @@ export async function fetchSerpApiHotel(
   );
 
   if (!response.ok) {
-    throw new Error(`SerpApi property fetch failed: ${response.status} ${response.statusText}`);
+    const body = await response.text().catch(() => '');
+    throw new Error(`SerpApi property fetch failed: ${response.status} ${response.statusText}${body ? ` — ${body}` : ''}`);
   }
 
   const json = await response.json();
