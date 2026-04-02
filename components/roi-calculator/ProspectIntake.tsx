@@ -380,10 +380,10 @@ export default function ProspectIntake({
                         <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                           {INPUT_GROUPS[gk as keyof typeof INPUT_GROUPS]?.label}
                         </h4>
-                        <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-50/60 border border-purple-200">
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-purple-100/60 border border-purple-200">
                           <BarChart3 className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
                           <p className="text-xs text-purple-800">
-                            RMS module excluded — the prospect is already using an RMS today.
+                            RMS module disabled — the prospect is already using an RMS today.
                           </p>
                         </div>
                       </div>
