@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    let candidates = await searchLiteAPI(name, city, countryCode);
+    let candidates = await searchLiteAPI(name, city ?? '', countryCode);
 
     if (candidates.length === 0) {
-      candidates = await searchSerpApi(name, city);
+      candidates = await searchSerpApi(name, city ?? '');
     }
 
     return NextResponse.json({ success: true, candidates });
