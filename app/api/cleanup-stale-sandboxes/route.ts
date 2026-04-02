@@ -60,6 +60,19 @@ async function checkSandboxActive(
 }
 
 /**
+ * GET /api/cleanup-stale-sandboxes
+ *
+ * Invoked by the Vercel cron job (weekly). Verifies CRON_SECRET before running.
+ */
+export async function GET(request: Request) {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+  return runCleanup(request);
+}
+
+/**
  * POST /api/cleanup-stale-sandboxes
  *
  * Checks every sandbox in the AccessToken table by calling configuration/get.
@@ -70,6 +83,10 @@ async function checkSandboxActive(
  *   dryRun=true  — report stale sandboxes without deleting them
  */
 export async function POST(request: Request) {
+  return runCleanup(request);
+}
+
+async function runCleanup(request: Request) {
   const { searchParams } = new URL(request.url);
   const dryRun = searchParams.get('dryRun') === 'true';
 

@@ -32,7 +32,7 @@ export interface PriorityInput {
   min: number;
   max: number;
   step: number;
-  group: 'property' | 'operations' | 'revenue' | 'payments' | 'rms';
+  group: 'property' | 'operations' | 'revenue' | 'payments' | 'rms' | 'housekeeping';
   importance: 'critical' | 'high' | 'medium';  // How much this input affects the ROI
   skipLabel?: string;                    // Text for the "skip" option
   benchmarkSourceInfo?: string;          // Explanation of where the benchmark data comes from

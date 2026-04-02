@@ -13,6 +13,7 @@ import DataComparisonSection from '@/components/roi-calculator/DataComparisonSec
 import DiscoverySection from '@/components/roi-calculator/sections/DiscoverySection';
 import ExportModal from '@/components/roi-calculator/ui/ExportModal';
 import PDFTemplate from '@/components/roi-calculator/PDFTemplate';
+import { ChevronDown } from 'lucide-react';
 import { countries, hotelTypes, usStates, getSmartDefaults, getBenchmarkForField } from '@/lib/roi-calculator/utils/hotelDefaults';
 import { getTranslations } from '@/lib/roi-calculator/translations';
 import { useROICalculator } from '@/hooks/useROICalculator';
@@ -26,6 +27,7 @@ import type {
   GuestExperienceInputs,
   PaymentInputs,
   RMSInputs,
+  HousekeepingInputs,
   ModuleKey,
 } from '@/lib/roi-calculator/types/calculator';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
@@ -46,7 +48,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     propertyContextString,
   } = useROICalculator(initialState);
 
-  const { config, ui, sharedVariables, guestExperience, payment, rms } = state;
+  const { config, ui, sharedVariables, guestExperience, payment, rms, housekeeping } = state;
   const { currencySymbol } = config;
   const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false);
   const [isIntakeOpen, setIsIntakeOpen] = useState(false);
@@ -117,7 +119,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
   // don't trigger unnecessary PATCH requests. Confidence map is included because
   // confirmed/adjusted/unknown statuses are meaningful and must be persisted.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, confidenceState.map, presentationId]);
+  }, [state.config, state.sharedVariables, state.guestExperience, state.payment, state.rms, state.housekeeping, confidenceState.map, presentationId]);
 
   // Helper: get a value from any state slice by name
   const getSliceValue = useCallback(
@@ -214,12 +216,20 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
     [dispatch],
   );
 
+  const handleHousekeepingChange = useCallback(
+    <K extends keyof HousekeepingInputs>(field: K, value: HousekeepingInputs[K]) => {
+      dispatch({ type: 'SET_FIELD', slice: 'housekeeping', field, value });
+    },
+    [dispatch],
+  );
+
   // Export — modal UI always in English; PDF uses presentationLanguage
   const enT = getTranslations('en');
   const exportableSections = [
     { id: 'guest-experience', label: enT.modules.guestExperience },
     { id: 'payment', label: enT.modules.payment },
     { id: 'rms', label: enT.modules.rms },
+    { id: 'housekeeping', label: enT.modules.housekeeping },
   ];
 
   const handleExportPDF = async () => {
@@ -234,6 +244,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
       if (ui.selectedSections.includes('guest-experience')) { filteredTime += results.guestExperience.totalTime; filteredSavings += results.guestExperience.totalSavings; }
       if (ui.selectedSections.includes('payment')) { filteredTime += results.payment.totalTime; filteredSavings += results.payment.totalSavings; }
       if (ui.selectedSections.includes('rms')) { filteredTime += results.rms.totalTime; filteredSavings += results.rms.totalSavings; }
+      if (ui.selectedSections.includes('housekeeping')) { filteredTime += results.housekeeping.totalTime; filteredSavings += results.housekeeping.totalSavings; }
 
       const pdfData = {
         title: config.title,
@@ -300,6 +311,22 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
               annualLaborCostSavings: results.rms.annualLaborCostSavings,
               totalTime: results.rms.totalTime,
               totalSavings: results.rms.totalSavings,
+            },
+          }),
+          ...(ui.selectedSections.includes('housekeeping') && {
+            housekeeping: {
+              roomAssignmentHours: results.housekeeping.roomAssignmentHours,
+              roomAssignmentCost: results.housekeeping.roomAssignmentCost,
+              cleaningStatusHours: results.housekeeping.cleaningStatusHours,
+              cleaningStatusCost: results.housekeeping.cleaningStatusCost,
+              maintenanceCommHours: results.housekeeping.maintenanceCommHours,
+              maintenanceCommCost: results.housekeeping.maintenanceCommCost,
+              taskMgmtHours: results.housekeeping.taskMgmtHours,
+              taskMgmtCost: results.housekeeping.taskMgmtCost,
+              amenitiesCostSaved: results.housekeeping.amenitiesCostSaved,
+              paperCostSaved: results.housekeeping.paperCostSaved,
+              totalTime: results.housekeeping.totalTime,
+              totalSavings: results.housekeeping.totalSavings,
             },
           }),
         },
@@ -379,45 +406,49 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
               placeholder="Enter presentation title…"
               className="w-full max-w-xl text-center text-2xl font-bold text-gray-800 bg-transparent outline-none placeholder:text-gray-300 placeholder:font-normal"
             />
-            {presentationId && saveStatus !== 'idle' && (
-              <span className="text-xs text-[--mews-night-black]/40 mt-1">
-                {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
-              </span>
-            )}
           </div>
 
           {/* Country, State & Hotel Type selectors */}
           <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
-            <select
-              value={config.country}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
-            >
-              {countries.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-            {config.country === 'United States' && (
+            <div className="relative">
               <select
-                value={config.usState}
-                onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: e.target.value })}
-                className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
+                value={config.country}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: e.target.value })}
+                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
               >
-                <option value="">All states (national avg)</option>
-                {usStates.map((s) => (
-                  <option key={s.code} value={s.name}>{s.name}</option>
+                {countries.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
                 ))}
               </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
+            {config.country === 'United States' && (
+              <div className="relative">
+                <select
+                  value={config.usState}
+                  onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: e.target.value })}
+                  className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
+                >
+                  <option value="">All states (national avg)</option>
+                  {usStates.map((s) => (
+                    <option key={s.code} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
             )}
-            <select
-              value={config.hotelType}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: e.target.value })}
-              className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
-            >
-              {hotelTypes.map((ht) => (
-                <option key={ht} value={ht}>{ht}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={config.hotelType}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: e.target.value })}
+                className="appearance-none pl-3 pr-8 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:ring-2 focus:ring-mews-primary focus:border-mews-primary outline-none transition-all cursor-pointer"
+              >
+                {hotelTypes.map((ht) => (
+                  <option key={ht} value={ht}>{ht}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
           </div>
 
           {/* Hero Number */}
@@ -531,6 +562,7 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         onDiscovery={() => setIsDiscoveryOpen(true)}
         presentationLanguage={config.presentationLanguage}
         onLanguageChange={(lang) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'presentationLanguage', value: lang })}
+        saveStatus={presentationId ? saveStatus : undefined}
       />
 
       {/* Modals */}
@@ -582,12 +614,6 @@ export default function ROIStage({ presentationId, initialState }: ROIStageProps
         onConfirmField={confirmField}
         onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
-        country={config.country}
-        usState={config.usState}
-        hotelType={config.hotelType}
-        onCountryChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: v })}
-        onUSStateChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: v })}
-        onHotelTypeChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: v })}
         currencySymbol={currencySymbol}
         hasExistingRMS={rms.hasExistingRMS}
         onHasExistingRMSChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'rms', field: 'hasExistingRMS', value: v })}

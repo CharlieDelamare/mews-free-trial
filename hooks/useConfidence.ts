@@ -81,9 +81,16 @@ const initialState: ConfidenceState = {
 export function useConfidence(priorityInputs: PriorityInput[]) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
+  // Exclude validation-only inputs from confidence scoring so counts
+  // match the inputs the user actually sees in the wizard.
+  const wizardInputs = useMemo(
+    () => priorityInputs.filter((i) => !i.validationOnly),
+    [priorityInputs],
+  );
+
   const score: ConfidenceScore = useMemo(
-    () => computeConfidenceScore(state.map, priorityInputs),
-    [state.map, priorityInputs],
+    () => computeConfidenceScore(state.map, wizardInputs),
+    [state.map, wizardInputs],
   );
 
   const getFieldStatus = useCallback(

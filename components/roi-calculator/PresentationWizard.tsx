@@ -8,6 +8,7 @@ import { useROICalculator } from '@/hooks/useROICalculator';
 import { useConfidence } from '@/hooks/useConfidence';
 import { getPriorityInputs } from '@/lib/roi-calculator/utils/priorityInputs';
 import { serializeState } from '@/lib/roi-calculator/utils/persistence';
+import { countries, hotelTypes, usStates } from '@/lib/roi-calculator/utils/hotelDefaults';
 import type { IntakeMode } from '@/lib/roi-calculator/types/confidence';
 import type { SharedVariables, EnabledModules } from '@/lib/roi-calculator/types/calculator';
 
@@ -21,8 +22,14 @@ export default function PresentationWizard() {
     guestExperience: true,
     payment: true,
     rms: true,
+    housekeeping: true,
   });
+  const [country, setCountry] = useState('');
+  const [usState, setUsState] = useState('');
+  const [hotelType, setHotelType] = useState('');
   const [nameError, setNameError] = useState('');
+  const [countryError, setCountryError] = useState('');
+  const [hotelTypeError, setHotelTypeError] = useState('');
   const [modulesError, setModulesError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,16 +65,35 @@ export default function PresentationWizard() {
 
   function handleIdentitySubmit(e: React.FormEvent) {
     e.preventDefault();
+    let hasError = false;
     if (!name.trim()) {
       setNameError('Hotel or group name is required');
-      return;
+      hasError = true;
+    } else {
+      setNameError('');
     }
-    setNameError('');
+    if (!country) {
+      setCountryError('Please select a country');
+      hasError = true;
+    } else {
+      setCountryError('');
+    }
+    if (!hotelType) {
+      setHotelTypeError('Please select a property type');
+      hasError = true;
+    } else {
+      setHotelTypeError('');
+    }
     if (!selectedModules.guestExperience && !selectedModules.payment && !selectedModules.rms) {
       setModulesError('Please select at least one Mews product');
-      return;
+      hasError = true;
+    } else {
+      setModulesError('');
     }
-    setModulesError('');
+    if (hasError) return;
+    dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: country });
+    dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: usState });
+    dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: hotelType });
     setStep('intake');
   }
 
@@ -152,6 +178,65 @@ export default function PresentationWizard() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Country <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={country}
+                onChange={(e) => { setCountry(e.target.value); setUsState(''); if (countryError) setCountryError(''); }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary text-sm text-gray-800"
+              >
+                <option value="">Select a country…</option>
+                {countries.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+              {countryError && <p className="mt-1.5 text-sm text-red-500">{countryError}</p>}
+            </div>
+
+            {country === 'United States' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State <span className="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <select
+                  value={usState}
+                  onChange={(e) => setUsState(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary text-sm text-gray-800"
+                >
+                  <option value="">All states (national average)</option>
+                  {usStates.map((s) => (
+                    <option key={s.code} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Property type <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {hotelTypes.map((ht) => (
+                  <button
+                    key={ht}
+                    type="button"
+                    onClick={() => { setHotelType(ht); if (hotelTypeError) setHotelTypeError(''); }}
+                    className={[
+                      'px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors text-left',
+                      hotelType === ht
+                        ? 'bg-mews-primary text-mews-night-black border-mews-primary'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50',
+                    ].join(' ')}
+                  >
+                    {ht}
+                  </button>
+                ))}
+              </div>
+              {hotelTypeError && <p className="mt-1.5 text-sm text-red-500">{hotelTypeError}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Which Mews products will they be using?
               </label>
               <div className="grid grid-cols-1 gap-2 mt-2">
@@ -171,6 +256,11 @@ export default function PresentationWizard() {
                       key: 'rms' as const,
                       label: 'RMS',
                       description: 'Rate management, channel optimisation',
+                    },
+                    {
+                      key: 'housekeeping' as const,
+                      label: 'Housekeeping',
+                      description: 'Room assignment, cleaning updates, maintenance coordination',
                     },
                   ] satisfies { key: keyof EnabledModules; label: string; description: string }[] // description kept for future use
                 ).map(({ key, label }) => {
@@ -229,10 +319,19 @@ export default function PresentationWizard() {
         </div>
       )}
       {isSubmitting && (
-        <div className="fixed inset-0 z-50 bg-white/70 flex items-center justify-center">
-          <p className="text-[--mews-night-black]/60 text-sm" style={{ fontFamily: 'var(--font-body)' }}>
-            Saving your presentation…
-          </p>
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[--mews-cream]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-4 border-mews-primary border-t-transparent rounded-full animate-spin" />
+            <p
+              className="text-lg font-semibold text-[--mews-night-black]/70"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              Building your ROI&hellip;
+            </p>
+            <p className="text-sm text-[--mews-night-black]/40" style={{ fontFamily: 'var(--font-body)' }}>
+              This usually takes a few seconds
+            </p>
+          </div>
         </div>
       )}
       <ProspectIntake
@@ -257,12 +356,6 @@ export default function PresentationWizard() {
         onConfirmField={confirmField}
         onRevertFieldToBenchmark={handleRevertFieldToBenchmark}
         score={score}
-        country={config.country}
-        usState={config.usState}
-        hotelType={config.hotelType}
-        onCountryChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'country', value: v })}
-        onUSStateChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'usState', value: v })}
-        onHotelTypeChange={(v) => dispatch({ type: 'SET_FIELD', slice: 'config', field: 'hotelType', value: v })}
         currencySymbol={currencySymbol}
         hasExistingRMS={state.rms.hasExistingRMS}
         onHasExistingRMSChange={(value) =>
