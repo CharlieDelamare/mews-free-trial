@@ -38,7 +38,7 @@ export default function CinematicOverlay({
   // Total slides: title + N modules + summary
   const totalSlides = enabledModuleKeys.length + 2;
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
@@ -48,6 +48,13 @@ export default function CinematicOverlay({
 
   const next = useCallback(() => dispatch({ type: 'CINEMATIC_NEXT' }), [dispatch]);
   const prev = useCallback(() => dispatch({ type: 'CINEMATIC_PREV' }), [dispatch]);
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, []);
   const exit = useCallback(() => {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
@@ -58,6 +65,9 @@ export default function CinematicOverlay({
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // When in fullscreen, the browser may fire fullscreenchange before this
+      // keydown handler runs. exit() guards with document.fullscreenElement, so
+      // the exitFullscreen call is safely a no-op if the browser already exited.
       if (e.key === 'Escape') exit();
       else if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
       else if (e.key === 'ArrowLeft') prev();
@@ -146,15 +156,8 @@ export default function CinematicOverlay({
             )}
           </button>
           <button
-            onClick={() => {
-              if (document.fullscreenElement) {
-                document.exitFullscreen().catch(() => {});
-              } else {
-                document.documentElement.requestFullscreen().catch(() => {});
-              }
-            }}
+            onClick={toggleFullscreen}
             aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            aria-pressed={isFullscreen}
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white/10 transition-colors"
           >
             {isFullscreen ? (
