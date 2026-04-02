@@ -43,7 +43,7 @@ export default function ExecSummaryPDFTemplate({
   t,
 }: ExecSummaryPDFTemplateProps) {
   const hotelName = title || 'Your property';
-  const formattedTotal = `${currencySymbol}${Math.round(totalSavings).toLocaleString()}`;
+  const formattedTotal = fmt(totalSavings, currencySymbol);
 
   return (
     <div
