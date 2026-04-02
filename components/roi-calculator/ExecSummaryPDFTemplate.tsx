@@ -25,7 +25,6 @@ interface ExecSummaryPDFTemplateProps {
 function fmt(value: number, cs: string): string {
   const abs = Math.abs(value);
   if (abs >= 1_000_000) return `${cs}${(value / 1_000_000).toFixed(1)}M`;
-  if (abs >= 10_000) return `${cs}${Math.round(value / 1_000)}k`;
   return `${cs}${Math.round(value).toLocaleString()}`;
 }
 
@@ -71,8 +70,7 @@ export default function ExecSummaryPDFTemplate({
         </div>
         <div style={{ textAlign: 'right', fontSize: '10px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.6' }}>
           ROI Business Case<br />
-          {hotelName} · {date}<br />
-          {propertyContext}
+          {hotelName} · {date}{propertyContext ? <><br />{propertyContext}</> : null}
         </div>
       </div>
 
