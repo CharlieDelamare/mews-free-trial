@@ -84,7 +84,7 @@ const logsLink = {
   ),
 };
 
-const allLinks = [...sandboxLinks, ...operationLinks, logsLink];
+const allLinks = [...sandboxLinks, ...operationLinks, logsLink, { href: '/research', label: 'Research', icon: <></> }];
 
 function getPageLabel(pathname: string): string {
   const match = allLinks.find(l => pathname.startsWith(l.href));
@@ -219,6 +219,14 @@ export function Navbar() {
                 <span className="flex items-center gap-2">
                   <Calculator className="h-4 w-4" />
                   ROI Calculator
+                </span>
+              </Link>
+              <Link key="/research" href="/research" onClick={close} className={linkClasses('/research')}>
+                <span className="flex items-center gap-2">
+                  <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
+                  </svg>
+                  Research
                 </span>
               </Link>
             </div>
