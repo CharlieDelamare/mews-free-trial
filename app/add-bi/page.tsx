@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import SearchableSelect from '@/components/SearchableSelect';
 
 interface Environment {
@@ -58,11 +58,38 @@ export default function AddBiPage() {
     setShowManualAdd(true);
   };
 
-  const closeManualAddModal = () => {
+  const closeManualAddModal = useCallback(() => {
     setShowManualAdd(false);
     setManualToken('');
     setManualAddMessage(null);
-  };
+  }, []);
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when modal opens; trap focus and handle Escape within modal
+  useEffect(() => {
+    if (!showManualAdd) return;
+    inputRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeManualAddModal(); return; }
+      if (e.key !== 'Tab' || !modalRef.current) return;
+      const focusable = Array.from(
+        modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showManualAdd, closeManualAddModal]);
 
   const handleManualAdd = async () => {
     if (!manualToken.trim()) return;
@@ -166,7 +193,7 @@ export default function AddBiPage() {
                   href={env.loginUrl ?? 'https://app.mews-demo.com'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 bg-[#fdf2ff] border border-mews-primary/30 text-mews-primary rounded-lg px-3 py-1.5 text-sm font-semibold hover:bg-[#f5e6ff] transition-colors"
+                  className="inline-flex items-center gap-1.5 bg-mews-primary/10 border border-mews-primary/30 text-mews-primary rounded-lg px-3 py-1.5 text-sm font-semibold hover:bg-mews-primary/20 transition-colors"
                 >
                   ↗ Open {name} in Mews
                 </a>
@@ -228,9 +255,16 @@ export default function AddBiPage() {
 
       {/* Manual Add Environment Modal */}
       {showManualAdd && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-mews-night-black mb-1">Add existing environment</h2>
+        <div className="fixed inset-0 bg-mews-night-black/70 flex items-center justify-center p-4 z-50" onClick={closeManualAddModal}>
+          <div
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="manual-add-title"
+            className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="manual-add-title" className="text-lg font-semibold text-mews-night-black mb-1">Add existing environment</h2>
             <p className="text-sm text-neutral-500 mb-5">
               Paste an access token to add an environment without waiting for the webhook.
             </p>
@@ -238,6 +272,7 @@ export default function AddBiPage() {
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">Access Token</label>
                 <input
+                  ref={inputRef}
                   type="text"
                   value={manualToken}
                   onChange={(e) => setManualToken(e.target.value)}
@@ -265,8 +300,8 @@ export default function AddBiPage() {
                     disabled={!manualToken.trim() || manualAddLoading}
                     className={`flex-1 py-2 px-4 font-semibold rounded-lg transition-colors ${
                       !manualToken.trim() || manualAddLoading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-700 text-white hover:bg-gray-800'
+                        ? 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                        : 'bg-mews-primary text-mews-night-black hover:bg-mews-primary-hover'
                     }`}
                   >
                     {manualAddLoading ? 'Storing...' : 'Store'}

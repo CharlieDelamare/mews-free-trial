@@ -5,6 +5,7 @@
 :root {
   /* Core Mews Colors */
   --mews-night-black: #1C1D24;
+  --mews-night-black-rgb: 28 29 36; /* RGB channels — enables Tailwind opacity modifiers e.g. bg-mews-night-black/70 */
   --mews-white: #FFFFFF;
   --mews-deep-blue: #2D2C37;
   --mews-linen: #FFFCF6;

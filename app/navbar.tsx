@@ -75,9 +75,29 @@ const operationLinks = [
   {
     href: '/control-centre',
     label: 'Control Centre',
+    badge: true as const,
     icon: (
       <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0H3" />
+      </svg>
+    ),
+  },
+];
+
+const toolLinks = [
+  {
+    href: '/roi-calculator',
+    label: 'ROI Calculator',
+    badge: true as const,
+    icon: <Calculator className="h-4 w-4" />,
+  },
+  {
+    href: '/research',
+    label: 'Research',
+    badge: true as const,
+    icon: (
+      <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
       </svg>
     ),
   },
@@ -93,7 +113,7 @@ const logsLink = {
   ),
 };
 
-const allLinks = [...sandboxLinks, ...operationLinks, logsLink, { href: '/research', label: 'Research', icon: <></> }];
+const allLinks = [...sandboxLinks, ...operationLinks, ...toolLinks, logsLink];
 
 function getPageLabel(pathname: string): string {
   const match = allLinks.find(l => pathname.startsWith(l.href));
@@ -140,12 +160,14 @@ export function Navbar() {
     </span>
   );
 
-  const renderLinks = (links: typeof sandboxLinks) =>
-    links.map(({ href, label, icon }) => (
+  type NavLink = { href: string; label: string; icon: React.ReactNode; badge?: true };
+
+  const renderLinks = (links: NavLink[]) =>
+    links.map(({ href, label, icon, badge }) => (
       <Link key={href} href={href} onClick={close} className={linkClasses(href)}>
         {icon}
         {label}
-        {(href === '/control-centre') && <BetaBadge />}
+        {badge && <BetaBadge />}
       </Link>
     ));
 
@@ -231,18 +253,7 @@ export function Navbar() {
           <div className="mt-4">
             <p className="text-xs font-semibold uppercase tracking-wider px-3 mb-1 text-neutral-400">Tools</p>
             <div className="space-y-1">
-              <Link key="/roi-calculator" href="/roi-calculator" onClick={close} className={linkClasses('/roi-calculator')}>
-                <Calculator className="h-4 w-4" />
-                ROI Calculator
-                <BetaBadge />
-              </Link>
-              <Link key="/research" href="/research" onClick={close} className={linkClasses('/research')}>
-                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
-                </svg>
-                Research
-                <BetaBadge />
-              </Link>
+              {renderLinks(toolLinks)}
             </div>
           </div>
 
