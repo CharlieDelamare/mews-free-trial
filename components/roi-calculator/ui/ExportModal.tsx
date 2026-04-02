@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { X, FileDown } from 'lucide-react';
 import { getTranslations } from '@/lib/roi-calculator/translations';
 import type { LanguageCode } from '@/lib/roi-calculator/types/translations';
@@ -15,7 +16,7 @@ interface ExportModalProps {
   sections: Section[];
   selectedSections: string[];
   onToggleSection: (sectionId: string) => void;
-  onExport: () => void;
+  onExport: (type: 'presentation' | 'summary') => void;
   isExporting: boolean;
   presentationLanguage?: LanguageCode;
 }
@@ -30,9 +31,12 @@ export default function ExportModal({
   isExporting,
   presentationLanguage,
 }: ExportModalProps) {
+  const [exportType, setExportType] = useState<'presentation' | 'summary'>('presentation');
+
   if (!isOpen) return null;
 
   const t = getTranslations('en');
+  const isPresentationMode = exportType === 'presentation';
 
   return (
     <div
@@ -73,52 +77,84 @@ export default function ExportModal({
           </button>
         </div>
 
-        {/* Section checklist */}
-        <div className="p-5 space-y-2">
-          {sections.map((section) => {
-            const isChecked = selectedSections.includes(section.id);
-            return (
-              <label
-                key={section.id}
-                className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150 group"
-                style={{
-                  background: isChecked ? 'color-mix(in srgb, var(--mews-indigo) 7%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 2%, transparent)',
-                  border: `1px solid ${isChecked ? 'color-mix(in srgb, var(--mews-indigo) 25%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)'}`,
-                }}
-              >
-                {/* Custom checkbox */}
-                <div
-                  className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-150"
-                  style={{
-                    background: isChecked
-                      ? 'var(--mews-indigo)'
-                      : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)',
-                    border: `2px solid ${isChecked ? 'transparent' : 'color-mix(in srgb, var(--mews-charcoal) 15%, transparent)'}`,
-                    boxShadow: isChecked ? '0 2px 8px color-mix(in srgb, var(--mews-indigo) 30%, transparent)' : 'none',
-                  }}
-                >
-                  {isChecked && (
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={() => onToggleSection(section.id)}
-                  className="sr-only"
-                  disabled={isExporting}
-                />
-                <span className="text-sm font-medium text-gray-800">{section.label}</span>
-              </label>
-            );
-          })}
+        <div className="p-5 space-y-4">
+          {/* Export type segmented control */}
+          <div
+            className="flex rounded-xl overflow-hidden"
+            style={{ border: '1px solid color-mix(in srgb, var(--mews-charcoal) 10%, transparent)' }}
+          >
+            <button
+              onClick={() => setExportType('presentation')}
+              disabled={isExporting}
+              className="flex-1 py-2 text-sm font-semibold transition-all duration-150"
+              style={{
+                background: isPresentationMode ? 'var(--mews-night-black)' : 'transparent',
+                color: isPresentationMode ? '#fff' : 'var(--roi-gray-700)',
+              }}
+            >
+              Full Presentation
+            </button>
+            <button
+              onClick={() => setExportType('summary')}
+              disabled={isExporting}
+              className="flex-1 py-2 text-sm font-semibold transition-all duration-150"
+              style={{
+                background: !isPresentationMode ? 'var(--mews-night-black)' : 'transparent',
+                color: !isPresentationMode ? '#fff' : 'var(--roi-gray-700)',
+              }}
+            >
+              Executive Summary
+            </button>
+          </div>
 
-          {selectedSections.length === 0 && (
-            <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-3 border border-amber-200">
-              {t.labels.selectAtLeastOne}
-            </p>
+          {/* Section checklist — only shown for Full Presentation */}
+          {isPresentationMode && (
+            <div className="space-y-2">
+              {sections.map((section) => {
+                const isChecked = selectedSections.includes(section.id);
+                return (
+                  <label
+                    key={section.id}
+                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-150 group"
+                    style={{
+                      background: isChecked ? 'color-mix(in srgb, var(--mews-indigo) 7%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 2%, transparent)',
+                      border: `1px solid ${isChecked ? 'color-mix(in srgb, var(--mews-indigo) 25%, transparent)' : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)'}`,
+                    }}
+                  >
+                    <div
+                      className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all duration-150"
+                      style={{
+                        background: isChecked
+                          ? 'var(--mews-indigo)'
+                          : 'color-mix(in srgb, var(--mews-charcoal) 6%, transparent)',
+                        border: `2px solid ${isChecked ? 'transparent' : 'color-mix(in srgb, var(--mews-charcoal) 15%, transparent)'}`,
+                        boxShadow: isChecked ? '0 2px 8px color-mix(in srgb, var(--mews-indigo) 30%, transparent)' : 'none',
+                      }}
+                    >
+                      {isChecked && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => onToggleSection(section.id)}
+                      className="sr-only"
+                      disabled={isExporting}
+                    />
+                    <span className="text-sm font-medium text-gray-800">{section.label}</span>
+                  </label>
+                );
+              })}
+
+              {selectedSections.length === 0 && (
+                <p className="text-xs text-amber-700 bg-amber-50 rounded-lg p-3 border border-amber-200">
+                  {t.labels.selectAtLeastOne}
+                </p>
+              )}
+            </div>
           )}
         </div>
 
@@ -146,19 +182,19 @@ export default function ExportModal({
             {t.labels.cancel}
           </button>
           <button
-            onClick={onExport}
-            disabled={selectedSections.length === 0 || isExporting}
+            onClick={() => onExport(exportType)}
+            disabled={(isPresentationMode && selectedSections.length === 0) || isExporting}
             className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition-all duration-150"
             style={{
               background:
-                selectedSections.length === 0 || isExporting
+                (isPresentationMode && selectedSections.length === 0) || isExporting
                   ? 'var(--roi-neutral-border)'
                   : 'linear-gradient(135deg, var(--mews-night-black) 0%, var(--mews-deep-blue) 100%)',
               boxShadow:
-                selectedSections.length === 0 || isExporting
+                (isPresentationMode && selectedSections.length === 0) || isExporting
                   ? 'none'
                   : '0 4px 12px color-mix(in srgb, var(--mews-charcoal) 30%, transparent)',
-              cursor: selectedSections.length === 0 || isExporting ? 'not-allowed' : 'pointer',
+              cursor: (isPresentationMode && selectedSections.length === 0) || isExporting ? 'not-allowed' : 'pointer',
             }}
           >
             {isExporting ? (
@@ -169,7 +205,7 @@ export default function ExportModal({
             ) : (
               <>
                 <FileDown className="w-4 h-4" />
-                {t.labels.exportPdf}
+                {isPresentationMode ? t.labels.exportPdf : 'Export Summary'}
               </>
             )}
           </button>
