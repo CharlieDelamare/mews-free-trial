@@ -93,12 +93,15 @@ export async function searchLiteAPI(
   city: string,
   countryCode?: string
 ): Promise<HotelCandidate[]> {
+  // LiteAPI requires countryCode (or lat/lon/placeId) — without it the API
+  // returns 400. Fall back to SerpApi when the caller omits countryCode.
+  if (!countryCode) return [];
+
   const params = new URLSearchParams({
     hotelName: name,
-    cityName: city,
+    countryCode,
     limit: '10',
   });
-  if (countryCode) params.set('countryCode', countryCode);
 
   const response = await fetchWithTimeout(
     `${LITEAPI_BASE}/data/hotels?${params}`,

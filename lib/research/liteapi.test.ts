@@ -1,7 +1,8 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import {
   normaliseLiteAPISearchResults,
   normaliseLiteAPIHotel,
+  searchLiteAPI,
 } from './liteapi';
 
 // Matches real LiteAPI /v3.0/data/hotels response shape
@@ -159,5 +160,17 @@ describe('normaliseLiteAPIHotel', () => {
   test('builds address from flat string fields', () => {
     const result = normaliseLiteAPIHotel(MOCK_HOTEL_RESPONSE);
     expect(result.address).toBe('Strand, London, WC2R 0EZ');
+  });
+});
+
+describe('searchLiteAPI', () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
+
+  test('returns empty array without making a request when countryCode is omitted', async () => {
+    const result = await searchLiteAPI('The Savoy', 'London');
+    expect(result).toEqual([]);
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });
