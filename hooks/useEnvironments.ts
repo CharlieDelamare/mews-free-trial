@@ -9,6 +9,7 @@ export interface Environment {
   type: 'trial' | 'manual';
   status?: string;
   customerEmail?: string;
+  loginUrl?: string;
   createdAt: Date;
   accessTokenId: number;
 }
@@ -29,7 +30,7 @@ function sortEnvironments(envs: Environment[]): Environment[] {
 
 export function useEnvironments(): UseEnvironmentsResult {
   const [environments, setEnvironments] = useState<Environment[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchEnvironments = useCallback(async () => {
     setLoading(true);
