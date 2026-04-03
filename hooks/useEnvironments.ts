@@ -17,7 +17,7 @@ export interface Environment {
 interface UseEnvironmentsResult {
   environments: Environment[];
   loading: boolean;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 function sortEnvironments(envs: Environment[]): Environment[] {
