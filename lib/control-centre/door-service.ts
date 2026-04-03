@@ -1,9 +1,10 @@
 import { fetchBookableServices } from '@/lib/mews-data-service';
-import { getMewsApiUrl, getMewsClientToken } from '@/lib/config';
+import { getMewsApiUrl } from '@/lib/config';
+import { loggedFetch } from '@/lib/api-call-logger';
+import { buildMewsAuth } from '@/lib/mews-api';
 import type { DoorAssignment, DoorsResult, DoorsProvisionResult } from '@/types/control-centre';
 
 const MEWS_API_URL = getMewsApiUrl();
-const CLIENT_TOKEN = getMewsClientToken();
 
 // Hardcoded room mappings for the TradeShow property
 export const DOOR_ROOM_MAPPING: Record<string, string> = {
@@ -21,20 +22,16 @@ export const DOOR_ROOM_MAPPING: Record<string, string> = {
   '0212': 'Room 0212',
 };
 
-function buildAuth(accessToken: string) {
-  return { ClientToken: CLIENT_TOKEN, AccessToken: accessToken, Client: 'Mews Sandbox Manager' };
-}
-
 export async function getDoorAssignments(accessToken: string): Promise<DoorsResult> {
-  const res = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceAccessTokens/getAll`, {
+  const res = await loggedFetch(`${MEWS_API_URL}/api/connector/v1/resourceAccessTokens/getAll`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ...buildAuth(accessToken),
+      ...buildMewsAuth(accessToken),
       ActivityStates: ['Active'],
       Limitation: { Count: 1000 },
     }),
-  });
+  }, { unifiedLogId: 'control-centre', group: 'rooms' });
 
   const data = await res.json();
   const tokens: Array<{
@@ -65,19 +62,19 @@ export async function provisionDoors(
   const result: DoorsProvisionResult = { successCount: 0, failureCount: 0, errors: [] };
 
   // Fetch reservation details to get validity dates
-  const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
+  const services = await fetchBookableServices(buildMewsAuth(accessToken).ClientToken, accessToken);
   const serviceIds = services.map(s => s.id);
 
-  const resRes = await fetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
+  const resRes = await loggedFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ...buildAuth(accessToken),
+      ...buildMewsAuth(accessToken),
       ServiceIds: serviceIds,
       States: ['Confirmed', 'Started'],
       Limitation: { Count: 1000 },
     }),
-  });
+  }, { unifiedLogId: 'control-centre', group: 'reservations' });
   const resData = await resRes.json();
   const reservations: Array<{ Id: string; ScheduledStartUtc: string; ScheduledEndUtc: string }> =
     resData.Reservations || [];
@@ -99,11 +96,11 @@ export async function provisionDoors(
         // Generate a random 4-digit PIN
         const pin = String(Math.floor(1000 + Math.random() * 9000));
 
-        const r = await fetch(`${MEWS_API_URL}/api/connector/v1/resourceAccessTokens/add`, {
+        const r = await loggedFetch(`${MEWS_API_URL}/api/connector/v1/resourceAccessTokens/add`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ...buildAuth(accessToken),
+            ...buildMewsAuth(accessToken),
             ResourceAccessTokenParameters: [{
               ServiceOrderId: reservationId,
               Type: 'PinCode',
@@ -118,7 +115,7 @@ export async function provisionDoors(
               },
             }],
           }),
-        });
+        }, { unifiedLogId: 'control-centre', group: 'rooms' });
         if (r.ok) result.successCount++;
         else {
           result.failureCount++;
@@ -135,20 +132,20 @@ export async function recoverSplitDoors(accessToken: string): Promise<DoorsProvi
   const result: DoorsProvisionResult = { successCount: 0, failureCount: 0, errors: [] };
 
   // Fetch service IDs required by the versioned reservations endpoint
-  const services = await fetchBookableServices(CLIENT_TOKEN, accessToken);
+  const services = await fetchBookableServices(buildMewsAuth(accessToken).ClientToken, accessToken);
   const serviceIds = services.map(s => s.id);
 
   // Fetch all started reservations using the versioned endpoint
-  const res = await fetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
+  const res = await loggedFetch(`${MEWS_API_URL}/api/connector/v1/reservations/getAll/2023-06-06`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ...buildAuth(accessToken),
+      ...buildMewsAuth(accessToken),
       ServiceIds: serviceIds,
       States: ['Started'],
       Limitation: { Count: 1000 },
     }),
-  });
+  }, { unifiedLogId: 'control-centre', group: 'reservations' });
 
   const data = await res.json();
   const reservations: Array<{ Id: string }> = data.Reservations || [];

@@ -6,8 +6,8 @@
  */
 
 import { fromZonedTime } from 'date-fns-tz';
-import { loggedFetch } from './api-call-logger';
-import { getMewsApiUrl } from './config';
+import { loggedFetch } from '@/lib/api-call-logger';
+import { getMewsApiUrl } from '@/lib/config';
 
 const MEWS_API_URL = getMewsApiUrl();
 

@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { fetchMewsData } from '@/lib/mews-data-service';
-import { getMewsApiUrl, getMewsClientToken } from '@/lib/config';
+import { getMewsApiUrl } from '@/lib/config';
+import { loggedFetch } from '@/lib/api-call-logger';
+import { buildMewsAuth } from '@/lib/mews-api';
 import type {
   IbeTheme,
   IbeThemeConfig,
@@ -11,7 +13,6 @@ import type {
 } from '@/types/control-centre';
 
 const MEWS_API_URL = getMewsApiUrl();
-const CLIENT_TOKEN = getMewsClientToken();
 
 export const IBE_THEME_CONFIG: Record<IbeTheme, IbeThemeConfig> = {
   luxury: {
@@ -59,23 +60,21 @@ export async function searchIbeAvailability(
   accessToken: string,
   params: IbeSearchParams
 ): Promise<IbeSearchResult[]> {
-  const mewsData = await fetchMewsData(CLIENT_TOKEN, accessToken, {
+  const mewsData = await fetchMewsData(buildMewsAuth(accessToken).ClientToken, accessToken, {
     serviceId: params.serviceId,
   });
 
   const url = `${MEWS_API_URL}/api/connector/v1/services/getAvailability`;
-  const res = await fetch(url, {
+  const res = await loggedFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ClientToken: CLIENT_TOKEN,
-      AccessToken: accessToken,
-      Client: 'Mews Sandbox Manager',
+      ...buildMewsAuth(accessToken),
       ServiceId: mewsData.serviceId,
       FirstTimeUnitStartUtc: `${params.checkIn}T00:00:00Z`,
       LastTimeUnitStartUtc: `${params.checkOut}T00:00:00Z`,
     }),
-  });
+  }, { unifiedLogId: 'control-centre', group: 'reservations' });
 
   const data = await res.json();
   const categoryAvailabilities: Array<{
@@ -113,22 +112,20 @@ export async function bookIbeReservation(
   params: IbeBookParams
 ): Promise<IbeBookResult> {
   // Fetch age category ID for this service
-  const mewsData = await fetchMewsData(CLIENT_TOKEN, accessToken, { serviceId: params.serviceId });
+  const mewsData = await fetchMewsData(buildMewsAuth(accessToken).ClientToken, accessToken, { serviceId: params.serviceId });
 
   // Create a customer profile first — customers/add requires LastName + OverwriteExisting
-  const customerRes = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
+  const customerRes = await loggedFetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ClientToken: CLIENT_TOKEN,
-      AccessToken: accessToken,
-      Client: 'Mews Sandbox Manager',
+      ...buildMewsAuth(accessToken),
       OverwriteExisting: false,
       FirstName: params.guestFirstName,
       LastName: params.guestLastName,
       Email: params.guestEmail,
     }),
-  });
+  }, { unifiedLogId: 'control-centre', group: 'customers' });
   const customerData = await customerRes.json();
   const customerId: string | undefined = customerData.Customers?.[0]?.Id;
   if (!customerId) {
@@ -136,13 +133,11 @@ export async function bookIbeReservation(
   }
 
   const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
-  const res = await fetch(url, {
+  const res = await loggedFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ClientToken: CLIENT_TOKEN,
-      AccessToken: accessToken,
-      Client: 'Mews Sandbox Manager',
+      ...buildMewsAuth(accessToken),
       ServiceId: params.serviceId,
       Reservations: [
         {
@@ -155,7 +150,7 @@ export async function bookIbeReservation(
         },
       ],
     }),
-  });
+  }, { unifiedLogId: 'control-centre', group: 'reservations' });
 
   const data = await res.json();
 
