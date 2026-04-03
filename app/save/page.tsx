@@ -3,30 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import SearchableSelect from '@/components/SearchableSelect';
 import { useToast } from '@/components/Toast';
-
-interface Environment {
-  enterpriseId: string;
-  enterpriseName: string;
-  propertyName?: string;
-  type: 'trial' | 'manual';
-  status?: string;
-  customerEmail?: string;
-  createdAt: Date;
-  accessTokenId: number;
-}
+import { useEnvironments } from '@/hooks/useEnvironments';
 
 export default function SaveSandboxPage() {
-  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const { environments, loading: environmentsLoading } = useEnvironments();
   const [selectedEnvironment, setSelectedEnvironment] = useState('');
-  const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { showToast } = useToast();
-
-  useEffect(() => {
-    fetchEnvironments();
-  }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -42,27 +27,6 @@ export default function SaveSandboxPage() {
   const handleDialogClose = useCallback(() => {
     setShowConfirmDialog(false);
   }, []);
-
-  const fetchEnvironments = async () => {
-    setEnvironmentsLoading(true);
-    try {
-      const response = await fetch('/api/environments/list');
-      const data = await response.json();
-      if (data.success) {
-        const sorted = (data.environments || [])
-          .sort((a: Environment, b: Environment) => {
-            const nameA = (a.propertyName || a.enterpriseName || '').toLowerCase();
-            const nameB = (b.propertyName || b.enterpriseName || '').toLowerCase();
-            return nameA.localeCompare(nameB);
-          });
-        setEnvironments(sorted);
-      }
-    } catch (error) {
-      console.error('Failed to fetch environments:', error);
-    } finally {
-      setEnvironmentsLoading(false);
-    }
-  };
 
   const handleSaveClick = () => {
     if (!selectedEnvironment) return;

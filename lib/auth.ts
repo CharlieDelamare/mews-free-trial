@@ -1,33 +1,22 @@
 import type { AuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
+import AzureADProvider from 'next-auth/providers/azure-ad';
 
-// Validate required env vars at module load time for clear error messages
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const nextAuthSecret = process.env.NEXTAUTH_SECRET;
-
-if (!googleClientId) throw new Error('GOOGLE_CLIENT_ID environment variable is required');
-if (!googleClientSecret) throw new Error('GOOGLE_CLIENT_SECRET environment variable is required');
-if (!nextAuthSecret) throw new Error('NEXTAUTH_SECRET environment variable is required');
-
+// Read at runtime (not module load) to avoid Next.js build failures on Vercel
+// when env vars are not available during the static analysis phase.
 export const authOptions: AuthOptions = {
-  secret: nextAuthSecret,
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
-    GoogleProvider({
-      clientId: googleClientId,
-      clientSecret: googleClientSecret,
-      authorization: {
-        params: {
-          hd: 'mews.com', // Pre-filter to mews.com accounts on Google's consent screen
-        },
-      },
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID ?? '',
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET ?? '',
+      tenantId: process.env.AZURE_AD_TENANT_ID, // single-tenant: restricts to mews.com org
     }),
   ],
   callbacks: {
     async signIn({ account, profile }) {
-      // Only allow @mews.com Google accounts — exact domain check, not endsWith
-      if (account?.provider === 'google') {
-        const email = profile?.email ?? '';
+      // Defence-in-depth: verify @mews.com domain even though tenantId already restricts this
+      if (account?.provider === 'azure-ad') {
+        const email = (profile?.email as string | undefined) ?? '';
         return email.split('@')[1] === 'mews.com';
       }
       return false;

@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const MESSAGES: Record<string, string> = {
-  AccessDenied: 'Only @mews.com accounts are allowed. Please sign in with your Mews Google account.',
+  AccessDenied: 'Only @mews.com accounts are allowed. Please sign in with your Mews Microsoft account.',
   Configuration: 'Server configuration error. Contact the platform team.',
 };
 

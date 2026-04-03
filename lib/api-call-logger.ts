@@ -113,7 +113,7 @@ class ApiCallLogBuffer {
   private buffer: ApiCallLogEntry[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private inflightCount = 0;
-  private inflightPromises: Promise<void>[] = [];
+  private drainResolvers: Array<() => void> = [];
   private droppedEntryCount = 0;
 
   add(entry: ApiCallLogEntry): void {
@@ -134,21 +134,20 @@ class ApiCallLogBuffer {
     const entries = this.buffer.splice(0);
     if (entries.length === 0) return;
 
-    // Drop batch if too many concurrent writes to protect connection pool
     if (this.inflightCount >= MAX_INFLIGHT_WRITES) {
       this.droppedEntryCount += entries.length;
       console.warn(
         `[API-CALL-LOG] Dropping ${entries.length} log entries: ` +
-        `${this.inflightCount} DB writes in-flight (max ${MAX_INFLIGHT_WRITES})`
+          `${this.inflightCount} DB writes in-flight (max ${MAX_INFLIGHT_WRITES})`
       );
       return;
     }
 
     this.inflightCount++;
 
-    const writePromise = prisma.apiCallLog
+    prisma.apiCallLog
       .createMany({
-        data: entries.map(e => ({
+        data: entries.map((e) => ({
           unifiedLogId: e.unifiedLogId,
           endpoint: e.endpoint,
           method: e.method,
@@ -163,14 +162,17 @@ class ApiCallLogBuffer {
           metadata: e.metadata ?? undefined,
         })),
       })
-      .catch(err => {
+      .catch((err: Error) => {
         console.error(`[API-CALL-LOG] Failed to persist ${entries.length} log entries:`, err.message);
       })
       .finally(() => {
         this.inflightCount--;
+        // Notify any drain() waiters if all writes have settled
+        if (this.inflightCount === 0) {
+          const resolvers = this.drainResolvers.splice(0);
+          for (const resolve of resolvers) resolve();
+        }
       });
-
-    this.inflightPromises.push(writePromise as Promise<void>);
   }
 
   /**
@@ -179,8 +181,9 @@ class ApiCallLogBuffer {
    */
   async drain(): Promise<void> {
     this.flush();
-    await Promise.allSettled(this.inflightPromises);
-    this.inflightPromises = [];
+    if (this.inflightCount > 0) {
+      await new Promise<void>((resolve) => this.drainResolvers.push(resolve));
+    }
     if (this.droppedEntryCount > 0) {
       console.warn(`[API-CALL-LOG] Total dropped entries during this session: ${this.droppedEntryCount}`);
       this.droppedEntryCount = 0;
@@ -314,7 +317,7 @@ export async function fetchWithRateLimitAndLog(
   context: string,
   logContext: ApiCallLogContext
 ): Promise<Response> {
-  return mewsRateLimiter.executeRequest<Response>(
+  return mewsRateLimiter.executeRequest(
     accessToken,
     () =>
       loggedFetch(url, options, {

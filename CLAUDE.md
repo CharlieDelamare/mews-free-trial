@@ -24,6 +24,10 @@ Next.js 14 (App Router) · TypeScript strict · PostgreSQL + Prisma + Accelerate
 
 ## Dev Commands
 
+> **Note:** `node`/`npm` are not on the default Bash PATH. Prefix commands with:
+> `PATH="/opt/homebrew/Cellar/node/25.6.1_1/bin:$PATH"`
+> e.g. `PATH="/opt/homebrew/Cellar/node/25.6.1_1/bin:$PATH" npm run test`
+
 ```bash
 npm run dev                                    # development server
 npm run test / test:watch / test:coverage      # tests
@@ -82,6 +86,8 @@ When post-merge changes need deployment, always create a new PR from the current
 - Auth: `buildMewsAuth()` and `mewsEndpoint()` in `lib/mews-api.ts`
 - Rate limit: 200 req/30s per token (`lib/mews-rate-limiter.ts`)
 - Default trial password: `Sample123`
+- **Cursor pagination**: paginated endpoints return a `Cursor` field; loop with `do/while` until `Cursor` is `null`/`undefined`. Missing this causes silent data loss (e.g. `getBills`).
+- `mewsRateLimiter` already handles backpressure between batches — never add manual `setTimeout` sleeps.
 
 ## Reference Docs
 

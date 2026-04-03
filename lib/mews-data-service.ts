@@ -8,6 +8,7 @@
 import { fromZonedTime } from 'date-fns-tz';
 import { loggedFetch } from '@/lib/api-call-logger';
 import { getMewsApiUrl } from '@/lib/config';
+import { forceLog, forceError } from '@/lib/force-log';
 
 const MEWS_API_URL = getMewsApiUrl();
 
@@ -139,7 +140,7 @@ export async function fetchMewsData(
 
     if (options?.serviceId) {
       serviceId = options.serviceId;
-      console.log(`[MEWS-DATA] Using provided service ID: ${serviceId}`);
+      forceLog('[MEWS-DATA]', `Using provided service ID: ${serviceId}`);
     } else {
       const services = await fetchServices(clientToken, accessToken, options?.logId);
       const bookableService = services.find((s: MewsService) => s.IsActive && s.Data.Discriminator === 'Bookable');
@@ -153,7 +154,7 @@ export async function fetchMewsData(
 
     return await fetchMewsDataForService(clientToken, accessToken, serviceId, options?.logId);
   } catch (error) {
-    console.error('[MEWS-DATA] ❌ Failed to fetch Mews data:', error);
+    forceError('[MEWS-DATA]', '❌ Failed to fetch Mews data:', error);
     throw new Error(`Mews data fetch failed: ${(error as Error).message}`);
   }
 }
@@ -175,19 +176,19 @@ export async function fetchAllMewsData(
       throw new Error('No bookable services found');
     }
 
-    console.log(`[MEWS-DATA] Found ${bookableServices.length} bookable service(s)`);
+    forceLog('[MEWS-DATA]', `Found ${bookableServices.length} bookable service(s)`);
     bookableServices.forEach((s, i) => {
-      console.log(`[MEWS-DATA]   Service ${i + 1}: ${s.Name} (${s.Id})`);
+      forceLog('[MEWS-DATA]', `  Service ${i + 1}: ${s.Name} (${s.Id})`);
     });
 
     const results = await Promise.all(
       bookableServices.map(s => fetchMewsDataForService(clientToken, accessToken, s.Id, options?.logId))
     );
 
-    console.log(`[MEWS-DATA] ✅ Fetched data for ${results.length} bookable service(s)`);
+    forceLog('[MEWS-DATA]', `✅ Fetched data for ${results.length} bookable service(s)`);
     return results;
   } catch (error) {
-    console.error('[MEWS-DATA] ❌ Failed to fetch all Mews data:', error);
+    forceError('[MEWS-DATA]', '❌ Failed to fetch all Mews data:', error);
     throw new Error(`Mews data fetch (all services) failed: ${(error as Error).message}`);
   }
 }
@@ -216,32 +217,32 @@ async function fetchMewsDataForService(
   const rateMap = mapRates(rates);
 
   // Fetch voucher assignments and voucher codes
-  console.log(`[MEWS-DATA] Fetching voucher assignments for service ${serviceId}...`);
+  forceLog('[MEWS-DATA]', `Fetching voucher assignments for service ${serviceId}...`);
   const voucherAssignments = await fetchVoucherAssignments(clientToken, accessToken, serviceId, logId);
-  console.log(`[MEWS-DATA] Found ${voucherAssignments.length} voucher assignments`);
+  forceLog('[MEWS-DATA]', `Found ${voucherAssignments.length} voucher assignments`);
 
   let vouchersByRate = new Map<string, string>();
   if (voucherAssignments.length > 0) {
     const voucherIds = Array.from(
       new Set(voucherAssignments.map((assignment: MewsVoucherAssignment) => assignment.VoucherId))
     );
-    console.log(`[MEWS-DATA] Found ${voucherIds.length} unique voucher(s) with rate assignments`);
+    forceLog('[MEWS-DATA]', `Found ${voucherIds.length} unique voucher(s) with rate assignments`);
 
     const voucherCodes = await fetchVoucherCodes(clientToken, accessToken, voucherIds, logId);
-    console.log(`[MEWS-DATA] Found ${voucherCodes.length} voucher codes`);
+    forceLog('[MEWS-DATA]', `Found ${voucherCodes.length} voucher codes`);
 
     vouchersByRate = mapVoucherCodesToRates(voucherAssignments, voucherCodes);
-    console.log(`[MEWS-DATA] Mapped ${vouchersByRate.size} rate(s) to voucher codes`);
+    forceLog('[MEWS-DATA]', `Mapped ${vouchersByRate.size} rate(s) to voucher codes`);
   } else {
-    console.log('[MEWS-DATA] No voucher assignments found, proceeding without voucher codes');
+    forceLog('[MEWS-DATA]', 'No voucher assignments found, proceeding without voucher codes');
   }
 
   // Count resources per category using assignments
-  console.log('[MEWS-DATA] Counting resources per category from assignments...');
-  console.log(`[MEWS-DATA] Total assignments: ${assignments.length}`);
+  forceLog('[MEWS-DATA]', 'Counting resources per category from assignments...');
+  forceLog('[MEWS-DATA]', `Total assignments: ${assignments.length}`);
 
   const activeAssignments = assignments.filter((a: MewsResourceCategoryAssignment) => a.IsActive);
-  console.log(`[MEWS-DATA] Active assignments: ${activeAssignments.length}`);
+  forceLog('[MEWS-DATA]', `Active assignments: ${activeAssignments.length}`);
 
   const resourceCountsPerCategory = new Map<string, number>();
   for (const assignment of activeAssignments) {
@@ -249,11 +250,11 @@ async function fetchMewsDataForService(
     resourceCountsPerCategory.set(assignment.CategoryId, count + 1);
   }
 
-  console.log('[MEWS-DATA] Resource counts map:', Object.fromEntries(resourceCountsPerCategory));
+  forceLog('[MEWS-DATA]', 'Resource counts map:', Object.fromEntries(resourceCountsPerCategory));
 
   // Map resource categories with resource counts
-  console.log('[MEWS-DATA] Mapping resource categories...');
-  console.log('[MEWS-DATA] Input categories:', resourceCategories.map((rc: any) => ({
+  forceLog('[MEWS-DATA]', 'Mapping resource categories...');
+  forceLog('[MEWS-DATA]', 'Input categories:', resourceCategories.map((rc: any) => ({
     Id: rc.Id,
     Names: rc.Names,
     Type: rc.Type,
@@ -267,9 +268,9 @@ async function fetchMewsDataForService(
     resourceCount: resourceCountsPerCategory.get(rc.Id) || 0
   }));
 
-  console.log('[MEWS-DATA] Resource counts per category:');
+  forceLog('[MEWS-DATA]', 'Resource counts per category:');
   resourceCategoryList.forEach(rc => {
-    console.log(`[MEWS-DATA]   - ${rc.name} (${rc.type}): ${rc.resourceCount} resources`);
+    forceLog('[MEWS-DATA]', `  - ${rc.name} (${rc.type}): ${rc.resourceCount} resources`);
   });
 
   // Find adult and child age categories
@@ -280,14 +281,14 @@ async function fetchMewsDataForService(
     throw new Error('No adult age category found');
   }
 
-  console.log('[MEWS-DATA] ✅ Mews data fetch complete');
-  console.log(`[MEWS-DATA] - Service: ${serviceId}`);
-  console.log(`[MEWS-DATA] - Rates: ${rateMap.length}`);
-  console.log(`[MEWS-DATA] - Resource categories: ${resourceCategoryList.length}`);
-  console.log(`[MEWS-DATA] - Total resource assignments: ${activeAssignments.length}`);
-  console.log(`[MEWS-DATA] - Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
-  console.log(`[MEWS-DATA] - Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
-  console.log('[MEWS-DATA] ✅ Fetch complete:', {
+  forceLog('[MEWS-DATA]', '✅ Mews data fetch complete');
+  forceLog('[MEWS-DATA]', `- Service: ${serviceId}`);
+  forceLog('[MEWS-DATA]', `- Rates: ${rateMap.length}`);
+  forceLog('[MEWS-DATA]', `- Resource categories: ${resourceCategoryList.length}`);
+  forceLog('[MEWS-DATA]', `- Total resource assignments: ${activeAssignments.length}`);
+  forceLog('[MEWS-DATA]', `- Age categories: Adult=${adultCategory.Id}, Child=${childCategory?.Id || 'N/A'}`);
+  forceLog('[MEWS-DATA]', `- Voucher mappings: ${vouchersByRate.size} rate(s) with voucher codes`);
+  forceLog('[MEWS-DATA]', '✅ Fetch complete:', {
     serviceId,
     rates: rateMap.length,
     resourceCategories: resourceCategoryList.length,
@@ -373,7 +374,7 @@ async function fetchResourceCategories(
   serviceId: string,
   logId?: string
 ): Promise<MewsResourceCategory[]> {
-  console.log('[MEWS-DATA] Fetching resource categories...');
+  forceLog('[MEWS-DATA]', 'Fetching resource categories...');
 
   const url = `${MEWS_API_URL}/api/connector/v1/resourceCategories/getAll`;
   const fetchOptions = {
@@ -399,12 +400,12 @@ async function fetchResourceCategories(
   const data = await response.json();
   const categories = data.ResourceCategories || [];
 
-  console.log('[MEWS-DATA] Raw resource categories response:');
-  console.log('[MEWS-DATA] Categories count:', categories.length);
+  forceLog('[MEWS-DATA]', 'Raw resource categories response:');
+  forceLog('[MEWS-DATA]', 'Categories count:', categories.length);
   if (categories.length > 0) {
-    console.log('[MEWS-DATA] First category sample:', JSON.stringify(categories[0], null, 2));
-    console.log('[MEWS-DATA] All category fields:', Object.keys(categories[0]));
-    console.log('[MEWS-DATA] Names field structure:', JSON.stringify(categories[0].Names, null, 2));
+    forceLog('[MEWS-DATA]', 'First category sample:', JSON.parse(JSON.stringify(categories[0])));
+    forceLog('[MEWS-DATA]', 'All category fields:', Object.keys(categories[0]));
+    forceLog('[MEWS-DATA]', 'Names field structure:', categories[0].Names);
   }
 
   return categories;
@@ -454,8 +455,8 @@ async function fetchResourceCategoryAssignments(
   resourceCategoryIds: string[],
   logId?: string
 ): Promise<MewsResourceCategoryAssignment[]> {
-  console.log('[MEWS-DATA] Fetching resource category assignments...');
-  console.log(`[MEWS-DATA] Requesting assignments for ${resourceCategoryIds.length} categories`);
+  forceLog('[MEWS-DATA]', 'Fetching resource category assignments...');
+  forceLog('[MEWS-DATA]', `Requesting assignments for ${resourceCategoryIds.length} categories`);
 
   const url = `${MEWS_API_URL}/api/connector/v1/resourceCategoryAssignments/getAll`;
   const fetchOptions = {
@@ -483,10 +484,10 @@ async function fetchResourceCategoryAssignments(
 
   const data = await response.json();
   const assignments = data.ResourceCategoryAssignments || [];
-  console.log(`[MEWS-DATA] Found ${assignments.length} resource category assignments`);
+  forceLog('[MEWS-DATA]', `Found ${assignments.length} resource category assignments`);
 
   if (assignments.length > 0) {
-    console.log('[MEWS-DATA] First assignment sample:', JSON.stringify(assignments[0], null, 2));
+    forceLog('[MEWS-DATA]', 'First assignment sample:', JSON.parse(JSON.stringify(assignments[0])));
   }
 
   return assignments;
@@ -500,8 +501,8 @@ function mapRates(rates: MewsRate[]): MewsData['rates'] {
   const activeRates = rates.filter((r: MewsRate) => r.IsActive && r.IsEnabled);
 
   if (activeRates.length === 0) {
-    console.error(`[MEWS-DATA] No active/enabled rates found`);
-    console.error(`[MEWS-DATA] All rates: ${rates.map((r: MewsRate) => `${r.Name} (Active=${r.IsActive}, Enabled=${r.IsEnabled})`).join(', ')}`);
+    forceError('[MEWS-DATA]', 'No active/enabled rates found');
+    forceError('[MEWS-DATA]', `All rates: ${rates.map((r: MewsRate) => `${r.Name} (Active=${r.IsActive}, Enabled=${r.IsEnabled})`).join(', ')}`);
     throw new Error('No active/enabled rates found from Mews API');
   }
 
@@ -514,12 +515,12 @@ function mapRates(rates: MewsRate[]): MewsData['rates'] {
   // Log filtered out rates
   const inactiveCount = rates.length - activeRates.length;
   if (inactiveCount > 0) {
-    console.log(`[MEWS-DATA] Filtered out ${inactiveCount} inactive/disabled rate(s)`);
+    forceLog('[MEWS-DATA]', `Filtered out ${inactiveCount} inactive/disabled rate(s)`);
   }
 
-  console.log(`[MEWS-DATA] Mapped ${mapped.length} active rate(s):`);
+  forceLog('[MEWS-DATA]', `Mapped ${mapped.length} active rate(s):`);
   mapped.forEach(r => {
-    console.log(`[MEWS-DATA]   - ${r.name} (${r.isPublic ? 'Public' : 'Private'}): ${r.id}`);
+    forceLog('[MEWS-DATA]', `  - ${r.name} (${r.isPublic ? 'Public' : 'Private'}): ${r.id}`);
   });
 
   return mapped;
@@ -541,13 +542,13 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
     }
   };
 
-  console.log('[MEWS-DATA] Fetching voucher assignments...');
-  console.log('[MEWS-DATA] Endpoint:', endpoint);
-  console.log('[MEWS-DATA] Payload:', JSON.stringify({
+  forceLog('[MEWS-DATA]', 'Fetching voucher assignments...');
+  forceLog('[MEWS-DATA]', 'Endpoint:', endpoint);
+  forceLog('[MEWS-DATA]', 'Payload:', {
     ...payload,
     ClientToken: '***REDACTED***',
     AccessToken: '***REDACTED***'
-  }, null, 2));
+  });
 
   try {
     const fetchOptions = {
@@ -562,14 +563,14 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[MEWS-DATA] Voucher assignments fetch failed: ${response.status} - ${errorText}`);
+      forceError('[MEWS-DATA]', `Voucher assignments fetch failed: ${response.status} - ${errorText}`);
       return [];
     }
 
     const data: VouchersGetAllResponse = await response.json();
 
     // Log response structure for debugging
-    console.log('[MEWS-DATA] Vouchers response structure:', {
+    forceLog('[MEWS-DATA]', 'Vouchers response structure:', {
       hasVouchers: data.Vouchers !== null,
       vouchersCount: data.Vouchers?.length || 0,
       hasAssignments: data.VoucherAssignments !== null,
@@ -591,13 +592,13 @@ async function fetchVoucherAssignments(clientToken: string, accessToken: string,
 
     const excludedCount = allAssignments.length - filteredAssignments.length;
     if (excludedCount > 0) {
-      console.log(`[MEWS-DATA] Filtered out ${excludedCount} assignment(s) from inactive voucher(s)`);
+      forceLog('[MEWS-DATA]', `Filtered out ${excludedCount} assignment(s) from inactive voucher(s)`);
     }
 
     return filteredAssignments;
 
   } catch (error) {
-    console.error('[MEWS-DATA] Error fetching voucher assignments:', error);
+    forceError('[MEWS-DATA]', 'Error fetching voucher assignments:', error);
     return [];
   }
 }
@@ -632,7 +633,7 @@ async function fetchVoucherCodes(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`[MEWS-DATA] Voucher codes fetch failed: ${response.status} - ${errorText}`);
+    forceError('[MEWS-DATA]', `Voucher codes fetch failed: ${response.status} - ${errorText}`);
     // Don't throw - continue without voucher codes
     return [];
   }
@@ -680,13 +681,13 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
   const activeVoucherCodes = voucherCodes.filter((vc: MewsVoucherCode) => {
     if (!vc.IsActive) return false;
     if (!isVoucherCodeCurrentlyValid(vc)) {
-      console.log(`[MEWS-DATA] Excluding voucher code "${vc.Value}" — outside validity period (start: ${vc.ValidityStartUtc}, end: ${vc.ValidityEndUtc})`);
+      forceLog('[MEWS-DATA]', `Excluding voucher code "${vc.Value}" — outside validity period (start: ${vc.ValidityStartUtc}, end: ${vc.ValidityEndUtc})`);
       return false;
     }
     return true;
   });
 
-  console.log(`[MEWS-DATA] Processing ${activeVoucherCodes.length} active/valid voucher codes with ${assignments.length} assignments`);
+  forceLog('[MEWS-DATA]', `Processing ${activeVoucherCodes.length} active/valid voucher codes with ${assignments.length} assignments`);
 
   // For each active voucher code, find its rate assignments
   for (const voucherCode of activeVoucherCodes) {
@@ -696,7 +697,7 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
     );
 
     if (voucherAssignments.length === 0) {
-      console.warn(`[MEWS-DATA] ⚠️  Voucher code ${voucherCode.Value} (ID: ${voucherCode.VoucherId}) has no rate assignments`);
+      forceLog('[MEWS-DATA]', `⚠️  Voucher code ${voucherCode.Value} (ID: ${voucherCode.VoucherId}) has no rate assignments`);
       continue;
     }
 
@@ -705,15 +706,15 @@ function mapVoucherCodesToRates(assignments: MewsVoucherAssignment[], voucherCod
     for (const assignment of voucherAssignments) {
       if (!rateToCodeMap.has(assignment.RateId)) {
         rateToCodeMap.set(assignment.RateId, voucherCode.Value);
-        console.log(`[MEWS-DATA] ✓ Mapped rate ${assignment.RateId} to voucher code: "${voucherCode.Value}"`);
+        forceLog('[MEWS-DATA]', `✓ Mapped rate ${assignment.RateId} to voucher code: "${voucherCode.Value}"`);
       } else {
-        console.log(`[MEWS-DATA] Rate ${assignment.RateId} already has voucher code "${rateToCodeMap.get(assignment.RateId)}", skipping "${voucherCode.Value}"`);
+        forceLog('[MEWS-DATA]', `Rate ${assignment.RateId} already has voucher code "${rateToCodeMap.get(assignment.RateId)}", skipping "${voucherCode.Value}"`);
       }
     }
   }
 
   if (rateToCodeMap.size === 0) {
-    console.log('[MEWS-DATA] No voucher code mappings created (no active codes with assignments)');
+    forceLog('[MEWS-DATA]', 'No voucher code mappings created (no active codes with assignments)');
   }
 
   return rateToCodeMap;
@@ -768,13 +769,13 @@ export async function updateBestPriceRate(
   const firstTimeUnitUtc = fromZonedTime(`${todayStr} 00:00:00`, timezone).toISOString();
   const lastTimeUnitUtc = fromZonedTime(`${endDateStr} 00:00:00`, timezone).toISOString();
 
-  console.log('[RATE-UPDATE] ========== Rate Update Request Details ==========');
-  console.log('[RATE-UPDATE] Property timezone:', timezone);
-  console.log('[RATE-UPDATE] Today (local date string):', todayStr);
-  console.log('[RATE-UPDATE] End date (local date string):', endDateStr);
-  console.log('[RATE-UPDATE] First time unit (UTC ISO):', firstTimeUnitUtc);
-  console.log('[RATE-UPDATE] Last time unit (UTC ISO):', lastTimeUnitUtc);
-  console.log('[RATE-UPDATE] Rate ID:', bestPriceRateId);
+  forceLog('[RATE-UPDATE]', '========== Rate Update Request Details ==========');
+  forceLog('[RATE-UPDATE]', 'Property timezone:', timezone);
+  forceLog('[RATE-UPDATE]', 'Today (local date string):', todayStr);
+  forceLog('[RATE-UPDATE]', 'End date (local date string):', endDateStr);
+  forceLog('[RATE-UPDATE]', 'First time unit (UTC ISO):', firstTimeUnitUtc);
+  forceLog('[RATE-UPDATE]', 'Last time unit (UTC ISO):', lastTimeUnitUtc);
+  forceLog('[RATE-UPDATE]', 'Rate ID:', bestPriceRateId);
 
   const payload = {
     ClientToken: clientToken,
@@ -790,13 +791,13 @@ export async function updateBestPriceRate(
     ]
   };
 
-  console.log('[RATE-UPDATE] ========== Sending Request ==========');
-  console.log('[RATE-UPDATE] Endpoint:', endpoint);
-  console.log('[RATE-UPDATE] Full payload:', JSON.stringify({
+  forceLog('[RATE-UPDATE]', '========== Sending Request ==========');
+  forceLog('[RATE-UPDATE]', 'Endpoint:', endpoint);
+  forceLog('[RATE-UPDATE]', 'Full payload:', {
     ...payload,
     ClientToken: '***REDACTED***',
     AccessToken: '***REDACTED***'
-  }, null, 2));
+  });
 
   try {
     const fetchOptions = {
@@ -809,18 +810,18 @@ export async function updateBestPriceRate(
       ? await loggedFetch(endpoint, fetchOptions, { unifiedLogId: logId, group: 'setup' })
       : await fetch(endpoint, fetchOptions);
 
-    console.log('[RATE-UPDATE] Response status:', response.status, response.statusText);
+    forceLog('[RATE-UPDATE]', 'Response status:', `${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[RATE-UPDATE] ❌ Rate price update failed');
-      console.error('[RATE-UPDATE] HTTP Status:', response.status, response.statusText);
-      console.error('[RATE-UPDATE] Error response:', errorText);
+      forceError('[RATE-UPDATE]', '❌ Rate price update failed');
+      forceError('[RATE-UPDATE]', `HTTP Status: ${response.status} ${response.statusText}`);
+      forceError('[RATE-UPDATE]', 'Error response:', errorText);
 
       // Try to parse error as JSON for better logging
       try {
         const errorJson = JSON.parse(errorText);
-        console.error('[RATE-UPDATE] Error details:', JSON.stringify(errorJson, null, 2));
+        forceError('[RATE-UPDATE]', 'Error details:', errorJson);
       } catch {
         // Not JSON, already logged as text
       }
@@ -829,13 +830,13 @@ export async function updateBestPriceRate(
     }
 
     const responseData = await response.json();
-    console.log('[RATE-UPDATE] ✅ Best Price rate updated successfully');
-    console.log('[RATE-UPDATE] Response data:', JSON.stringify(responseData, null, 2));
+    forceLog('[RATE-UPDATE]', '✅ Best Price rate updated successfully');
+    forceLog('[RATE-UPDATE]', 'Response data:', responseData);
     return true;
   } catch (error) {
-    console.error('[RATE-UPDATE] ❌ Rate price update error:', error);
-    console.error('[RATE-UPDATE] Error message:', (error as Error).message);
-    console.error('[RATE-UPDATE] Error stack:', (error as Error).stack);
+    forceError('[RATE-UPDATE]', '❌ Rate price update error:', error);
+    forceError('[RATE-UPDATE]', `Error message: ${(error as Error).message}`);
+    forceError('[RATE-UPDATE]', `Error stack: ${(error as Error).stack}`);
     return false;
   }
 }

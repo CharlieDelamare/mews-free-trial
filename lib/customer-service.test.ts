@@ -346,35 +346,6 @@ describe('customer-service', () => {
       });
     });
 
-    it('should apply 100ms delay between batches', async () => {
-      const customers = Array.from({ length: 7 }, (_, i) => ({
-        FirstName: `Customer`,
-        LastName: `${i}`,
-        Email: `customer${i}@example.com`,
-        Phone: '+44123456789',
-        BirthDate: '1990-01-01',
-        Sex: 'Male',
-        Title: 'Mister',
-        NationalityCode: 'GB',
-        PreferredLanguageCode: 'en-GB',
-      }));
-
-      mockGetSampleCustomers.mockReturnValue(customers);
-
-      (global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => ({ Id: 'customer-123' }),
-      });
-
-      const startTime = Date.now();
-      await createSampleCustomers('test-token', 'test-enterprise', 123);
-      const duration = Date.now() - startTime;
-
-      // With 7 customers in batches of 5, there should be 1 delay (100ms)
-      // Allow some margin for test execution time
-      expect(duration).toBeGreaterThanOrEqual(80);
-    });
-
     it('should send correct API request payload', async () => {
       mockGetSampleCustomers.mockReturnValue([
         {

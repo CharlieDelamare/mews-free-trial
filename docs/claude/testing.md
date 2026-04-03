@@ -2,7 +2,7 @@
 
 ## Stack
 
-- **Runner**: Vitest (v3) with happy-dom — pinned to v3, do not upgrade to v4
+- **Runner**: Vitest (v4) with happy-dom
 - **React**: `@testing-library/react` + `@testing-library/jest-dom`
 - **API mocking**: MSW (Mock Service Worker)
 - **Prisma mocking**: `vitest-mock-extended`

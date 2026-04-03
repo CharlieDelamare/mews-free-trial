@@ -1,25 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import SearchableSelect from '@/components/SearchableSelect';
-
-interface Environment {
-  enterpriseId: string;
-  enterpriseName: string;
-  propertyName?: string;
-  type: 'trial' | 'manual';
-  status?: string;
-  customerEmail?: string;
-  createdAt: Date;
-  accessTokenId: number;
-}
+import { useEnvironments } from '@/hooks/useEnvironments';
 
 export default function SandboxFillerPage() {
   const router = useRouter();
-  const [environments, setEnvironments] = useState<Environment[]>([]);
-  const [environmentsLoading, setEnvironmentsLoading] = useState(false);
+  const { environments, loading: environmentsLoading, refetch: fetchEnvironments } = useEnvironments();
   const submittingRef = useRef(false);
 
   // Helper function to format date as YYYY-MM-DD
@@ -58,30 +47,6 @@ export default function SandboxFillerPage() {
   const CHEVRON_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2374757D'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E")`;
   const selectStyle = { backgroundImage: CHEVRON_SVG } as const;
   const selectClasses = "w-full h-9 md:h-auto px-3 md:px-4 py-1 md:py-2 pr-10 text-sm md:text-base leading-tight border border-neutral-200 rounded-lg focus:ring-2 focus:ring-mews-primary focus:border-mews-primary appearance-none bg-no-repeat bg-[length:16px_16px] bg-[position:right_12px_center]";
-
-  useEffect(() => {
-    fetchEnvironments();
-  }, []);
-
-  const fetchEnvironments = async () => {
-    setEnvironmentsLoading(true);
-    try {
-      const response = await fetch('/api/environments/list');
-      const data = await response.json();
-      if (data.success) {
-        const sortedEnvironments = (data.environments || []).sort((a: any, b: any) => {
-          const nameA = (a.propertyName || a.enterpriseName || '').toLowerCase();
-          const nameB = (b.propertyName || b.enterpriseName || '').toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        setEnvironments(sortedEnvironments);
-      }
-    } catch (error) {
-      console.error('Failed to fetch environments:', error);
-    } finally {
-      setEnvironmentsLoading(false);
-    }
-  };
 
   const fetchServicesForEnvironment = async (enterpriseId: string) => {
     setServicesLoading(true);

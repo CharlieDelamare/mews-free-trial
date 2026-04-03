@@ -39,8 +39,6 @@ interface RateLimiterConfig {
 interface RequestWindow {
   /** Timestamps of requests made within the window */
   timestamps: number[];
-  /** Flag indicating if queue is being processed */
-  isProcessing: boolean;
 }
 
 /**
@@ -51,8 +49,6 @@ export interface RateLimitMetrics {
   currentCount: number;
   /** Percentage of rate limit used (0-100) */
   percentageUsed: number;
-  /** Number of requests in queue */
-  queueLength: number;
   /** Whether throttling is active */
   isThrottling: boolean;
 }
@@ -97,14 +93,14 @@ export class MewsRateLimiter {
    * @param options - Optional configuration (maxRetries, logContext)
    * @returns Parsed JSON response
    */
-  async executeRequest<T>(
+  async executeRequest(
     accessToken: string,
     requestFn: () => Promise<Response>,
     options?: {
       maxRetries?: number;
       logContext?: string;
     }
-  ): Promise<T> {
+  ): Promise<Response> {
     const maxRetries = options?.maxRetries ?? this.config.maxRetries;
     const logContext = options?.logContext ?? 'unknown';
     const redactedToken = this.redactToken(accessToken);
@@ -142,7 +138,7 @@ export class MewsRateLimiter {
         }
 
         // Return response (let caller handle response.ok checking)
-        return response as T;
+        return response;
 
       } catch (error) {
         lastError = error as Error;
@@ -318,7 +314,6 @@ export class MewsRateLimiter {
     if (!this.windows.has(accessToken)) {
       this.windows.set(accessToken, {
         timestamps: [],
-        isProcessing: false
       });
     }
     return this.windows.get(accessToken)!;
@@ -336,7 +331,6 @@ export class MewsRateLimiter {
     return {
       currentCount,
       percentageUsed: Math.round((currentCount / this.config.maxRequests) * 100),
-      queueLength: 0,
       isThrottling: currentCount >= threshold
     };
   }
@@ -353,7 +347,6 @@ export class MewsRateLimiter {
     console.log(
       `[RATE-LIMITER] Token: ${this.redactToken(accessToken)} | ` +
       `Requests: ${metrics.currentCount}/${this.config.maxRequests} (${metrics.percentageUsed}%) | ` +
-      `Queue: ${metrics.queueLength} | ` +
       `Status: ${status}`
     );
   }
@@ -399,7 +392,7 @@ export async function fetchWithRateLimit(
   options: RequestInit,
   context?: string
 ): Promise<Response> {
-  return mewsRateLimiter.executeRequest<Response>(
+  return mewsRateLimiter.executeRequest(
     accessToken,
     () => fetch(url, options),
     { logContext: context }
