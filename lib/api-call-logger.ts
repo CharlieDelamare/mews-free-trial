@@ -314,7 +314,7 @@ export async function fetchWithRateLimitAndLog(
   context: string,
   logContext: ApiCallLogContext
 ): Promise<Response> {
-  return mewsRateLimiter.executeRequest<Response>(
+  return mewsRateLimiter.executeRequest(
     accessToken,
     () =>
       loggedFetch(url, options, {
