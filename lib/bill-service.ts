@@ -48,44 +48,32 @@ export async function getBills(
         `[BILL-SERVICE] Fetching bills window ${windowCount}: ${windowStart.toISOString()} to ${windowEnd.toISOString()}`
       );
 
-      const fetchOptions: RequestInit = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ClientToken: getMewsClientToken(),
-          AccessToken: accessToken,
-          Client: 'Mews Sandbox Manager',
-          UpdatedUtc: {
-            StartUtc: windowStart.toISOString(),
-            EndUtc: windowEnd.toISOString()
-          },
-          ...(state && { State: state }),
-          Limitation: { Count: 1000 }
-        })
-      };
-
       try {
-        const response = logId
-          ? await loggedFetch(url, fetchOptions, {
-              unifiedLogId: logId,
-              group: 'bills',
-              endpoint: 'bills/getAll',
-            })
-          : await fetch(url, fetchOptions);
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.warn(
-            `[BILL-SERVICE] Window ${windowCount} failed: ${response.status} - ${errorData.Message || response.statusText}`
-          );
-        } else {
+        let cursor: string | null = null;
+        do {
+          const body: Record<string, unknown> = {
+            ClientToken: getMewsClientToken(),
+            AccessToken: accessToken,
+            Client: 'Mews Sandbox Manager',
+            UpdatedUtc: { StartUtc: windowStart.toISOString(), EndUtc: windowEnd.toISOString() },
+            ...(state && { State: state }),
+            Limitation: { Count: 1000, ...(cursor && { Cursor: cursor }) },
+          };
+          const fetchOptions: RequestInit = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+          const response = logId
+            ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'bills', endpoint: 'bills/getAll' })
+            : await fetch(url, fetchOptions);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.warn(`[BILL-SERVICE] Window ${windowCount} failed: ${response.status} - ${errorData.Message || response.statusText}`);
+            break;
+          }
           const data = await response.json();
           const bills: Bill[] = data.Bills || [];
-          for (const bill of bills) {
-            allBills.set(bill.Id, bill);
-          }
-          console.log(`[BILL-SERVICE] Window ${windowCount}: found ${bills.length} bills (${allBills.size} unique total)`);
-        }
+          for (const bill of bills) { allBills.set(bill.Id, bill); }
+          cursor = data.Cursor ?? null;
+          console.log(`[BILL-SERVICE] Window ${windowCount}: ${bills.length} bills (${allBills.size} total)`);
+        } while (cursor !== null);
       } catch (windowError) {
         console.warn(`[BILL-SERVICE] Window ${windowCount} error:`, windowError);
       }
