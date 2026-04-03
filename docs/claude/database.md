@@ -92,6 +92,47 @@ model AccessToken {
 }
 ```
 
+## IbeSession
+
+```prisma
+model IbeSession {
+  id             String    @id @default(cuid())
+  enterpriseId   String
+  theme          String    // 'luxury' | 'city' | 'resort' | 'conference' | 'budget'
+  reservationId  String?
+  checkIn        String
+  checkOut       String
+  guestCount     Int
+  totalPrice     Float?
+  status         String    // 'searching' | 'booked' | 'failed'
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+  metadata       Json?
+}
+```
+
+Used by Control Centre IBE simulation to track booking attempts per sandbox.
+
+## RoiPresentation
+
+```prisma
+model RoiPresentation {
+  id                  String   @id @default(uuid())
+  name                String
+  salesforceAccountId String?
+  country             String
+  hotelType           String
+  numberOfRooms       Int      @default(0)
+  totalAnnualSavings  Float    @default(0)
+  createdBy           String?
+  stateJson           Json     // full ROI calculator state
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+```
+
+Used by ROI Calculator to persist and share presentations. `stateJson` holds the full calculator state blob — managed via `lib/roi-calculator/utils/persistence.ts`.
+
 ## Legacy Tables (historical data only)
 
 - `EnvironmentLog` — original trial creation log

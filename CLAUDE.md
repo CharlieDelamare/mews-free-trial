@@ -2,6 +2,10 @@
 
 Mews Sandbox Manager — Next.js app for managing Mews demo trial sandboxes. Sales reps create, reset, extend, save, and populate trial hotel environments via the Mews API.
 
+## Project Overview
+
+This is a TypeScript project using Next.js. Primary language is TypeScript. Use strict typing and avoid `any` types.
+
 ## AI Workflow
 
 **Always plan before coding.** Use TodoWrite for any task with 3+ steps. Keep exactly one task `in_progress` at a time. Mark complete immediately after finishing — never batch.
@@ -43,6 +47,8 @@ git worktree list                              # list active feature worktrees
 | `SLACK_WEBHOOK_URL` | Slack Workflow webhook URL |
 | `RESEND_API_KEY` | Resend email API key |
 | `ADMIN_EMAILS` / `NEXT_PUBLIC_ADMIN_EMAILS` | Comma-separated admin emails (1-day trials, skip SF ID) |
+| `LITEAPI_API_KEY` | LiteAPI hotel pricing data (Research feature) |
+| `SERPAPI_API_KEY` | SerpApi competitor data (Research feature) |
 
 Service/Rate/Category IDs are fetched dynamically — no env vars needed.
 
@@ -53,6 +59,22 @@ Service/Rate/Category IDs are fetched dynamically — no env vars needed.
 - Long operations: `runInBackground()` from `lib/background.ts` (Vercel waitUntil)
 - Prisma: singleton via `import { prisma } from '@/lib/prisma'`
 - Components: `'use client'` directive, `useToast()` for notifications
+
+## UI/Styling
+
+When making UI/styling changes, confirm the exact elements and desired styles with the user before applying. Do not assume which components to modify — ask if ambiguous.
+
+## Development Workflow
+
+After any code change that affects types or builds, run `npm run build` (or the project's build command) before committing to catch type errors early.
+
+## API Integration
+
+When fixing bugs or building features, do not assume API response shapes or field names. If unsure, read the actual API types/interfaces in the codebase or ask the user to paste real payloads.
+
+## Git Workflow
+
+When post-merge changes need deployment, always create a new PR from the current branch — do not push directly to main. Ask before pushing to any protected branch.
 
 ## Mews API
 

@@ -112,6 +112,63 @@ Admin. Deletes stuck logs (building/processing) and associated API call logs.
 - **POST**: Receives Mews access token webhooks. Triggers customer/reservation/task creation in background.
 - **GET**: Returns stored tokens. Optional `enterpriseId` query param.
 
+## GET `/api/cleanup-stale-sandboxes`
+
+Cron-triggered (Mon 8am UTC via `vercel.json`). Checks all stored sandboxes against the Mews API — removes `AccessToken` records for dead/expired enterprises. Returns `{ checked, removed, errors }`.
+
+## Control Centre (`/api/control-centre/*`)
+
+All routes accept `{ enterpriseId: string }` unless noted.
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `status` | GET | Sandbox health check (reservation counts, bill state) |
+| `morning-prep` | POST | Run morning prep workflow (checkout overdue, close bills) |
+| `auto-checkout` | POST | Auto-checkout reservations past departure |
+| `close-overdue-tasks` | POST | Close onboarding tasks past due date |
+| `inspect` | POST | Inspect full sandbox state |
+| `ota-simulate` | POST | Simulate an OTA channel booking |
+| `scenario-provision` | POST | Provision a named demo scenario |
+| `scenario-status` | GET | Poll scenario provision job status (`?jobId=`) |
+| `doors` | POST | Provision door lock demo data |
+| `ibe` | POST | Simulate an IBE booking (`theme`, `checkIn`, `checkOut`, `guestCount`) |
+
+## Research
+
+### POST `/api/research/search`
+
+```typescript
+{ query: string; city?: string; checkIn?: string; checkOut?: string; }
+```
+
+Returns hotel list from SerpApi + LiteAPI enrichment. Requires `SERPAPI_API_KEY` and `LITEAPI_API_KEY`.
+
+### GET `/api/research/hotel/[id]`
+
+Returns detailed hotel data including pricing for a specific LiteAPI hotel ID.
+
+## ROI Presentations
+
+### GET `/api/roi-presentations`
+
+Returns all saved ROI presentations for the current user (filtered by `createdBy`).
+
+### POST `/api/roi-presentations`
+
+```typescript
+{ name: string; salesforceAccountId?: string; country: string; hotelType: string; numberOfRooms: number; stateJson: object; createdBy?: string; }
+```
+
+Creates a new persisted ROI presentation. Returns `{ id, ...presentation }`.
+
+### GET `/api/roi-presentations/[id]`
+
+Returns a single ROI presentation by ID.
+
+### PUT `/api/roi-presentations/[id]`
+
+Updates an existing presentation. Accepts partial state (same shape as POST body).
+
 ## GET `/api/debug`
 
 Params: `enterpriseId` (optional), `limit` (optional). Raw database inspection.

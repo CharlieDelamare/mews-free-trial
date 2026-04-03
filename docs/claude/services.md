@@ -61,6 +61,45 @@ Orchestrated by `lib/reset-service.ts` (750s Vercel deadline):
 | `Pagination` | Page nav with ellipsis and "Showing X-Y of Z" |
 | `ApiCallLogs` | Expandable API call viewer with group filtering |
 
+## Control Centre
+
+`lib/control-centre/` — tools for managing and demonstrating sandbox state:
+
+- **`scenario-service.ts`**: Named demo scenarios (e.g. "full house", "group booking") that provision specific reservation/guest configurations.
+- **`ibe-service.ts`**: Simulates an IBE (Internet Booking Engine) guest booking through the Mews API. Creates an `IbeSession` DB record. Themes: `luxury`, `city`, `resort`, `conference`, `budget`.
+- **`operations-service.ts`**: Morning prep (auto-checkout + close bills), auto-checkout overdue reservations, close overdue tasks.
+- **`door-service.ts`**: Provisions door lock demo data.
+- **`ota-service.ts`**: Simulates OTA channel bookings.
+- **`dashboard-service.ts`**: Aggregates sandbox health metrics for the Control Centre dashboard.
+- **`csv-parser.ts`**: Parses CSV imports for bulk reservation/guest creation.
+
+Control Centre UI: `components/control-centre/` (tabs: Dashboard, Scenarios, Operations, OTA, Doors, IBE).
+
+## ROI Calculator
+
+`lib/roi-calculator/` — calculates and presents ROI for switching to Mews:
+
+- **`utils/calculations.ts`**: Core savings calculations across 4 modules (RevPAR, Distribution, Operations, Housekeeping).
+- **`utils/confidenceScoring.ts`**: Scores input completeness to show confidence level.
+- **`utils/narratives.ts`**: Generates human-readable ROI narrative summaries.
+- **`utils/persistence.ts`**: Saves/loads `RoiPresentation` DB records via Prisma.
+- **`utils/priorityInputs.ts`**: Detects which inputs have the highest impact.
+- **`data/countryBenchmarks.ts`** / **`data/usStateBenchmarks.ts`**: Industry benchmarks by country/state.
+
+ROI UI: `components/roi-calculator/` — `PresentationWizard` (step-by-step input), `ROIStage` (results view), `PDFTemplate` + `ExecSummaryPDFTemplate` (PDF export — use inline styles, PDF context only).
+
+Presentations are persisted to the `RoiPresentation` table. Shareable via URL (`/roi-calculator/[id]`).
+
+## Research
+
+`lib/research/` — hotel competitive intelligence:
+
+- **`liteapi.ts`**: Fetches hotel pricing and availability from LiteAPI. Requires `LITEAPI_API_KEY`.
+- **`serpapi.ts`**: Searches competitor hotels via SerpApi (Google Hotels). Requires `SERPAPI_API_KEY`. Note: `startDate`/`endDate` params are required by SerpApi.
+- **`inference.ts`**: Enriches hotel data with AI-generated property summaries.
+
+Research UI: `app/research/page.tsx` — search form + hotel results with pricing data.
+
 ## useAdaptivePolling Hook
 
 `hooks/useAdaptivePolling.ts` — 5s poll when operations active, 60s when idle. Pauses on hidden tab, fetches immediately on return. Cancels in-flight requests on cleanup.
