@@ -6,8 +6,9 @@
  */
 
 import { loggedFetch } from './api-call-logger';
+import { getMewsApiUrl } from '@/lib/config';
 
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
+const MEWS_API_URL = getMewsApiUrl();
 
 export interface TimezoneConfig {
   timezone: string;

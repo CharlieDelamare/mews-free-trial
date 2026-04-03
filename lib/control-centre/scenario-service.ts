@@ -2,9 +2,10 @@ import { prisma } from '@/lib/prisma';
 import { addDays } from 'date-fns';
 import { fetchMewsData } from '@/lib/mews-data-service';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
+import { getMewsClientToken } from '@/lib/config';
 import type { ScenarioType, ScenarioConfig } from '@/types/control-centre';
 
-const CLIENT_TOKEN = process.env.MEWS_CLIENT_TOKEN || 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+const CLIENT_TOKEN = getMewsClientToken();
 
 export const SCENARIO_CONFIG: Record<ScenarioType, ScenarioConfig> = {
   individual: {
