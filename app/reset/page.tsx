@@ -3,23 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import SearchableSelect from '@/components/SearchableSelect';
-
-interface Environment {
-  enterpriseId: string;
-  enterpriseName: string;
-  propertyName?: string;
-  type: 'trial' | 'manual';
-  status?: string;
-  customerEmail?: string;
-  createdAt: Date;
-  accessTokenId: number;
-}
+import { useEnvironments } from '@/hooks/useEnvironments';
 
 export default function ResetSandboxPage() {
   const router = useRouter();
-  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const { environments, loading: environmentsLoading, refetch: fetchEnvironments } = useEnvironments();
   const [selectedEnvironment, setSelectedEnvironment] = useState('');
-  const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showManualAdd, setShowManualAdd] = useState(false);
@@ -27,10 +16,6 @@ export default function ResetSandboxPage() {
   const [manualAddLoading, setManualAddLoading] = useState(false);
   const [manualAddMessage, setManualAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    fetchEnvironments();
-  }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -50,26 +35,6 @@ export default function ResetSandboxPage() {
   const handleDialogClose = useCallback(() => {
     setShowConfirmDialog(false);
   }, []);
-
-  const fetchEnvironments = async () => {
-    setEnvironmentsLoading(true);
-    try {
-      const response = await fetch('/api/environments/list');
-      const data = await response.json();
-      if (data.success) {
-        const sortedEnvironments = (data.environments || []).sort((a: any, b: any) => {
-          const nameA = (a.propertyName || a.enterpriseName || '').toLowerCase();
-          const nameB = (b.propertyName || b.enterpriseName || '').toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        setEnvironments(sortedEnvironments);
-      }
-    } catch (error) {
-      console.error('Failed to fetch environments:', error);
-    } finally {
-      setEnvironmentsLoading(false);
-    }
-  };
 
   const openManualAddModal = () => {
     setManualToken('');

@@ -24,6 +24,10 @@ Next.js 14 (App Router) · TypeScript strict · PostgreSQL + Prisma + Accelerate
 
 ## Dev Commands
 
+> **Note:** `node`/`npm` are not on the default Bash PATH. Prefix commands with:
+> `PATH="/opt/homebrew/Cellar/node/25.6.1_1/bin:$PATH"`
+> e.g. `PATH="/opt/homebrew/Cellar/node/25.6.1_1/bin:$PATH" npm run test`
+
 ```bash
 npm run dev                                    # development server
 npm run test / test:watch / test:coverage      # tests

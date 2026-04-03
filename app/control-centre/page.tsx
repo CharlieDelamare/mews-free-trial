@@ -10,12 +10,7 @@ import IbeTab from '@/components/control-centre/IbeTab';
 import OtaTab from '@/components/control-centre/OtaTab';
 import DoorsTab from '@/components/control-centre/DoorsTab';
 import type { DashboardMetrics } from '@/types/control-centre';
-
-interface Environment {
-  enterpriseId: string;
-  enterpriseName: string;
-  propertyName?: string;
-}
+import { useEnvironments, type Environment } from '@/hooks/useEnvironments';
 
 type Tab = 'dashboard' | 'operations' | 'scenarios' | 'ibe' | 'ota' | 'doors';
 
@@ -32,8 +27,6 @@ function ControlCentreContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [environments, setEnvironments] = useState<Environment[]>([]);
-  const [environmentsLoading, setEnvironmentsLoading] = useState(false);
   const [selectedEnterpriseId, setSelectedEnterpriseId] = useState('');
   const [activeTab, setActiveTab] = useState<Tab>((searchParams.get('tab') as Tab) || 'dashboard');
 
@@ -47,36 +40,8 @@ function ControlCentreContent() {
 
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    fetchEnvironments();
-  }, []);
-
   const STORAGE_KEY = 'controlCentre.enterpriseId';
-
-  const fetchEnvironments = async () => {
-    setEnvironmentsLoading(true);
-    try {
-      const res = await fetch('/api/environments/list');
-      const data = await res.json();
-      if (data.success) {
-        const sorted = (data.environments || []).sort((a: Environment, b: Environment) => {
-          const nameA = (a.propertyName || a.enterpriseName || '').toLowerCase();
-          const nameB = (b.propertyName || b.enterpriseName || '').toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        setEnvironments(sorted);
-        // Restore saved selection if it still exists in the list
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved && sorted.some((e: Environment) => e.enterpriseId === saved)) {
-          setSelectedEnterpriseId(saved);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to fetch environments:', e);
-    } finally {
-      setEnvironmentsLoading(false);
-    }
-  };
+  const { environments, loading: environmentsLoading, refetch: fetchEnvironments } = useEnvironments();
 
   const fetchMetrics = async (enterpriseId: string) => {
     if (!enterpriseId) return;
@@ -95,6 +60,15 @@ function ControlCentreContent() {
       setMetricsLoading(false);
     }
   };
+
+  // Restore saved environment selection when environments load
+  useEffect(() => {
+    if (environments.length === 0) return;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && environments.some(e => e.enterpriseId === saved)) {
+      setSelectedEnterpriseId(saved);
+    }
+  }, [environments]);
 
   // Dashboard auto-refresh
   useEffect(() => {

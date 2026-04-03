@@ -2,18 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import SearchableSelect from '@/components/SearchableSelect';
-
-interface Environment {
-  enterpriseId: string;
-  enterpriseName: string;
-  propertyName?: string;
-  loginUrl?: string;
-  type: 'trial' | 'manual';
-  status?: string;
-  customerEmail?: string;
-  createdAt: Date;
-  accessTokenId: number;
-}
+import { useEnvironments } from '@/hooks/useEnvironments';
 
 const BI_ADD_ON_URL = (enterpriseId: string) =>
   `https://app.mews-demo.com/Commander/00000000-0000-0000-0000-000000000000/EnterpriseIntegration/Marketplace?OwnerId=${enterpriseId}&ApplicationId=4a3b8e4c-4245-4274-9142-b21b0115f375`;
@@ -22,35 +11,12 @@ const BI_CONNECTOR_URL = (enterpriseId: string) =>
   `https://app.mews-demo.com/Commander/${enterpriseId}/EnterpriseIntegration/Marketplace?OwnerId=${enterpriseId}&CategoryId=subscriptions&ApplicationId=MewsBiIntegration`;
 
 export default function AddBiPage() {
-  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const { environments, loading, refetch: fetchEnvironments } = useEnvironments();
   const [selectedId, setSelectedId] = useState('');
-  const [loading, setLoading] = useState(false);
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [manualToken, setManualToken] = useState('');
   const [manualAddLoading, setManualAddLoading] = useState(false);
   const [manualAddMessage, setManualAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const fetchEnvironments = useCallback(async () => {
-    setLoading(true);
-    try {
-      const r = await fetch('/api/environments/list');
-      const data = await r.json();
-      if (data.success) {
-        const sorted = (data.environments as Environment[]).sort((a, b) => {
-          const nameA = (a.propertyName || a.enterpriseName).toLowerCase();
-          const nameB = (b.propertyName || b.enterpriseName).toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-        setEnvironments(sorted);
-      }
-    } catch (err) {
-      console.error('Failed to fetch environments:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchEnvironments(); }, [fetchEnvironments]);
 
   const openManualAddModal = () => {
     setManualToken('');
