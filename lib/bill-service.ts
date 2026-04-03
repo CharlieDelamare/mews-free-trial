@@ -59,18 +59,24 @@ export async function getBills(
             ...(state && { State: state }),
             Limitation: { Count: 1000, ...(cursor && { Cursor: cursor }) },
           };
-          const fetchOptions: RequestInit = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+          const fetchOptions: RequestInit = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          };
           const response = logId
             ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'bills', endpoint: 'bills/getAll' })
             : await fetch(url, fetchOptions);
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             console.warn(`[BILL-SERVICE] Window ${windowCount} failed: ${response.status} - ${errorData.Message || response.statusText}`);
-            break;
+            break; // abandon remaining pages for this window; outer loop continues to next window
           }
           const data = await response.json();
           const bills: Bill[] = data.Bills || [];
-          for (const bill of bills) { allBills.set(bill.Id, bill); }
+          for (const bill of bills) {
+            allBills.set(bill.Id, bill);
+          }
           cursor = data.Cursor ?? null;
           console.log(`[BILL-SERVICE] Window ${windowCount}: ${bills.length} bills (${allBills.size} total)`);
         } while (cursor !== null);
