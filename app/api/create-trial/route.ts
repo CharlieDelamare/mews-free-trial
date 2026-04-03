@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { isAdminEmail } from '@/lib/admin';
 import {
   getPreferredLanguage,
   getLegalEnvironmentCode,
@@ -16,7 +19,6 @@ import { loggedFetch } from '@/lib/api-call-logger';
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 
 interface SandboxRequest {
-  requestorEmail: string;
   firstName: string;
   lastName: string;
   customerEmail: string;
@@ -29,11 +31,18 @@ interface SandboxRequest {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Resolve caller identity from the server-side session — never trust the request body for this
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+  const requestorEmail = session.user.email;
+  const isAdmin = isAdminEmail(requestorEmail);
+
   try {
     const body: SandboxRequest = await request.json();
-    
+
     const {
-      requestorEmail,
       firstName,
       lastName,
       customerEmail,
@@ -42,7 +51,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       propertyCountry,
       propertyType,
       durationDays,
-      salesforceAccountId
+      salesforceAccountId,
     } = body;
 
     // Validate required fields
@@ -53,17 +62,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check for Charlie user exception (needs to be before duration validation)
-    const isCharlie = requestorEmail === 'charlie.delamare@gmail.com' ||
-                      requestorEmail === 'charlie.delamare@mews.com';
-
-    // Validate duration (context-aware for Charlie)
-    const validDurations = isCharlie ? [1, 7, 30, 60] : [7, 30, 60];
+    // Validate duration (context-aware for admin users)
+    const validDurations = isAdmin ? [1, 7, 30, 60] : [7, 30, 60];
     if (!validDurations.includes(durationDays)) {
       return NextResponse.json(
         {
           success: false,
-          error: isCharlie
+          error: isAdmin
             ? 'Invalid duration. Must be 1, 7, 30, or 60 days'
             : 'Invalid duration. Must be 7, 30, or 60 days'
         },
@@ -117,8 +122,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Duplicate prevention: Check if Salesforce Account ID already has an environment
-    // Skip check for Charlie users (internal testing) and if no Salesforce ID provided
-    if (!isCharlie && salesforceAccountId) {
+    // Skip check for admin users (internal testing) and if no Salesforce ID provided
+    if (!isAdmin && salesforceAccountId) {
       try {
         const existingEnv = await prisma.unifiedLog.findFirst({
           where: {
