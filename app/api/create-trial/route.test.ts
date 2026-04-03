@@ -1,6 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+
+vi.mock('next-auth', () => ({
+  getServerSession: vi.fn(),
+}));
 
 // Mock dependencies
 const mockCreateEnvironmentLog = vi.fn();
@@ -41,6 +46,8 @@ describe('POST /api/create-trial', () => {
     mockCreateEnvironmentLog.mockResolvedValue({ id: 'test-log-id' });
     mockUpdateUnifiedLog.mockResolvedValue({ id: 'test-log-id' });
     mockSendZapierNotification.mockResolvedValue(undefined);
+    // Default session: admin user (charlie.delamare@mews.com is in ADMIN_EMAILS)
+    (getServerSession as any).mockResolvedValue({ user: { email: 'charlie.delamare@mews.com' }, expires: '' });
   });
 
   const createMockRequest = (body: any) => {
@@ -472,7 +479,7 @@ describe('POST /api/create-trial', () => {
         loginEmail: 'john@example.com',
         loginPassword: 'Sample123',
         status: 'building',
-        requestorEmail: undefined,
+        requestorEmail: 'charlie.delamare@mews.com',
         durationDays: 30,
         roomCount: 20,
         dormCount: undefined,
@@ -576,7 +583,7 @@ describe('POST /api/create-trial', () => {
           firstName: 'Jane',
           lastName: 'Smith',
           customerName: 'Jane Smith',
-          requestorEmail: 'requestor@example.com',
+          requestorEmail: 'charlie.delamare@mews.com',
           customerEmail: 'jane@example.com',
           error: 'Failed to create trial environment',
         })
@@ -614,8 +621,8 @@ describe('POST /api/create-trial', () => {
     });
   });
 
-  describe('Charlie Delamare Exception', () => {
-    test('allows 1-day duration for charlie.delamare@mews.com', async () => {
+  describe('Admin Duration Exception', () => {
+    test('allows 1-day duration for admin users', async () => {
       const request = createMockRequest({
         firstName: 'Charlie',
         lastName: 'Delamare',
@@ -647,7 +654,7 @@ describe('POST /api/create-trial', () => {
       expect(payload.Lifetime).toBe('P0Y0M1DT0H0M0S');
     });
 
-    test('allows 1-day duration for charlie.delamare@gmail.com', async () => {
+    test('allows 1-day duration for any admin (session-based, not email-specific)', async () => {
       const request = createMockRequest({
         firstName: 'Charlie',
         lastName: 'Delamare',
@@ -669,11 +676,13 @@ describe('POST /api/create-trial', () => {
       expect(response.status).toBe(200);
     });
 
-    test('rejects 1-day duration for non-Charlie users', async () => {
+    test('rejects 1-day duration for non-admin users', async () => {
+      // Override default admin session with a non-admin session
+      (getServerSession as any).mockResolvedValueOnce({ user: { email: 'user@mews.com' }, expires: '' });
+
       const request = createMockRequest({
         firstName: 'John',
         lastName: 'Doe',
-        requestorEmail: 'john@example.com',
         customerEmail: 'customer@example.com',
         propertyName: 'Test Hotel',
         propertyCountry: 'United Kingdom',
@@ -692,6 +701,9 @@ describe('POST /api/create-trial', () => {
 
   describe('Duplicate Salesforce ID Prevention', () => {
     test('returns 409 when Salesforce ID already has an environment', async () => {
+      // Use non-admin session so the Salesforce duplicate check runs (admins bypass it)
+      (getServerSession as any).mockResolvedValueOnce({ user: { email: 'user@mews.com' }, expires: '' });
+
       const { prisma } = await import('@/lib/prisma');
       (prisma.unifiedLog.findFirst as any).mockResolvedValueOnce({
         id: 'existing-log-1',
@@ -705,7 +717,6 @@ describe('POST /api/create-trial', () => {
       const request = createMockRequest({
         firstName: 'John',
         lastName: 'Doe',
-        requestorEmail: 'john@example.com',
         customerEmail: 'new@example.com',
         propertyName: 'New Hotel',
         propertyCountry: 'United Kingdom',
@@ -724,7 +735,7 @@ describe('POST /api/create-trial', () => {
       expect(data.existingEnvironment.propertyName).toBe('Existing Hotel');
     });
 
-    test('skips duplicate check for Charlie users', async () => {
+    test('skips duplicate check for admin users', async () => {
       const request = createMockRequest({
         firstName: 'Charlie',
         lastName: 'Delamare',

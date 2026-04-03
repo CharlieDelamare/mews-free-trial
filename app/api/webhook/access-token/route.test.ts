@@ -1,6 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { POST, GET } from './route';
 import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+
+vi.mock('next-auth', () => ({
+  getServerSession: vi.fn(),
+}));
 
 // Mock dependencies
 const mockFindEnvironmentLogByPropertyName = vi.fn();
@@ -63,7 +68,11 @@ import { prisma } from '@/lib/prisma';
 describe('POST /api/webhook/access-token', () => {
   const createMockRequest = (body: any) => ({
     json: async () => body,
-  } as NextRequest);
+    // Include webhook secret so verifyWebhookSecret passes
+    nextUrl: {
+      searchParams: new URLSearchParams(`secret=${process.env.WEBHOOK_SECRET}`),
+    },
+  } as unknown as NextRequest);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -486,7 +495,10 @@ describe('POST /api/webhook/access-token', () => {
     test('returns 500 on unexpected error', async () => {
       const request = {
         json: async () => { throw new Error('Parse error'); },
-      } as NextRequest;
+        nextUrl: {
+          searchParams: new URLSearchParams(`secret=${process.env.WEBHOOK_SECRET}`),
+        },
+      } as unknown as NextRequest;
 
       const response = await POST(request);
       expect(response.status).toBe(500);
@@ -514,6 +526,8 @@ describe('GET /api/webhook/access-token', () => {
     vi.clearAllMocks();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    // GET handler requires admin session
+    (getServerSession as any).mockResolvedValue({ user: { email: 'charlie.delamare@mews.com' }, expires: '' });
   });
 
   test('returns all tokens when no enterpriseId filter', async () => {

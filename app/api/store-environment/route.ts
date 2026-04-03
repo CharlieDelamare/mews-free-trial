@@ -28,9 +28,17 @@ export async function POST(request: NextRequest) {
   try {
     const { accessToken } = await request.json();
 
-    if (!accessToken || typeof accessToken !== 'string') {
+    if (!accessToken || typeof accessToken !== 'string' || accessToken.trim().length === 0) {
       return NextResponse.json(
         { success: false, error: 'Access token is required' },
+        { status: 400 }
+      );
+    }
+
+    // Mews access tokens are short strings — anything over 500 chars is invalid
+    if (accessToken.length > 500) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid access token' },
         { status: 400 }
       );
     }

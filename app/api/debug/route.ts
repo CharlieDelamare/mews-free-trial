@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { isAdminEmail } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -11,12 +14,18 @@ export const dynamic = 'force-dynamic';
  *   - limit: Number of recent records to return (default: 10)
  */
 export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email || !isAdminEmail(session.user.email)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const enterpriseId = searchParams.get('enterpriseId');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const rawLimit = parseInt(searchParams.get('limit') ?? '10', 10);
+    const limit = isNaN(rawLimit) ? 10 : Math.min(Math.max(1, rawLimit), 100);
 
-    console.log('[DEBUG] Debug endpoint called');
+    console.log('[DEBUG] Debug endpoint called by:', session.user.email);
     console.log('[DEBUG] Parameters:', { enterpriseId, limit });
 
     // Get recent environment logs from UnifiedLog
@@ -148,7 +157,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[DEBUG] Error in debug endpoint:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error', details: String(error) },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

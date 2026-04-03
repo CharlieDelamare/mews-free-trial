@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { isAdminEmail } from '@/lib/admin';
 import { prisma } from '@/lib/prisma';
 import { findEnvironmentLogByPropertyName, updateUnifiedLog } from '@/lib/unified-logger';
 import { createReservationsForEnvironment } from '@/lib/reservation-service';
@@ -118,11 +121,7 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
     console.error('[WEBHOOK] Error handling IntegrationDeleted:', error);
 
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error processing IntegrationDeleted',
-        details: (error as Error).message
-      },
+      { success: false, error: 'Internal server error processing IntegrationDeleted' },
       { status: 500 }
     );
   }
@@ -131,22 +130,23 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
 
 /**
  * Verify the webhook secret query parameter using constant-time comparison.
- * If WEBHOOK_SECRET is not configured, allow all requests (backwards-compatible).
+ * Fails closed: if WEBHOOK_SECRET is not configured, all requests are rejected.
  */
 function verifyWebhookSecret(request: NextRequest): boolean {
   const expectedSecret = process.env.WEBHOOK_SECRET;
   if (!expectedSecret) {
-    return true; // No secret configured, allow all requests
+    console.error('[WEBHOOK] WEBHOOK_SECRET is not configured — rejecting request');
+    return false; // fail closed: no secret = no access
   }
 
-  const providedSecret = request.nextUrl.searchParams.get('secret') || '';
+  const providedSecret = request.nextUrl.searchParams.get('secret') ?? '';
   if (providedSecret.length !== expectedSecret.length) {
     return false;
   }
 
   return timingSafeEqual(
     Buffer.from(providedSecret),
-    Buffer.from(expectedSecret)
+    Buffer.from(expectedSecret),
   );
 }
 
@@ -427,25 +427,40 @@ export async function POST(request: NextRequest) {
  * Retrieve stored access tokens (for debugging/admin)
  */
 export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.email || !isAdminEmail(session.user.email)) {
+    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
-    // Optional: filter by enterpriseId from query params
     const { searchParams } = new URL(request.url);
     const enterpriseId = searchParams.get('enterpriseId');
 
     const tokens = await prisma.accessToken.findMany({
       where: enterpriseId ? { enterpriseId } : undefined,
-      orderBy: {
-        receivedAt: 'desc'
-      }
+      orderBy: { receivedAt: 'desc' },
+      select: {
+        id: true,
+        enterpriseId: true,
+        enterpriseName: true,
+        integrationId: true,
+        integrationName: true,
+        serviceId: true,
+        serviceName: true,
+        action: true,
+        isEnabled: true,
+        receivedAt: true,
+        createdUtc: true,
+        // accessToken field intentionally omitted — never return credentials in API responses
+      },
     });
 
     return NextResponse.json({ tokens, count: tokens.length });
-
   } catch (error) {
     console.error('[Webhook] Error retrieving tokens:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error retrieving tokens' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

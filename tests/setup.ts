@@ -2,6 +2,14 @@ import '@testing-library/jest-dom';
 import { beforeAll, afterEach, afterAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
+// Set auth env vars before test file imports resolve.
+process.env.AZURE_AD_CLIENT_ID ??= 'test-azure-client-id';
+process.env.AZURE_AD_CLIENT_SECRET ??= 'test-azure-client-secret';
+process.env.AZURE_AD_TENANT_ID ??= 'test-azure-tenant-id';
+process.env.NEXTAUTH_SECRET ??= 'test-nextauth-secret';
+process.env.ADMIN_EMAILS ??= 'charlie.delamare@mews.com';
+process.env.WEBHOOK_SECRET ??= 'test-webhook-secret';
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();
