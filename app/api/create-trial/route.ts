@@ -12,6 +12,7 @@ import { convertDaysToISO8601 } from '@/lib/duration';
 import { prisma } from '@/lib/prisma';
 import { sendZapierNotification } from '@/lib/zapier';
 import { loggedFetch } from '@/lib/api-call-logger';
+import { isAdminEmail } from '@/lib/admin';
 
 const MEWS_API_URL = 'https://app.mews-demo.com/api/general/v1/enterprises/addSample';
 
@@ -53,17 +54,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Check for Charlie user exception (needs to be before duration validation)
-    const isCharlie = requestorEmail === 'charlie.delamare@gmail.com' ||
-                      requestorEmail === 'charlie.delamare@mews.com';
+    // Admin users (configured via ADMIN_EMAILS env var) can create 1-day trials
+    // and skip Salesforce Account ID validation.
+    const isAdmin = isAdminEmail(requestorEmail);
 
-    // Validate duration (context-aware for Charlie)
-    const validDurations = isCharlie ? [1, 7, 30, 60] : [7, 30, 60];
+    // Validate duration (admins can create 1-day trials for testing)
+    const validDurations = isAdmin ? [1, 7, 30, 60] : [7, 30, 60];
     if (!validDurations.includes(durationDays)) {
       return NextResponse.json(
         {
           success: false,
-          error: isCharlie
+          error: isAdmin
             ? 'Invalid duration. Must be 1, 7, 30, or 60 days'
             : 'Invalid duration. Must be 7, 30, or 60 days'
         },
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Duplicate prevention: Check if Salesforce Account ID already has an environment
     // Skip check for Charlie users (internal testing) and if no Salesforce ID provided
-    if (!isCharlie && salesforceAccountId) {
+    if (!isAdmin && salesforceAccountId) {
       try {
         const existingEnv = await prisma.unifiedLog.findFirst({
           where: {
