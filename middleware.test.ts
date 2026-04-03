@@ -3,11 +3,12 @@ import { describe, it, expect } from 'vitest';
 // The middleware logic exempts certain paths from auth checks.
 // We test the exemption list in isolation (Edge API not available in Vitest).
 describe('middleware route exemptions', () => {
+  // Keep in sync with EXEMPT_PREFIXES in middleware.ts
   const EXEMPT_PREFIXES = [
     '/api/auth/',
     '/api/webhook/',
-    '/api/cleanup-stale-sandboxes',
-    '/api/cleanup-stuck-logs',
+    '/api/cleanup-stale-sandboxes/',
+    '/api/cleanup-stuck-logs/',
   ];
 
   function isExempt(pathname: string): boolean {
@@ -25,8 +26,8 @@ describe('middleware route exemptions', () => {
   });
 
   it('exempts cron endpoints', () => {
-    expect(isExempt('/api/cleanup-stale-sandboxes')).toBe(true);
-    expect(isExempt('/api/cleanup-stuck-logs')).toBe(true);
+    expect(isExempt('/api/cleanup-stale-sandboxes/')).toBe(true);
+    expect(isExempt('/api/cleanup-stuck-logs/')).toBe(true);
   });
 
   it('does NOT exempt regular API routes', () => {

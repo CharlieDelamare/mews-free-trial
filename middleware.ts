@@ -10,8 +10,8 @@ import { getToken } from 'next-auth/jwt';
 const EXEMPT_PREFIXES = [
   '/api/auth/',
   '/api/webhook/',
-  '/api/cleanup-stale-sandboxes',
-  '/api/cleanup-stuck-logs',
+  '/api/cleanup-stale-sandboxes/',
+  '/api/cleanup-stuck-logs/',
 ];
 
 export async function middleware(req: NextRequest) {
