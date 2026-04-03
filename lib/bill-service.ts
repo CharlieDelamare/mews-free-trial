@@ -108,7 +108,7 @@ async function fetchItemsForBills<T>(
   endpoint: string,
   responseKey: string,
   logId?: string,
-  chunkSize = 200
+  chunkSize = 50 // conservative: avoids hitting the 1000-item response cap per chunk
 ): Promise<T[]> {
   const allItems: T[] = [];
   for (let i = 0; i < billIds.length; i += chunkSize) {
@@ -122,18 +122,27 @@ async function fetchItemsForBills<T>(
         AccessToken: accessToken,
         Client: 'Mews Sandbox Manager',
         BillIds: chunk,
-        Limitation: { Count: 1000 },
+        Limitation: { Count: 1000 }, // NOTE: if a chunk has >1000 items, results are truncated.
+        // Mitigated by small chunkSize (50 bills); full cursor pagination not implemented here.
       }),
     };
-    const response = logId
-      ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'bills', endpoint })
-      : await fetch(url, fetchOptions);
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(`Failed to fetch ${endpoint}: ${response.status} - ${err.Message || response.statusText}`);
+    try {
+      const response = logId
+        ? await loggedFetch(url, fetchOptions, { unifiedLogId: logId, group: 'bills', endpoint })
+        : await fetch(url, fetchOptions);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        console.warn(
+          `[BILL-SERVICE] ${endpoint} chunk ${Math.floor(i / chunkSize) + 1} failed: ${response.status} - ${err.Message || response.statusText}`
+        );
+        continue; // skip this chunk, keep what we have
+      }
+      const data = await response.json();
+      allItems.push(...(data[responseKey] ?? []));
+    } catch (chunkError) {
+      console.warn(`[BILL-SERVICE] ${endpoint} chunk ${Math.floor(i / chunkSize) + 1} error:`, chunkError);
+      // continue with remaining chunks
     }
-    const data = await response.json();
-    allItems.push(...(data[responseKey] ?? []));
   }
   return allItems;
 }
