@@ -495,79 +495,69 @@ export async function resetEnvironment(
     });
 
     // ========================================
-    // STEP 3: Get Reservations (all services)
+    // STEPS 3 & 4: Fetch all reservation states in parallel per service
     // ========================================
-    console.log(`[RESET-SERVICE] Step 3/9: Fetching reservations for ${allMewsData.length} service(s)...`);
+    console.log(`[RESET-SERVICE] Steps 3–4/9: Fetching Confirmed/Optional and Started reservations in parallel...`);
+
+    const now = new Date();
     const allReservations: Reservation[] = [];
+    const missedDepartureReservations: Reservation[] = [];
 
-    for (const serviceData of allMewsData) {
-      const { reservations: serviceReservations, error: serviceError } =
-        await getAllReservationsWithPagination(
-          accessToken,
-          serviceData.serviceId,
-          ['Confirmed', 'Optional'], // NOT 'Started'
-          log.id
-        );
+    const serviceReservationResults = await Promise.all(
+      allMewsData.map(async (serviceData) => {
+        const [
+          { reservations: confirmedOpt, error: confError },
+          { reservations: started, error: startedError },
+        ] = await Promise.all([
+          getAllReservationsWithPagination(
+            accessToken,
+            serviceData.serviceId,
+            ['Confirmed', 'Optional'],
+            log.id
+          ),
+          getAllReservationsWithPagination(
+            accessToken,
+            serviceData.serviceId,
+            ['Started'],
+            log.id
+          ),
+        ]);
+        return { serviceId: serviceData.serviceId, confirmedOpt, started, confError, startedError };
+      })
+    );
 
-      if (serviceError) {
-        details.errors?.push(`Service ${serviceData.serviceId}: ${serviceError}`);
-      }
+    for (const { serviceId, confirmedOpt, started, confError, startedError } of serviceReservationResults) {
+      if (confError) details.errors?.push(`Service ${serviceId} (Confirmed/Optional): ${confError}`);
+      if (startedError) details.errors?.push(`Service ${serviceId} (Started): ${startedError}`);
 
-      allReservations.push(...serviceReservations);
-      console.log(`[RESET-SERVICE]   Service ${serviceData.serviceId}: ${serviceReservations.length} reservations`);
+      allReservations.push(...confirmedOpt);
+      console.log(`[RESET-SERVICE]   Service ${serviceId}: ${confirmedOpt.length} Confirmed/Optional reservations`);
+
+      const missed = started.filter(
+        (r) => r.ScheduledEndUtc && r.ScheduledEndUtc < now.toISOString()
+      );
+      missedDepartureReservations.push(...missed);
+      console.log(
+        `[RESET-SERVICE]   Service ${serviceId}: ${started.length} Started, ${missed.length} missed departures`
+      );
     }
 
     details.reservationsFetched = allReservations.length;
-
-    await updateUnifiedLog(log.id, { currentStep: 3, operationDetails: details });
-
-    console.log(`[RESET-SERVICE] ✓ Found ${allReservations.length} total reservations to cancel across ${allMewsData.length} service(s)`);
-
-    // ========================================
-    // STEP 4: Process Missed Departures
-    // ========================================
-    console.log(`[RESET-SERVICE] Step 4/9: Processing missed departures (Started reservations with past departure)...`);
-
-    const now = new Date();
-    const missedDepartureReservations: Reservation[] = [];
-
-    for (const serviceData of allMewsData) {
-      // Fetch Started reservations — use a wide start window to catch historical check-ins
-      const { reservations: startedReservations } = await getAllReservationsWithPagination(
-        accessToken,
-        serviceData.serviceId,
-        ['Started'],
-        log.id
-      );
-
-      // Filter client-side: only those whose scheduled departure is in the past
-      const missedForService = startedReservations.filter(
-        r => r.ScheduledEndUtc && r.ScheduledEndUtc < now.toISOString()
-      );
-
-      missedDepartureReservations.push(...missedForService);
-      console.log(
-        `[RESET-SERVICE]   Service ${serviceData.serviceId}: ${startedReservations.length} started, ${missedForService.length} missed departures`
-      );
-    }
-
     details.missedDeparturesFetched = missedDepartureReservations.length;
 
+    await updateUnifiedLog(log.id, { currentStep: 3, operationDetails: details });
+    console.log(`[RESET-SERVICE] ✓ Found ${allReservations.length} reservations to cancel, ${missedDepartureReservations.length} missed departures`);
+
+    // Process missed departures
     if (missedDepartureReservations.length > 0) {
-      const missedIds = missedDepartureReservations.map(r => r.Id);
+      const missedIds = missedDepartureReservations.map((r) => r.Id);
       const { successCount: processedCount, failureCount: processFailed } =
         await processReservationsInBatches(accessToken, missedIds, log.id);
 
       details.missedDeparturesProcessed = processedCount;
       details.missedDeparturesProcessFailed = processFailed;
-
-      if (processFailed > 0) {
-        details.errors?.push(`Failed to process ${processFailed} missed departure reservations`);
-      }
-
-      console.log(
-        `[RESET-SERVICE] ✓ Processed ${processedCount} missed departures (${processFailed} failed)`
-      );
+      if (processFailed > 0) details.errors?.push(`Failed to process ${processFailed} missed departure reservations`);
+      console.log(`[RESET-SERVICE] ✓ Processed ${processedCount} missed departures (${processFailed} failed)`);
     } else {
       details.missedDeparturesProcessed = 0;
       details.missedDeparturesProcessFailed = 0;
