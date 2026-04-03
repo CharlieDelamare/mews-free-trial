@@ -176,7 +176,7 @@ function Slide({ children }: { children: React.ReactNode }) {
 function MetricCard({
   label,
   value,
-  accent = 'var(--mews-indigo)',
+  accent = '#b3b2fb', // --mews-indigo
   sub,
 }: {
   label: string;
@@ -222,9 +222,9 @@ function LeverRow({
   typeLabels: { cost: string; revenue: string; time: string };
 }) {
   const colorMap = {
-    cost: { color: 'var(--roi-pdf-emerald)', bg: 'rgba(52,211,153,0.1)' },
-    revenue: { color: 'var(--roi-pdf-blue)', bg: 'rgba(96,165,250,0.1)' },
-    time: { color: 'var(--roi-pdf-violet)', bg: 'rgba(167,139,250,0.1)' },
+    cost: { color: '#34d399', bg: 'rgba(52,211,153,0.1)' },    // --roi-pdf-emerald
+    revenue: { color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' }, // --roi-pdf-blue
+    time: { color: '#a78bfa', bg: 'rgba(167,139,250,0.1)' },   // --roi-pdf-violet
   };
   const style = colorMap[type];
 
@@ -320,10 +320,13 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
   }
 
   /* ── Build contributions for waterfall ──────────────────────────────── */
+  // PDF-only: literal hex values required — CSS variables break JS string interpolation
+  // in gradient strings (e.g. `${color}30` → `var(--x)30` is invalid CSS) and are
+  // unreliable in html2canvas off-screen rendering.
   const contributions: { label: string; savings: number; color: string }[] = [];
-  if (ge) contributions.push({ label: t.modules.guestExperience, savings: ge.totalSavings, color: 'var(--mews-indigo)' });
-  if (pm) contributions.push({ label: t.modules.payment, savings: pm.totalSavings, color: 'var(--roi-pdf-emerald)' });
-  if (rm) contributions.push({ label: t.modules.rms, savings: rm.totalSavings, color: 'var(--roi-pdf-violet)' });
+  if (ge) contributions.push({ label: t.modules.guestExperience, savings: ge.totalSavings, color: '#b3b2fb' }); // --mews-indigo
+  if (pm) contributions.push({ label: t.modules.payment, savings: pm.totalSavings, color: '#34d399' });        // --roi-pdf-emerald
+  if (rm) contributions.push({ label: t.modules.rms, savings: rm.totalSavings, color: '#a78bfa' });           // --roi-pdf-violet
   if (hk) contributions.push({ label: t.modules.housekeeping, savings: hk.totalSavings, color: '#f59e0b' });
 
   return (
@@ -356,27 +359,27 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
             })}
           </p>
 
-          {/* Three KPI pills */}
-          <div style={{ display: 'flex', gap: 40, marginTop: 48 }}>
+          {/* Three KPI pills — stacked layout prevents baseline misalignment from mixed font sizes */}
+          <div style={{ display: 'flex', gap: 40, marginTop: 48, alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <TrendingDown style={{ width: 18, height: 18, color: 'var(--roi-pdf-emerald)' }} />
-              <div>
-                <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{formatBig(costSavings, cs)}</span>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginLeft: 8 }}>{t.labels.costSavings}</span>
+              <TrendingDown style={{ width: 18, height: 18, color: '#34d399', flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>{formatBig(costSavings, cs)}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.2 }}>{t.labels.costSavings}</span>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <TrendingUp style={{ width: 18, height: 18, color: 'var(--roi-pdf-blue)' }} />
-              <div>
-                <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{formatBig(revenueUplift, cs)}</span>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginLeft: 8 }}>{t.labels.revenueUplift}</span>
+              <TrendingUp style={{ width: 18, height: 18, color: '#60a5fa', flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>{formatBig(revenueUplift, cs)}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.2 }}>{t.labels.revenueUplift}</span>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Clock style={{ width: 18, height: 18, color: 'var(--roi-pdf-violet)' }} />
-              <div>
-                <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{Math.round(data.totalTime).toLocaleString()}</span>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginLeft: 8 }}>{t.labels.hoursReclaimed}</span>
+              <Clock style={{ width: 18, height: 18, color: '#a78bfa', flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>{Math.round(data.totalTime).toLocaleString()}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.2 }}>{t.labels.hoursReclaimed}</span>
               </div>
             </div>
           </div>
@@ -389,7 +392,7 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
         <Slide>
           <div style={{ padding: '40px 48px 0', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             <div style={{ background: 'rgba(179,178,251,0.15)', borderRadius: 10, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Users style={{ width: 22, height: 22, color: 'var(--mews-indigo)' }} />
+              <Users style={{ width: 22, height: 22, color: '#b3b2fb' }} />
             </div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>{t.modules.guestExperience}</h2>
           </div>
@@ -397,7 +400,7 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
           <div style={{ padding: '0 48px', flex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
             {/* Top metric row */}
             <div style={{ display: 'flex', gap: 16 }}>
-              <MetricCard label={t.labels.annualImpact} value={formatBig(ge.totalSavings, cs)} accent="var(--mews-indigo)" />
+              <MetricCard label={t.labels.annualImpact} value={formatBig(ge.totalSavings, cs)} accent="#b3b2fb" />
               <MetricCard label={t.labels.timeSaved} value={`${ge.totalTime.toLocaleString()} ${t.labels.hrs}`} accent="#fff" sub={t.labels.perYear} />
             </div>
 
@@ -429,14 +432,14 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
         <Slide>
           <div style={{ padding: '40px 48px 0', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             <div style={{ background: 'rgba(52,211,153,0.12)', borderRadius: 10, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CreditCard style={{ width: 22, height: 22, color: 'var(--roi-pdf-emerald)' }} />
+              <CreditCard style={{ width: 22, height: 22, color: '#34d399' }} />
             </div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>{t.modules.payment}</h2>
           </div>
 
           <div style={{ padding: '0 48px', flex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
             <div style={{ display: 'flex', gap: 16 }}>
-              <MetricCard label={t.labels.annualImpact} value={formatBig(pm.totalSavings, cs)} accent="var(--roi-pdf-emerald)" />
+              <MetricCard label={t.labels.annualImpact} value={formatBig(pm.totalSavings, cs)} accent="#34d399" />
               <MetricCard label={t.labels.timeSaved} value={`${pm.totalTime.toLocaleString()} ${t.labels.hrs}`} accent="#fff" sub={t.labels.perYear} />
             </div>
 
@@ -471,15 +474,15 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
         <Slide>
           <div style={{ padding: '40px 48px 0', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             <div style={{ background: 'rgba(167,139,250,0.12)', borderRadius: 10, padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <BarChart3 style={{ width: 22, height: 22, color: 'var(--roi-pdf-violet)' }} />
+              <BarChart3 style={{ width: 22, height: 22, color: '#a78bfa' }} />
             </div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#fff', margin: 0 }}>{t.modules.rms}</h2>
           </div>
 
           <div style={{ padding: '0 48px', flex: 1, display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
             <div style={{ display: 'flex', gap: 16 }}>
-              <MetricCard label={t.labels.annualRevenueGain} value={formatBig(rm.annualRevenueGain, cs)} accent="var(--roi-pdf-violet)" />
-              <MetricCard label={t.labels.laborCostSavings} value={formatCurrency(rm.annualLaborCostSavings)} accent="var(--roi-pdf-emerald)" />
+              <MetricCard label={t.labels.annualRevenueGain} value={formatBig(rm.annualRevenueGain, cs)} accent="#a78bfa" />
+              <MetricCard label={t.labels.laborCostSavings} value={formatCurrency(rm.annualLaborCostSavings)} accent="#34d399" />
               <MetricCard label={t.labels.timeSaved} value={`${rm.totalTime.toLocaleString()} ${t.labels.hrs}`} accent="#fff" sub={t.labels.perYear} />
             </div>
 
@@ -499,7 +502,7 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
               </div>
               <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px 18px', flex: 1 }}>
                 <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{t.labels.revenueUpliftPercent}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--roi-pdf-violet)' }}>{rm.inputs.estimatedRevenueUplift}%</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: '#a78bfa' }}>{rm.inputs.estimatedRevenueUplift}%</div>
               </div>
             </div>
 
@@ -631,15 +634,15 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
           {/* Bottom KPIs */}
           <div style={{ display: 'flex', gap: 36, marginTop: 28 }}>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--roi-pdf-emerald)' }}>{formatBig(costSavings, cs)}</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#34d399' }}>{formatBig(costSavings, cs)}</span>
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{t.labels.costSavings}</p>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--roi-pdf-blue)' }}>{formatBig(revenueUplift, cs)}</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#60a5fa' }}>{formatBig(revenueUplift, cs)}</span>
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{t.labels.revenueUplift}</p>
             </div>
             <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--roi-pdf-violet)' }}>{Math.round(data.totalTime).toLocaleString()}</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#a78bfa' }}>{Math.round(data.totalTime).toLocaleString()}</span>
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{t.labels.hoursReclaimed}</p>
             </div>
           </div>

@@ -84,15 +84,15 @@ export default function CinematicSlide(props: CinematicSlideProps) {
           style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }}
         />
 
-        {/* KPI row */}
-        <div className="flex gap-12 justify-center">
+        {/* KPI row — grid ensures equal column widths regardless of number length */}
+        <div className="grid grid-cols-3 gap-8 w-full max-w-2xl">
           {/* Cost savings */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-base"
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: 'color-mix(in srgb, var(--mews-light-green) 12%, transparent)' }}
             >
-              ↓
+              <TrendingDown className="w-5 h-5" style={{ color: 'var(--mews-light-green)' }} />
             </div>
             <span
               className="text-2xl font-extrabold tracking-tight tabular-nums"
@@ -106,15 +106,21 @@ export default function CinematicSlide(props: CinematicSlideProps) {
             >
               {t.labels.costSavings}
             </span>
+            <p
+              className="text-[11px] leading-snug mt-1"
+              style={{ color: 'rgba(255,255,255,0.2)' }}
+            >
+              {t.subtexts.costSavingsSubtext}
+            </p>
           </div>
 
           {/* Revenue uplift */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-base"
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: 'color-mix(in srgb, var(--mews-primary-pink) 12%, transparent)' }}
             >
-              ↑
+              <TrendingUp className="w-5 h-5" style={{ color: 'var(--mews-primary-pink)' }} />
             </div>
             <span
               className="text-2xl font-extrabold tracking-tight tabular-nums"
@@ -128,15 +134,21 @@ export default function CinematicSlide(props: CinematicSlideProps) {
             >
               {t.labels.revenueUplift}
             </span>
+            <p
+              className="text-[11px] leading-snug mt-1"
+              style={{ color: 'rgba(255,255,255,0.2)' }}
+            >
+              {t.subtexts.revenueUpliftSubtext}
+            </p>
           </div>
 
           {/* Hours reclaimed */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 text-center">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-base"
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: 'color-mix(in srgb, var(--mews-orange) 12%, transparent)' }}
             >
-              ◷
+              <Clock className="w-5 h-5" style={{ color: 'var(--mews-orange)' }} />
             </div>
             <span
               className="text-2xl font-extrabold tracking-tight tabular-nums"
@@ -150,6 +162,12 @@ export default function CinematicSlide(props: CinematicSlideProps) {
             >
               {t.labels.hoursReclaimed}
             </span>
+            <p
+              className="text-[11px] leading-snug mt-1"
+              style={{ color: 'rgba(255,255,255,0.2)' }}
+            >
+              {t.subtexts.hoursReclaimedSubtext}
+            </p>
           </div>
         </div>
       </div>
