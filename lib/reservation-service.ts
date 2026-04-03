@@ -17,6 +17,7 @@ import { log, logError } from './force-log';
 import { resolveLanguage, type SupportedLanguage } from './translations/language-utils';
 import { translateNote } from './translations/customer-notes';
 import { getMewsClientToken, getMewsApiUrl } from '@/lib/config';
+import { buildMewsAuth } from '@/lib/mews-api';
 const CUSTOMER_CONCURRENCY = 5; // Process 5 customers at a time
 
 export interface ReservationCreationResult {
@@ -59,6 +60,18 @@ interface CategoryTarget {
   targetOccupancy: number;
 }
 
+interface CreatedReservation {
+  id: string;
+  isOptional: boolean;
+}
+
+interface FailedReservation {
+  error: string;
+  skipped?: boolean;
+  checkInUtc?: Date;
+  checkOutUtc?: Date;
+}
+
 /**
  * Fetch timezone from Mews configuration API
  */
@@ -70,9 +83,7 @@ async function fetchTimezoneFromMews(accessToken: string, logId?: string): Promi
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ClientToken: getMewsClientToken(),
-      AccessToken: accessToken,
-      Client: 'Mews Sandbox Manager'
+      ...buildMewsAuth(accessToken),
     })
   };
   const contextStr = 'configuration/get';
@@ -211,8 +222,8 @@ export async function createReservationsForEnvironment(
     // Step 6: Determine customer strategy and generate reservation templates
     const language = resolveLanguage(options?.languageCode);
     let customerIds: string[];
-    let createdReservations: any[];
-    let failures: any[];
+    let createdReservations: CreatedReservation[];
+    let failures: FailedReservation[];
 
     if (options?.customerIds && options.customerIds.length > 0) {
       // Path A: Pre-provided customer IDs — assign directly to reservation templates
@@ -380,18 +391,18 @@ export async function createReservationsForEnvironment(
     if (logId && operationType === 'automatic') {
       try {
         // Count reservations by state
-        const optionalCount = createdReservations.filter((r: any) => r.isOptional).length;
+        const optionalCount = createdReservations.filter(r => r.isOptional).length;
         const byState: Record<string, number> = {
           Confirmed: createdReservations.length - optionalCount,
           ...(optionalCount > 0 && { Optional: optionalCount })
         };
 
         // Format failures for logging (only include essential info)
-        const formattedFailures = failures.map((f: any) => ({
+        const formattedFailures = failures.map(f => ({
           error: f.error,
-          skipped: f.skipped || false,
-          checkInUtc: f.checkInUtc?.toISOString?.() || f.checkInUtc,
-          checkOutUtc: f.checkOutUtc?.toISOString?.() || f.checkOutUtc
+          skipped: f.skipped ?? false,
+          checkInUtc: f.checkInUtc?.toISOString(),
+          checkOutUtc: f.checkOutUtc?.toISOString()
         }));
 
         await updateEnvironmentReservationStats(logId, {
@@ -645,9 +656,7 @@ async function getCustomerByEmail(email: string, accessToken: string, logId?: st
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: getMewsClientToken(),
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager',
+        ...buildMewsAuth(accessToken),
         Emails: [email],
         Extent: {
           Customers: true,
@@ -690,9 +699,7 @@ async function getCustomerByEmail(email: string, accessToken: string, logId?: st
  */
 async function createSingleCustomer(customer: SampleCustomer, accessToken: string, language: SupportedLanguage = 'en', logId?: string): Promise<string> {
   const requestBody = {
-    ClientToken: getMewsClientToken(),
-    AccessToken: accessToken,
-    Client: 'Free Trial Generator',
+    ...buildMewsAuth(accessToken),
     FirstName: customer.FirstName,
     LastName: customer.LastName,
     Email: customer.Email,
@@ -987,18 +994,16 @@ async function sendReservationGroup(
   adultAgeCategoryId: string,
   vouchersByRate: Map<string, string>,
   logId?: string
-): Promise<{ created: any[]; failed: any[] }> {
-  const created: any[] = [];
-  const failed: any[] = [];
+): Promise<{ created: CreatedReservation[]; failed: FailedReservation[] }> {
+  const created: CreatedReservation[] = [];
+  const failed: FailedReservation[] = [];
 
   const url = `${getMewsApiUrl()}/api/connector/v1/reservations/add`;
   const fetchOpts: RequestInit = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      ClientToken: getMewsClientToken(),
-      AccessToken: accessToken,
-      Client: 'Mews Sandbox Manager',
+      ...buildMewsAuth(accessToken),
       ServiceId: serviceId,
       Reservations: group.map(r => {
         const reservation: any = {
@@ -1105,9 +1110,9 @@ async function createReservationGroups(
   adultAgeCategoryId: string,
   vouchersByRate: Map<string, string>,
   logId?: string
-): Promise<{ createdReservations: any[]; failures: any[] }> {
-  const createdReservations: any[] = [];
-  const failures: any[] = [];
+): Promise<{ createdReservations: CreatedReservation[]; failures: FailedReservation[] }> {
+  const createdReservations: CreatedReservation[] = [];
+  const failures: FailedReservation[] = [];
 
   for (let i = 0; i < groups.length; i++) {
     try {
@@ -1136,10 +1141,10 @@ async function createReservationGroupsWithCustomers(
   vouchersByRate: Map<string, string>,
   language: SupportedLanguage,
   logId?: string
-): Promise<{ createdReservations: any[]; failures: any[]; customerPool: Map<number, string> }> {
+): Promise<{ createdReservations: CreatedReservation[]; failures: FailedReservation[]; customerPool: Map<number, string> }> {
   const customerPool = new Map<number, string>(); // customerIndex → Mews customer ID
-  const createdReservations: any[] = [];
-  const failures: any[] = [];
+  const createdReservations: CreatedReservation[] = [];
+  const failures: FailedReservation[] = [];
 
   for (let i = 0; i < groups.length; i++) {
     const group = groups[i];
