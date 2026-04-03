@@ -2,6 +2,14 @@ import '@testing-library/jest-dom';
 import { beforeAll, afterEach, afterAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
+// lib/auth.ts validates these at module import time (not lazily),
+// so they must be set at the top level — before any test file imports resolve.
+process.env.GOOGLE_CLIENT_ID ??= 'test-google-client-id';
+process.env.GOOGLE_CLIENT_SECRET ??= 'test-google-client-secret';
+process.env.NEXTAUTH_SECRET ??= 'test-nextauth-secret';
+process.env.ADMIN_EMAILS ??= 'charlie.delamare@mews.com';
+process.env.WEBHOOK_SECRET ??= 'test-webhook-secret';
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();
