@@ -121,11 +121,7 @@ async function handleIntegrationDeleted(payload: IntegrationDeletedPayload) {
     console.error('[WEBHOOK] Error handling IntegrationDeleted:', error);
 
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error processing IntegrationDeleted',
-        details: (error as Error).message
-      },
+      { success: false, error: 'Internal server error processing IntegrationDeleted' },
       { status: 500 }
     );
   }

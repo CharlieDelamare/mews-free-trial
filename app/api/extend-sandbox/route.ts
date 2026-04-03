@@ -94,7 +94,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ExtendSan
   } catch (error) {
     console.error('[EXTEND-SANDBOX] Error:', error);
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

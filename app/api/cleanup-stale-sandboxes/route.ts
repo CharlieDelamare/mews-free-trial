@@ -83,6 +83,10 @@ export async function GET(request: Request) {
  *   dryRun=true  — report stale sandboxes without deleting them
  */
 export async function POST(request: Request) {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
   return runCleanup(request);
 }
 
@@ -199,7 +203,7 @@ async function runCleanup(request: Request) {
   } catch (error) {
     console.error('[CLEANUP-STALE] Failed:', error);
     return NextResponse.json(
-      { success: false, error: String(error) },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
