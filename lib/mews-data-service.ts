@@ -6,9 +6,10 @@
  */
 
 import { fromZonedTime } from 'date-fns-tz';
-import { loggedFetch } from './api-call-logger';
+import { loggedFetch } from '@/lib/api-call-logger';
+import { getMewsApiUrl } from '@/lib/config';
 
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews.com';
+const MEWS_API_URL = getMewsApiUrl();
 
 export interface MewsData {
   serviceId: string;

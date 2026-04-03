@@ -274,7 +274,7 @@ describe('findEnvironmentLogByPropertyName', () => {
     const result = await findEnvironmentLogByPropertyName('Test Hotel');
 
     expect(prisma.unifiedLog.findFirst).toHaveBeenCalledWith({
-      where: { propertyName: 'Test Hotel', logType: 'environment', status: 'building' },
+      where: { propertyName: { equals: 'Test Hotel', mode: 'insensitive' }, logType: 'environment', status: 'building' },
       orderBy: { timestamp: 'desc' },
     });
     expect(result).toEqual(mockLog);
@@ -286,7 +286,7 @@ describe('findEnvironmentLogByPropertyName', () => {
     await findEnvironmentLogByPropertyName('Test Hotel', false);
 
     expect(prisma.unifiedLog.findFirst).toHaveBeenCalledWith({
-      where: { propertyName: 'Test Hotel', logType: 'environment' },
+      where: { propertyName: { equals: 'Test Hotel', mode: 'insensitive' }, logType: 'environment' },
       orderBy: { timestamp: 'desc' },
     });
   });

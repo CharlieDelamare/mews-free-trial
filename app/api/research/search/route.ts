@@ -15,6 +15,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (!city) {
+    return NextResponse.json(
+      { success: false, error: 'city is required' },
+      { status: 400 }
+    );
+  }
+
   try {
     let candidates = await searchLiteAPI(name, city ?? '', countryCode);
 

@@ -85,6 +85,18 @@ const minimalState: CalculatorState = {
     hasExistingRMS: false,
     estimatedRevenueUplift: 10.5,
   },
+  housekeeping: {
+    hkStaffOnDuty: 3,
+    hkStaffOnDutyIsManual: false,
+    departureCleanTime: 30,
+    stayoverCleanTime: 20,
+    amenityCostPerRoomNight: 1.00,
+    amenityReductionPct: 0.05,
+    roomAssignmentTimeManual: 3.0,
+    roomAssignmentMethod: 'manual',
+    usesHousekeepingSoftware: false,
+    hasExistingHousekeepingApp: false,
+  },
 };
 
 describe('serializeState', () => {

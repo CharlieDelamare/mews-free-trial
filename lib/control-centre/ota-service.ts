@@ -1,8 +1,10 @@
 import type { OtaSimulateParams, OtaSimulateResult } from '@/types/control-centre';
 import { fetchMewsData } from '@/lib/mews-data-service';
+import { getMewsApiUrl } from '@/lib/config';
+import { loggedFetch } from '@/lib/api-call-logger';
+import { buildMewsAuth } from '@/lib/mews-api';
 
-const MEWS_API_URL = process.env.MEWS_API_URL || 'https://api.mews-demo.com';
-const CLIENT_TOKEN = process.env.MEWS_CLIENT_TOKEN || 'B7DB2BC5307849758EB9B00A00E85B69-77E0E354A6E058C0E1A456B5238BFA0';
+const MEWS_API_URL = getMewsApiUrl();
 
 const OTA_SOURCE_NAMES: Record<string, string> = {
   booking_com: 'Booking.com',
@@ -17,7 +19,7 @@ export async function simulateOtaBooking(
   params: OtaSimulateParams
 ): Promise<OtaSimulateResult> {
   try {
-    const mewsData = await fetchMewsData(CLIENT_TOKEN, accessToken);
+    const mewsData = await fetchMewsData(buildMewsAuth(accessToken).ClientToken, accessToken);
     const rate = mewsData.rates[0];
     const category = mewsData.resourceCategories[0];
 
@@ -26,17 +28,15 @@ export async function simulateOtaBooking(
     }
 
     // Create a customer first — required by reservations/add
-    const customerRes = await fetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
+    const customerRes = await loggedFetch(`${MEWS_API_URL}/api/connector/v1/customers/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager',
+        ...buildMewsAuth(accessToken),
         OverwriteExisting: false,
         LastName: `${OTA_SOURCE_NAMES[params.channel] || params.channel} Guest`,
       }),
-    });
+    }, { unifiedLogId: 'control-centre', group: 'customers' });
     const customerData = await customerRes.json();
     const customerId: string | undefined = customerData.Customers?.[0]?.Id;
     if (!customerId) {
@@ -44,13 +44,11 @@ export async function simulateOtaBooking(
     }
 
     const url = `${MEWS_API_URL}/api/connector/v1/reservations/add`;
-    const res = await fetch(url, {
+    const res = await loggedFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ClientToken: CLIENT_TOKEN,
-        AccessToken: accessToken,
-        Client: 'Mews Sandbox Manager',
+        ...buildMewsAuth(accessToken),
         ServiceId: mewsData.serviceId,
         Reservations: [
           {
@@ -64,7 +62,7 @@ export async function simulateOtaBooking(
           },
         ],
       }),
-    });
+    }, { unifiedLogId: 'control-centre', group: 'reservations' });
 
     const data = await res.json();
 
