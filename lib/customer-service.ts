@@ -233,11 +233,6 @@ async function processBatch(
     });
 
     results.push(...chunkResults);
-
-    // Small delay between chunks to be nice to the API
-    if (i + concurrency < customers.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
   }
 
   return results;
