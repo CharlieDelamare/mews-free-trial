@@ -618,7 +618,7 @@ export async function resetEnvironment(
     // STEP 7: Close Bills
     // ========================================
     console.log(`[RESET-SERVICE] Step 7/9: Closing bills...`);
-    const billsResult = await closeBillsForEnvironment(accessToken, log.id);
+    const billsResult = await closeBillsForEnvironment(accessToken, log.id, config.currency);
 
     details.billsFetched = billsResult.totalBills;
     details.billsClosed = billsResult.successCount;
