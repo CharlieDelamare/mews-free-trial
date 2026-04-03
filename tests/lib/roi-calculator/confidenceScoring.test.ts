@@ -96,10 +96,9 @@ describe('computeConfidenceScore', () => {
 
     const result = computeConfidenceScore(confidenceMap, priorityInputs);
 
-    expect(result.confirmedCount).toBe(1);
-    expect(result.adjustedCount).toBe(1);
-    expect(result.benchmarkCount).toBe(1);
-    expect(result.unknownCount).toBe(1);
+    // 'adjusted' is normalised → confirmed; 'unknown' is normalised → benchmark
+    expect(result.confirmedCount).toBe(2);
+    expect(result.benchmarkCount).toBe(2);
     expect(result.totalTracked).toBe(4);
   });
 });

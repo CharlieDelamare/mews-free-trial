@@ -20,6 +20,7 @@ const mockPresentation = {
     guestExperience: { reservationsPerMonth: 900, averageStaffWage: 18, averageDailyRate: 100, checkInTime: 5, checkOutTime: 1, mewsCheckInTime: 1, mewsCheckOutTime: 0.5, roomAssignmentTime: 2, currentCheckInPercentage: 10, onlineCheckInPercentage: 30, revenueUplift: 12, currentDirectBookingPercent: 30, directBookingIncrease: 40, averageCommission: 15 },
     payment: { transactionsPerMonth: 900, secondsPerTransaction: 55, processingWage: 14, chargebackRate: 0.4, mewsChargebackRate: 0.15, chargebackVolume: 40, chargebackCostPerMonth: 1800, reconciliationTimeDaily: 2, mewsReconciliationTimeDaily: 0.5, reconciliationWage: 14, monthlyRevenue: 180000, noShowRate: 2, noShowWithoutFee: 50, foreignCurrencyPercent: 25, multiCurrencyAdoption: 30, revenueShare: 1 },
     rms: { hotelRevPAR: 75, numberOfRooms: 80, numberOfRatePlans: 5, rateUpdateFrequency: 'Daily', rateChangesPerWeek: 7, numberOfChannels: 4, avgTimeToUpdateRate: 5, hasRevenueManager: false, hasExistingRMS: false, estimatedRevenueUplift: 10.5 },
+    housekeeping: { hkStaffOnDuty: 3, hkStaffOnDutyIsManual: false, departureCleanTime: 30, stayoverCleanTime: 20, amenityCostPerRoomNight: 1.00, amenityReductionPct: 0.05, roomAssignmentTimeManual: 3.0, roomAssignmentMethod: 'manual', usesHousekeepingSoftware: false, hasExistingHousekeepingApp: false },
   },
   createdAt: new Date('2026-03-17'),
   updatedAt: new Date('2026-03-17'),
